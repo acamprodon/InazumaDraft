@@ -52,7 +52,7 @@ val formations = listOf(
     Formation("2-3-5", listOf(
         "PT", "DF", "DF", "MC", "MC", "MC", "DL", "DL", "DL", "DL", "DL")
 ),
-    Formation("3-4-3", listOf("PT", "DF", "DF", "MC", "MC", "MC", "MC", "DL", "DL", "DL")),
+    Formation("3-4-3", listOf("PT", "DF", "DF","DF",  "MC", "MC", "MC", "MC", "DL", "DL", "DL")),
             Formation(
             name = "5-3-2",
     positions = listOf(
