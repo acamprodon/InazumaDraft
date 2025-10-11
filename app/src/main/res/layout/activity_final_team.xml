@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
         android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -14,17 +15,24 @@
             android:background="@drawable/football_field" />
 
     <!-- Botón para alternar vistas -->
-    <Button
-            android:id="@+id/btnToggleView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Ver estadísticas"
-            android:textStyle="bold"
-            android:textColor="#000000"
-            android:backgroundTint="#ffcc00"
-            android:layout_margin="8dp" />
+
+    <!-- Botón pequeño para crear otro equipo -->
+
 
     <!-- Lista con stats del equipo -->
+
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/btnNewTeam"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end|bottom"
+            android:layout_margin="20dp"
+            android:contentDescription="Crear otro equipo"
+            app:backgroundTint="#00cc66"
+            app:tint="@android:color/white"
+            app:srcCompat="@android:drawable/ic_popup_sync" />
+
     <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerFinalTeam"
             android:layout_width="match_parent"
@@ -33,4 +41,14 @@
             android:padding="8dp"
             android:background="#151c30"
             android:visibility="gone" />
+
+    <Button
+            android:id="@+id/btnToggleView"
+            android:layout_width="318dp"
+            android:layout_height="wrap_content"
+            android:text="Ver estadísticas"
+            android:textStyle="bold"
+            android:textColor="#000000"
+            android:backgroundTint="#ffcc00"
+            android:layout_margin="8dp" />
 </LinearLayout>

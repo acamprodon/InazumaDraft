@@ -1,5 +1,6 @@
 package com.inazumadraft.ui
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageView
@@ -14,6 +15,7 @@ import com.inazumadraft.data.formations
 import com.inazumadraft.model.Player
 
 class FinalTeamActivity : AppCompatActivity() {
+    private lateinit var btnNewTeam: com.google.android.material.floatingactionbutton.FloatingActionButton
 
     private lateinit var fieldLayout: RelativeLayout
     private lateinit var btnToggleView: Button
@@ -26,6 +28,13 @@ class FinalTeamActivity : AppCompatActivity() {
         fieldLayout = findViewById(R.id.fieldLayout)
         btnToggleView = findViewById(R.id.btnToggleView)
         recyclerFinalTeam = findViewById(R.id.recyclerFinalTeam)
+        btnNewTeam = findViewById(R.id.btnNewTeam)
+        btnNewTeam.setOnClickListener {
+            val intent = Intent(this@FinalTeamActivity, DraftActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+            startActivity(intent)
+            finish()
+        }
 
         val team = intent.getParcelableArrayListExtra<Player>("finalTeam") ?: arrayListOf()
         val formationName = intent.getStringExtra("formation") ?: "4-4-2"
@@ -41,16 +50,22 @@ class FinalTeamActivity : AppCompatActivity() {
         // Toggle campo <-> stats
         btnToggleView.setOnClickListener {
             if (recyclerFinalTeam.visibility == View.GONE) {
-                // Mostrar stats
                 recyclerFinalTeam.visibility = View.VISIBLE
                 fieldLayout.visibility = View.GONE
                 btnToggleView.text = "Ver campo"
             } else {
-                // Mostrar campo
                 recyclerFinalTeam.visibility = View.GONE
                 fieldLayout.visibility = View.VISIBLE
                 btnToggleView.text = "Ver estadísticas"
             }
+        }
+
+        // Botón pequeño para crear nuevo equipo
+        btnNewTeam.setOnClickListener {
+            val intent = Intent(this@FinalTeamActivity, DraftActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+            startActivity(intent)
+            finish()
         }
     }
 
@@ -62,27 +77,31 @@ class FinalTeamActivity : AppCompatActivity() {
         "delantero", "dl" -> "DL"
         else -> pos.trim().uppercase()
     }
+
     private fun codeToNice(code: String): String = when (code.uppercase()) {
-        "PT" -> "Portero"; "DF" -> "Defensa"; "MC" -> "Centrocampista"; "DL" -> "Delantero"; else -> code
+        "PT" -> "Portero"
+        "DF" -> "Defensa"
+        "MC" -> "Centrocampista"
+        "DL" -> "Delantero"
+        else -> code
     }
 
     /**
-     * Template uniforme: filas de **arriba a abajo** = DL → MC → DF → PT (portero abajo).
-     * Slots centrados y equiespaciados. Tamaño de carta único para todo el equipo.
-     * Si falta un jugador, se muestra el nombre de la posición en el slot.
+     * Dibuja la plantilla uniforme del campo con jugadores o huecos vacíos.
      */
     private fun drawTemplateAndFill(playersIn: List<Player>, formationName: String, captainName: String?) {
         fieldLayout.removeAllViews()
 
-        // 1) Leer formación y contar piezas por rol
+        // 1) Leer formación
         val formation = formations.firstOrNull { it.name == formationName } ?: return
         val codes = formation.positions.map { toCode(it) }
+
+        // 2) Calcular filas por tipo
         val nPT = codes.count { it == "PT" }
         val nDF = codes.count { it == "DF" }
         val nMC = codes.count { it == "MC" }
         val nDL = codes.count { it == "DL" }
 
-        // 2) Reparto por filas (puedes ajustar máximos por fila)
         fun split(count: Int, maxPerRow: Int): List<Int> {
             if (count <= 0) return emptyList()
             val rows = mutableListOf<Int>()
@@ -94,12 +113,11 @@ class FinalTeamActivity : AppCompatActivity() {
             }
             return rows
         }
-        val dlRows = split(nDL, 3) // arriba
+
+        val dlRows = split(nDL, 3)
         val mcRows = split(nMC, 4)
         val dfRows = split(nDF, 4)
-        val ptRows = if (nPT > 0) listOf(nPT) else emptyList() // abajo
-
-        // Orden de filas **de arriba a abajo** (¡portero último!)
+        val ptRows = if (nPT > 0) listOf(nPT) else emptyList()
         val rowSpec = buildList {
             addAll(dlRows)
             addAll(mcRows)
@@ -108,7 +126,7 @@ class FinalTeamActivity : AppCompatActivity() {
         }
         if (rowSpec.isEmpty()) return
 
-        // Para saber qué posición corresponde a cada fila
+        // Orden de roles por fila
         val dlStart = 0
         val mcStart = dlStart + dlRows.size
         val dfStart = mcStart + mcRows.size
@@ -120,12 +138,13 @@ class FinalTeamActivity : AppCompatActivity() {
             else -> "PT"
         }
 
-        // 3) Ordenar los jugadores reales en ese mismo orden
+        // 3) Ordenar jugadores
         val pool = playersIn.toMutableList()
         fun takeOne(role: String): Player? {
             val idx = pool.indexOfFirst { it.position.equals(role, ignoreCase = true) }
             return if (idx >= 0) pool.removeAt(idx) else null
         }
+
         val orderedForTemplate = mutableListOf<Player?>().apply {
             repeat(nDL) { add(takeOne("DL")) }
             repeat(nMC) { add(takeOne("MC")) }
@@ -133,15 +152,14 @@ class FinalTeamActivity : AppCompatActivity() {
             repeat(nPT) { add(takeOne("PT")) }
         }
 
-        // 4) Parámetros visuales
+        // 4) Medidas visuales
         val d = resources.displayMetrics.density
         var cardW = 100f * d
         var cardH = cardW * 1.25f
-        val hGap  = 8f * d
+        val hGap = 8f * d
         val topPad = fieldLayout.height * 0.10f
         val bottomPad = fieldLayout.height * 0.90f
 
-        // Ajusta anchura si la fila más ancha no cabe
         val maxCols = rowSpec.maxOrNull() ?: 1
         val rowWidthNeeded = maxCols * cardW + (maxCols - 1) * hGap
         if (rowWidthNeeded > fieldLayout.width) {
@@ -149,19 +167,16 @@ class FinalTeamActivity : AppCompatActivity() {
             cardH = cardW * 1.25f
         }
 
-        // 5) Y de cada fila equiespaciadas (arriba→abajo)
         val rowsCount = rowSpec.size
         val yCenters = (0 until rowsCount).map { r ->
             val t = if (rowsCount == 1) 0.5f else r / (rowsCount - 1f)
             topPad + t * (bottomPad - topPad)
         }
 
-        // 6) Pintar slots
+        // 5) Dibujar slots
         var globalIndex = 0
         rowSpec.forEachIndexed { rowIdx, cols ->
-            val n = cols.coerceAtLeast(0)
-            if (n == 0) return@forEachIndexed
-
+            val n = cols
             val rowWidth = n * cardW + (n - 1) * hGap
             val startX = (fieldLayout.width - rowWidth) / 2f
             val yCenter = yCenters[rowIdx]
@@ -172,7 +187,7 @@ class FinalTeamActivity : AppCompatActivity() {
                 globalIndex++
 
                 val view = layoutInflater.inflate(R.layout.item_player_field, fieldLayout, false)
-                val img  = view.findViewById<ImageView>(R.id.imgPlayer)
+                val img = view.findViewById<ImageView>(R.id.imgPlayer)
                 val name = view.findViewById<TextView>(R.id.txtPlayerName)
                 val elem = view.findViewById<ImageView>(R.id.imgElement)
 
@@ -182,7 +197,6 @@ class FinalTeamActivity : AppCompatActivity() {
                     elem.setImageResource(p.element)
                     if (p.name == captainName) img.setBackgroundResource(R.drawable.captain_border)
                 } else {
-                    // Slot vacío: badge textual de la posición
                     name.text = codeToNice(roleForThisRow)
                     elem.setImageResource(0)
                     img.setImageResource(0)
@@ -190,7 +204,7 @@ class FinalTeamActivity : AppCompatActivity() {
 
                 val lp = RelativeLayout.LayoutParams(cardW.toInt(), cardH.toInt())
                 lp.leftMargin = (startX + i * (cardW + hGap)).toInt()
-                lp.topMargin  = (yCenter - cardH / 2f).toInt()
+                lp.topMargin = (yCenter - cardH / 2f).toInt()
                 view.layoutParams = lp
                 fieldLayout.addView(view)
             }
