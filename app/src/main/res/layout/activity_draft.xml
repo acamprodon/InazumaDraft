@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/draftLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+    <TextView
+            android:id="@+id/roundTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Elige una formación"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="16dp" />
+
+    <LinearLayout
+            android:id="@+id/formationButtonsLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_below="@id/roundTitle"
+            android:gravity="center"
+            android:layout_marginTop="8dp">
+
+        <Button
+                android:id="@+id/btnFormation1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="1-2-1" />
+
+        <Button
+                android:id="@+id/btnFormation2"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:text="2-1-1" />
+
+        <Button
+                android:id="@+id/btnFormation3"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="1-1-2" />
+    </LinearLayout>
+
+    <!-- Campo de fútbol -->
+    <RelativeLayout
+            android:id="@+id/fieldLayout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@id/formationButtonsLayout"
+            android:layout_above="@id/btnNext"
+            android:layout_marginTop="16dp"
+            android:visibility="gone"
+            android:background="@drawable/football_field" />
+
+    <Button
+            android:id="@+id/btnNext"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Confirmar equipo"
+            android:layout_alignParentBottom="true"
+            android:visibility="gone"
+            android:layout_margin="16dp" />
+
+</RelativeLayout>
