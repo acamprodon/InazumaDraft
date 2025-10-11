@@ -6,100 +6,84 @@ import kotlinx.parcelize.Parcelize
 @Parcelize
 data class Formation(
     val name: String,
-    val positions: List<String> // PT, DF, MC, DL
+    val positions: List<String> // Debe tener 11 elementos (PT + 10)
 ) : Parcelable
 
-// Formaciones de fútbol 7 (1 PT + 6 de campo)
+// OJO: usamos "MC" como etiqueta de medios. (Tus Player pueden tener "Mediocampista":
+// tu lógica ya trata ambas como equivalentes si usas el helper matchesPosition del DraftActivity.)
 val formations = listOf(
-    // 3 DFs, 2 medios, 1 DL
     Formation(
-        name = "3-2-1",
-        positions = listOf(
+        "4-4-2",
+        listOf(
             "PT",
-            "DF", "DF", "DF",
-            "MC", "MC",
-            "DL"
+            "DF","DF","DF","DF",
+            "MC","MC","MC","MC",
+            "DL","DL"
         )
     ),
-    // 2 DFs, 3 medios, 1 DL
     Formation(
-        name = "2-3-1",
-        positions = listOf(
+        "4-3-3",
+        listOf(
             "PT",
-            "DF", "DF",
-            "MC", "MC", "MC",
-            "DL"
+            "DF","DF","DF","DF",
+            "MC","MC","MC",
+            "DL","DL","DL"
         )
     ),
-    // 3 DFs, 1 medio, 2 DLs
     Formation(
-        name = "3-1-2",
-        positions = listOf(
+        "5-2-3",
+        listOf(
             "PT",
-            "DF", "DF", "DF",
-            "MC",
-            "DL", "DL"
+            "DF","DF","DF","DF","DF",
+            "MC","MC",
+            "DL","DL","DL"
         )
     ),
-    // 2 DFs, 2 medios, 2 DLs
     Formation(
-        name = "2-2-2",
-        positions = listOf(
+        "3-2-3-2",
+        listOf(
             "PT",
-            "DF", "DF",
-            "MC", "MC",
-            "DL", "DL"
+            "DF","DF","DF",
+            "MC","MC",
+            "MC","MC","MC",
+            "DL","DL"
         )
     )
 )
 
 /**
- * Coordenadas relativas (x, y) en el campo [0..1].
- * y=0.92 PT; líneas: DFs ~0.72, medios ~0.50, DLs ~0.15.
- * El orden de cada lista coincide con 'positions' de la formación.
+ * Coordenadas proporcionales (x,y) dentro del campo [0..1].
+ * y=0.92 PT (abajo), y=0.78 DFs, y=0.62 pivotes, y=0.50/0.45 interiores/medias,
+ * y=0.20 DLs. x repartido de izquierda a derecha.
  */
-val formationCoordinates: Map<String, List<Pair<Float, Float>>> = mapOf(
-    // 3-2-1: 3 DF en línea, 2 MC abiertos, 1 DL centrado
-    "3-2-1" to listOf(
-        0.50f to 0.92f, // PT
-        0.20f to 0.72f, // DF izq
-        0.50f to 0.72f, // DF centro
-        0.80f to 0.72f, // DF der
-        0.35f to 0.50f, // MC izq
-        0.65f to 0.50f, // MC der
-        0.50f to 0.15f  // DL centro
+val formationCoordinates = mapOf(
+    // 4-4-2
+    "4-4-2" to listOf(
+        0.50f to 0.92f, // GK
+        0.15f to 0.78f, 0.35f to 0.78f, 0.65f to 0.78f, 0.85f to 0.78f, // 4 DEF
+        0.15f to 0.50f, 0.35f to 0.50f, 0.65f to 0.50f, 0.85f to 0.50f, // 4 MID
+        0.40f to 0.20f, 0.60f to 0.20f  // 2 FWD
     ),
-
-    // 2-3-1: 2 DF abiertos, 3 MC (izq-centro-der), 1 DL centrado
-    "2-3-1" to listOf(
-        0.50f to 0.92f, // PT
-        0.30f to 0.72f, // DF izq
-        0.70f to 0.72f, // DF der
-        0.20f to 0.50f, // MC izq
-        0.50f to 0.50f, // MC centro
-        0.80f to 0.50f, // MC der
-        0.50f to 0.15f  // DL centro
+    // 4-3-3
+    "4-3-3" to listOf(
+        0.50f to 0.92f, // GK
+        0.15f to 0.78f, 0.35f to 0.78f, 0.65f to 0.78f, 0.85f to 0.78f, // 4 DEF
+        0.25f to 0.55f, 0.50f to 0.55f, 0.75f to 0.55f, // 3 MID
+        0.25f to 0.20f, 0.50f to 0.20f, 0.75f to 0.20f // 3 FWD
     ),
-
-    // 3-1-2: 3 DF en línea, 1 MC centrado, 2 DL abiertos
-    "3-1-2" to listOf(
-        0.50f to 0.92f, // PT
-        0.20f to 0.72f, // DF izq
-        0.50f to 0.72f, // DF centro
-        0.80f to 0.72f, // DF der
-        0.50f to 0.50f, // MC centro
-        0.35f to 0.15f, // DL izq
-        0.65f to 0.15f  // DL der
+    // 5-2-3
+    "5-2-3" to listOf(
+        0.50f to 0.92f, // GK
+        0.10f to 0.80f, 0.30f to 0.80f, 0.50f to 0.80f, 0.70f to 0.80f, 0.90f to 0.80f, // 5 DEF
+        0.40f to 0.58f, 0.60f to 0.58f, // 2 MID
+        0.25f to 0.20f, 0.50f to 0.20f, 0.75f to 0.20f // 3 FWD
     ),
-
-    // 2-2-2: 2 DF, 2 MC, 2 DL (simétricos)
-    "2-2-2" to listOf(
-        0.50f to 0.92f, // PT
-        0.30f to 0.72f, // DF izq
-        0.70f to 0.72f, // DF der
-        0.35f to 0.50f, // MC izq
-        0.65f to 0.50f, // MC der
-        0.35f to 0.15f, // DL izq
-        0.65f to 0.15f  // DL der
+    // 3-2-3-2  (3 DEF, 2 pivotes, 3 medias/volantes, 2 FWD)
+    "3-2-3-2" to listOf(
+        0.50f to 0.92f, // GK
+        0.30f to 0.80f, 0.50f to 0.80f, 0.70f to 0.80f, // 3 DEF
+        0.40f to 0.62f, 0.60f to 0.62f, // 2 MID (pivotes)
+        0.25f to 0.48f, 0.50f to 0.48f, 0.75f to 0.48f, // 3 MID (interiores/medias)
+        0.40f to 0.18f, 0.60f to 0.18f // 2 FWD
     )
 )

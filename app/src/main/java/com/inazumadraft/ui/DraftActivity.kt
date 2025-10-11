@@ -51,10 +51,11 @@ class DraftActivity : AppCompatActivity() {
         rvOptions.layoutManager = GridLayoutManager(this, 2)
 
         // Formaciones (índices 0..3)
-        btnFormation1.setOnClickListener { selectFormation(0) } // 3-2-1
-        btnFormation2.setOnClickListener { selectFormation(1) } // 2-3-1
-        btnFormation3.setOnClickListener { selectFormation(2) } // 3-1-2
-        btnFormation4.setOnClickListener { selectFormation(3) } // 2-2-2
+        btnFormation1.setOnClickListener { selectFormation(0) } // 4-4-2
+        btnFormation2.setOnClickListener { selectFormation(1) } // 4-3-3
+        btnFormation3.setOnClickListener { selectFormation(2) } // 5-2-3
+        findViewById<Button>(R.id.btnFormation4).setOnClickListener { selectFormation(3) } // 3-2-3-2
+
 
         // Confirmar equipo
         btnNext.setOnClickListener {

@@ -26,8 +26,12 @@ object PlayerRepository {
         Player("Steve", "MC", R.drawable.aire, 68, 72, 78, 70, R.drawable.steve),
         Player("Timmy", "MC", R.drawable.bosque, 75, 75, 75, 70, R.drawable.timmy),
         Player("Tod","DF", R.drawable.fuego, 68, 73, 74, 75, R.drawable.tod ),
+       Player("Willy","DL", R.drawable.bosque, 60 ,55, 50, 2, R.drawable.willy),
+        Player("Thomas Feldt", "PT", R.drawable.bosque, 65, 70, 75, 84, R.drawable.feldt),
+        Player("Mask", "PT", R.drawable.aire, 63, 78, 75, 80, R.drawable.mask ),
+        Player("Wolfy", "MC", R.drawable.fuego, 78, 82, 79, 70, R.drawable.wolfy),
 
-    )
+        )
 
     fun getPlayersByPosition(position: String): List<Player> {
         return players.filter { it.position.equals(position, ignoreCase = true) }
