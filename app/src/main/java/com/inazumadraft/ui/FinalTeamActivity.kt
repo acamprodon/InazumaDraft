@@ -1,10 +1,14 @@
 package com.inazumadraft.ui
 
 import android.os.Bundle
+import android.view.View
 import android.widget.ImageView
 import android.widget.RelativeLayout
 import android.widget.TextView
+import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.inazumadraft.R
 import com.inazumadraft.data.formations
 import com.inazumadraft.model.Player
@@ -12,19 +16,41 @@ import com.inazumadraft.model.Player
 class FinalTeamActivity : AppCompatActivity() {
 
     private lateinit var fieldLayout: RelativeLayout
+    private lateinit var btnToggleView: Button
+    private lateinit var recyclerFinalTeam: RecyclerView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_final_team)
 
         fieldLayout = findViewById(R.id.fieldLayout)
+        btnToggleView = findViewById(R.id.btnToggleView)
+        recyclerFinalTeam = findViewById(R.id.recyclerFinalTeam)
 
         val team = intent.getParcelableArrayListExtra<Player>("finalTeam") ?: arrayListOf()
         val formationName = intent.getStringExtra("formation") ?: "4-4-2"
         val captainName = intent.getStringExtra("captainName")
 
-        fieldLayout.post {
-            drawTemplateAndFill(team, formationName, captainName)
+        // Pintar el campo cuando ya tenemos medidas
+        fieldLayout.post { drawTemplateAndFill(team, formationName, captainName) }
+
+        // Stats list
+        recyclerFinalTeam.layoutManager = LinearLayoutManager(this)
+        recyclerFinalTeam.adapter = FinalTeamAdapter(team)
+
+        // Toggle campo <-> stats
+        btnToggleView.setOnClickListener {
+            if (recyclerFinalTeam.visibility == View.GONE) {
+                // Mostrar stats
+                recyclerFinalTeam.visibility = View.VISIBLE
+                fieldLayout.visibility = View.GONE
+                btnToggleView.text = "Ver campo"
+            } else {
+                // Mostrar campo
+                recyclerFinalTeam.visibility = View.GONE
+                fieldLayout.visibility = View.VISIBLE
+                btnToggleView.text = "Ver estadísticas"
+            }
         }
     }
 
@@ -36,38 +62,29 @@ class FinalTeamActivity : AppCompatActivity() {
         "delantero", "dl" -> "DL"
         else -> pos.trim().uppercase()
     }
-
     private fun codeToNice(code: String): String = when (code.uppercase()) {
-        "PT" -> "Portero"
-        "DF" -> "Defensa"
-        "MC" -> "Centrocampista"
-        "DL" -> "Delantero"
-        else -> code
+        "PT" -> "Portero"; "DF" -> "Defensa"; "MC" -> "Centrocampista"; "DL" -> "Delantero"; else -> code
     }
 
     /**
-     * TEMPLATE UNIFORME (estilo “opción 2”):
-     * - Tamaño de carta único para todo el equipo.
-     * - Filas equiespaciadas: PT / DF / MC / DL (si hay muchas piezas, se parte en varias filas).
-     * - Slots centrados y equiespaciados por fila (sin solapes).
-     * - Si falta un jugador, el slot muestra un badge de posición (PT/DF/MC/DL).
+     * Template uniforme: filas de **arriba a abajo** = DL → MC → DF → PT (portero abajo).
+     * Slots centrados y equiespaciados. Tamaño de carta único para todo el equipo.
+     * Si falta un jugador, se muestra el nombre de la posición en el slot.
      */
     private fun drawTemplateAndFill(playersIn: List<Player>, formationName: String, captainName: String?) {
         fieldLayout.removeAllViews()
 
-        // 1) Leer la formación elegida y contar piezas por rol
+        // 1) Leer formación y contar piezas por rol
         val formation = formations.firstOrNull { it.name == formationName } ?: return
         val codes = formation.positions.map { toCode(it) }
-
         val nPT = codes.count { it == "PT" }
         val nDF = codes.count { it == "DF" }
         val nMC = codes.count { it == "MC" }
         val nDL = codes.count { it == "DL" }
 
-        // 2) Reparto por filas para estética uniforme
+        // 2) Reparto por filas (puedes ajustar máximos por fila)
         fun split(count: Int, maxPerRow: Int): List<Int> {
             if (count <= 0) return emptyList()
-            if (count <= maxPerRow) return listOf(count)
             val rows = mutableListOf<Int>()
             var left = count
             while (left > 0) {
@@ -77,43 +94,54 @@ class FinalTeamActivity : AppCompatActivity() {
             }
             return rows
         }
-        // Ajusta aquí el “máximo por fila” de cada línea si quieres otro look
-        val dfRows = split(nDF, 4) // ej. hasta 4 defensas por fila
-        val mcRows = split(nMC, 4) // hasta 4 medios por fila
-        val dlRows = split(nDL, 3) // hasta 3 delanteros por fila (queda más “punta”)
+        val dlRows = split(nDL, 3) // arriba
+        val mcRows = split(nMC, 4)
+        val dfRows = split(nDF, 4)
+        val ptRows = if (nPT > 0) listOf(nPT) else emptyList() // abajo
 
-        // Orden de filas: Portero → Defensas → Medios → Delanteros
+        // Orden de filas **de arriba a abajo** (¡portero último!)
         val rowSpec = buildList {
-            if (nPT > 0) add(nPT)
-            addAll(dfRows)
-            addAll(mcRows)
             addAll(dlRows)
+            addAll(mcRows)
+            addAll(dfRows)
+            addAll(ptRows)
         }
         if (rowSpec.isEmpty()) return
 
-        // 3) Ordenar los jugadores reales para meterlos en los slots en ese mismo orden
+        // Para saber qué posición corresponde a cada fila
+        val dlStart = 0
+        val mcStart = dlStart + dlRows.size
+        val dfStart = mcStart + mcRows.size
+        val ptStart = dfStart + dfRows.size
+        fun roleForRow(rowIdx: Int): String = when {
+            rowIdx < mcStart -> "DL"
+            rowIdx < dfStart -> "MC"
+            rowIdx < ptStart -> "DF"
+            else -> "PT"
+        }
+
+        // 3) Ordenar los jugadores reales en ese mismo orden
         val pool = playersIn.toMutableList()
         fun takeOne(role: String): Player? {
             val idx = pool.indexOfFirst { it.position.equals(role, ignoreCase = true) }
             return if (idx >= 0) pool.removeAt(idx) else null
         }
         val orderedForTemplate = mutableListOf<Player?>().apply {
-            repeat(nPT) { add(takeOne("PT")) }
-            repeat(nDF) { add(takeOne("DF")) }
-            repeat(nMC) { add(takeOne("MC")) }
             repeat(nDL) { add(takeOne("DL")) }
+            repeat(nMC) { add(takeOne("MC")) }
+            repeat(nDF) { add(takeOne("DF")) }
+            repeat(nPT) { add(takeOne("PT")) }
         }
 
-        // 4) Parámetros visuales globales
+        // 4) Parámetros visuales
         val d = resources.displayMetrics.density
-        var cardW = 100f * d               // ancho uniforme
-        var cardH = cardW * 1.25f          // alto uniforme (aspecto 4:5 aprox)
-        val hGap  = 8f * d                 // separación horizontal entre cartas
-        val vGap  = 22f * d                // separación vertical entre filas
-        val topPad = fieldLayout.height * 0.12f
-        val bottomPad = fieldLayout.height * 0.88f
+        var cardW = 100f * d
+        var cardH = cardW * 1.25f
+        val hGap  = 8f * d
+        val topPad = fieldLayout.height * 0.10f
+        val bottomPad = fieldLayout.height * 0.90f
 
-        // Asegura que la fila más ancha cabe; si no, ajusta cardW/cardH a la baja
+        // Ajusta anchura si la fila más ancha no cabe
         val maxCols = rowSpec.maxOrNull() ?: 1
         val rowWidthNeeded = maxCols * cardW + (maxCols - 1) * hGap
         if (rowWidthNeeded > fieldLayout.width) {
@@ -121,14 +149,14 @@ class FinalTeamActivity : AppCompatActivity() {
             cardH = cardW * 1.25f
         }
 
-        // 5) Y de cada fila (equiespaciadas)
+        // 5) Y de cada fila equiespaciadas (arriba→abajo)
         val rowsCount = rowSpec.size
         val yCenters = (0 until rowsCount).map { r ->
             val t = if (rowsCount == 1) 0.5f else r / (rowsCount - 1f)
             topPad + t * (bottomPad - topPad)
         }
 
-        // 6) Pintar filas y slots
+        // 6) Pintar slots
         var globalIndex = 0
         rowSpec.forEachIndexed { rowIdx, cols ->
             val n = cols.coerceAtLeast(0)
@@ -137,6 +165,7 @@ class FinalTeamActivity : AppCompatActivity() {
             val rowWidth = n * cardW + (n - 1) * hGap
             val startX = (fieldLayout.width - rowWidth) / 2f
             val yCenter = yCenters[rowIdx]
+            val roleForThisRow = roleForRow(rowIdx)
 
             repeat(n) { i ->
                 val p = orderedForTemplate.getOrNull(globalIndex)
@@ -148,27 +177,15 @@ class FinalTeamActivity : AppCompatActivity() {
                 val elem = view.findViewById<ImageView>(R.id.imgElement)
 
                 if (p != null) {
-                    // Slot con jugador
                     img.setImageResource(p.image)
                     name.text = p.name
                     elem.setImageResource(p.element)
-                    if (p.name == captainName) {
-                        img.setBackgroundResource(R.drawable.captain_border)
-                    }
+                    if (p.name == captainName) img.setBackgroundResource(R.drawable.captain_border)
                 } else {
-                    // Slot vacío: badge de posición
-                    val neededRole = when {
-                        rowIdx == 0 && nPT > 0 -> "PT"
-                        // cuántas filas ocupa cada bloque
-                        rowIdx in 1..dfRows.size && nDF > 0 -> "DF"
-                        rowIdx in (1 + dfRows.size)..(dfRows.size + mcRows.size) && nMC > 0 -> "MC"
-                        else -> "DL"
-                    }
-                    name.text = codeToNice(neededRole)  // muestra “Portero/Defensa/…”
+                    // Slot vacío: badge textual de la posición
+                    name.text = codeToNice(roleForThisRow)
                     elem.setImageResource(0)
                     img.setImageResource(0)
-                    // Fondo sutil para distinguir slot vacío (opcional):
-                    // view.setBackgroundResource(R.drawable.slot_placeholder)
                 }
 
                 val lp = RelativeLayout.LayoutParams(cardW.toInt(), cardH.toInt())
