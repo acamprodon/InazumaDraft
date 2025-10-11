@@ -25,7 +25,8 @@ class DraftActivity : AppCompatActivity() {
     private lateinit var rvOptions: RecyclerView
     private lateinit var btnNext: Button
     private lateinit var roundTitle: TextView
-
+    private lateinit var btnShuffle: Button
+    private var selectedFormations: List<Formation> =emptyList()
     private var selectedFormation: Formation? = null
     private val selectedPlayers: MutableList<Player> = mutableListOf()
     private var captain: Player? = null
@@ -43,13 +44,14 @@ class DraftActivity : AppCompatActivity() {
         btnFormation2 = findViewById(R.id.btnFormation2)
         btnFormation3 = findViewById(R.id.btnFormation3)
         btnFormation4 = findViewById(R.id.btnFormation4)
+        btnShuffle   = findViewById(R.id.btnShuffleFormations)
         rvOptions = findViewById(R.id.rvOptions)
         btnNext = findViewById(R.id.btnNext)
         roundTitle = findViewById(R.id.roundTitle)
 
         // Grid 2x2 para ver 4 opciones sin scroll
         rvOptions.layoutManager = GridLayoutManager(this, 2)
-
+        refreshVisibleFormations()
         // Formaciones (índices 0..3)
         btnFormation1.setOnClickListener { selectFormation(0) } // 4-4-2
         btnFormation2.setOnClickListener { selectFormation(1) } // 4-3-3

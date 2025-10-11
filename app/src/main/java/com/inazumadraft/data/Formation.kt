@@ -48,7 +48,11 @@ val formations = listOf(
             "MC","MC","MC",
             "DL","DL"
         )
-    )
+    ),
+    Formation("2-3-5", listOf(
+        "PT", "DF", "DF", "MC", "MC", "MC", "DL", "DL", "DL", "DL", "DL")
+),
+    Formation("3-4-3", listOf("PT", "DF", "DF", "MC", "MC", "MC", "MC", "DL", "DL", "DL"))
 )
 
 /**
