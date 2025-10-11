@@ -1,20 +1,36 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        android:id="@+id/finalTeamLayout"
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:background="#202a44">
 
-    <!-- Campo de fútbol de fondo -->
-    <ImageView
-            android:id="@+id/footballField"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:scaleType="fitXY"
-            android:src="@drawable/football_field" />
-
-    <!-- Aquí se colocarán los jugadores en el campo -->
+    <!-- Campo de fútbol -->
     <RelativeLayout
             android:id="@+id/fieldLayout"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="@drawable/football_field" />
 
-</RelativeLayout>
+    <!-- Botón para alternar vistas -->
+    <Button
+            android:id="@+id/btnToggleView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Ver estadísticas"
+            android:textStyle="bold"
+            android:textColor="#000000"
+            android:backgroundTint="#ffcc00"
+            android:layout_margin="8dp" />
+
+    <!-- Lista con stats del equipo -->
+    <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerFinalTeam"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:padding="8dp"
+            android:background="#151c30"
+            android:visibility="gone" />
+</LinearLayout>

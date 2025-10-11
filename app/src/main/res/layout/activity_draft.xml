@@ -18,6 +18,8 @@
             android:layout_marginTop="16dp" />
 
     <!-- Botones de formaciones (4) -->
+
+    <!-- Cuadrícula de jugadores disponibles -->
     <LinearLayout
             android:id="@+id/formationButtonsLayout"
             android:layout_width="match_parent"
@@ -25,7 +27,7 @@
             android:orientation="horizontal"
             android:layout_below="@id/roundTitle"
             android:gravity="center"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="63dp"
             android:padding="8dp">
 
         <Button
@@ -57,7 +59,6 @@
                 android:text="2-2-2" />
     </LinearLayout>
 
-    <!-- Cuadrícula de jugadores disponibles -->
     <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvOptions"
             android:layout_width="match_parent"
