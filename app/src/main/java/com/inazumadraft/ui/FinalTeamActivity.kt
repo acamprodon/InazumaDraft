@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.inazumadraft.R
 import com.inazumadraft.data.formations
+import com.inazumadraft.data.formationCoordinates
 import com.inazumadraft.model.Player
 
 class FinalTeamActivity : AppCompatActivity() {
@@ -90,6 +91,77 @@ class FinalTeamActivity : AppCompatActivity() {
         fieldLayout.removeAllViews()
 
         val formation = formations.firstOrNull { it.name == formationName } ?: return
+
+        // --- Medidas de la carta ---
+        val d = resources.displayMetrics.density
+        var cardW = 100f * d
+        var cardH = cardW * 1.25f
+        val hGap = 8f * d
+
+        val maxCols = 4
+        val rowWidthNeeded = maxCols * cardW + (maxCols - 1) * hGap
+        if (rowWidthNeeded > fieldLayout.width) {
+            cardW = (fieldLayout.width - (maxCols - 1) * hGap) / maxCols
+            cardH = cardW * 1.25f
+        }
+
+        // --- Intento 1: usar coordenadas reales si existen ---
+        val coords = formationCoordinates[formationName]
+        if (coords != null && coords.size == formation.positions.size) {
+
+            // Banda visible del campo (compacta verticalmente)
+            val topBand = 0.08f
+            val bottomBand = 0.96f
+            fun mapY(y: Float): Float = (topBand + y * (bottomBand - topBand)).coerceIn(0f, 1f)
+
+            // Ordenar jugadores según posiciones de la formación
+            val pool = playersIn.toMutableList()
+            fun take(role: String): Player? {
+                val i = pool.indexOfFirst { it.position.equals(role, true) }
+                return if (i >= 0) pool.removeAt(i) else null
+            }
+
+            val playersByFormationOrder: List<Player?> = formation.positions.map { pos ->
+                when (toCode(pos)) {
+                    "PT" -> take("PT")
+                    "DF" -> take("DF")
+                    "MC" -> take("MC")
+                    "DL" -> take("DL")
+                    else -> null
+                }
+            }
+
+            // Dibuja cada posición con coordenadas proporcionales
+            coords.forEachIndexed { i, (x, yRaw) ->
+                val y = mapY(yRaw)
+                val view = layoutInflater.inflate(R.layout.item_player_field, fieldLayout, false)
+                val img = view.findViewById<ImageView>(R.id.imgPlayer)
+                val name = view.findViewById<TextView>(R.id.txtPlayerName)
+                val elem = view.findViewById<ImageView>(R.id.imgElement)
+
+                val p = playersByFormationOrder[i]
+                if (p != null) {
+                    img.setImageResource(p.image)
+                    name.text = p.name
+                    elem.setImageResource(p.element)
+                    if (p.name == captainName) img.setBackgroundResource(R.drawable.captain_border)
+                } else {
+                    name.text = codeToNice(toCode(formation.positions[i]))
+                    elem.setImageResource(0)
+                    img.setImageResource(0)
+                }
+
+                val lp = RelativeLayout.LayoutParams(cardW.toInt(), cardH.toInt())
+                lp.leftMargin = (fieldLayout.width * x - cardW / 2f).toInt()
+                lp.topMargin = (fieldLayout.height * y - cardH / 2f).toInt()
+                view.layoutParams = lp
+                fieldLayout.addView(view)
+            }
+
+            return // Ya dibujamos con coordenadas reales
+        }
+
+        // --- Fallback: método de filas (por si no hay coordenadas) ---
         val codes = formation.positions.map { toCode(it) }
 
         val nPT = codes.count { it == "PT" }
@@ -145,22 +217,8 @@ class FinalTeamActivity : AppCompatActivity() {
             repeat(nPT) { add(takeOne("PT")) }
         }
 
-        val d = resources.displayMetrics.density
-        var cardW = 100f * d
-        var cardH = cardW * 1.25f
-        val hGap = 8f * d
-
-        // Compactamos el espacio vertical
-        val topPad = fieldLayout.height * 0.20f
-        val bottomPad = fieldLayout.height * 0.80f
-
-        val maxCols = rowSpec.maxOrNull() ?: 1
-        val rowWidthNeeded = maxCols * cardW + (maxCols - 1) * hGap
-        if (rowWidthNeeded > fieldLayout.width) {
-            cardW = (fieldLayout.width - (maxCols - 1) * hGap) / maxCols
-            cardH = cardW * 1.25f
-        }
-
+        val topPad = fieldLayout.height * 0.10f
+        val bottomPad = fieldLayout.height * 0.95f
         val rowsCount = rowSpec.size
         val spacing = (bottomPad - topPad) / (rowsCount.coerceAtLeast(1))
         val yCenters = (0 until rowsCount).map { r -> topPad + r * spacing }
