@@ -3,9 +3,9 @@
         android:id="@+id/draftLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/cardview_dark_background">
+        android:background="#202a44">
 
-
+    <!-- Título -->
     <TextView
             android:id="@+id/roundTitle"
             android:layout_width="wrap_content"
@@ -13,10 +13,11 @@
             android:text="Elige una formación"
             android:textSize="20sp"
             android:textStyle="bold"
+            android:textColor="@android:color/white"
             android:layout_centerHorizontal="true"
             android:layout_marginTop="16dp" />
 
-    <!-- Botones de formaciones (4-4-2, 4-3-3, 5-2-3, 3-2-3-2) -->
+    <!-- Botones de formaciones (4 visibles) -->
     <LinearLayout
             android:id="@+id/formationButtonsLayout"
             android:layout_width="match_parent"
@@ -24,57 +25,61 @@
             android:orientation="horizontal"
             android:layout_below="@id/roundTitle"
             android:gravity="center"
-            android:layout_marginTop="8dp">
+            android:layout_marginTop="8dp"
+            android:padding="8dp">
 
         <Button
                 android:id="@+id/btnFormation1"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="4-4-2" />
+                android:text="F1" />
 
         <Button
                 android:id="@+id/btnFormation2"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="4-3-3" />
+                android:text="F2" />
 
         <Button
                 android:id="@+id/btnFormation3"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="5-2-3" />
+                android:text="F3" />
 
         <Button
                 android:id="@+id/btnFormation4"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="3-2-3-2" />
+                android:text="F4" />
     </LinearLayout>
 
-    <!-- Opciones (capitán / jugadores) en cuadrícula -->
+    <!-- Cuadrícula de jugadores disponibles (2x2) -->
     <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvOptions"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_below="@id/formationButtonsLayout"
-            android:layout_marginTop="12dp"
-            android:visibility="gone" />
+            android:layout_marginTop="16dp"
+            android:padding="8dp"
+            android:visibility="gone"
+            android:background="#151c30" />
 
-    <!-- Campo de fútbol para slots y colocación -->
+    <!-- Campo de fútbol para vista previa/uso futuro (si lo muestras en esta pantalla) -->
     <RelativeLayout
             android:id="@+id/fieldLayout"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
+            android:layout_height="match_parent"
             android:layout_below="@id/rvOptions"
             android:layout_above="@id/btnNext"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="16dp"
             android:visibility="gone"
             android:background="@drawable/football_field" />
 
+    <!-- Botón para confirmar equipo -->
     <Button
             android:id="@+id/btnNext"
             android:layout_width="match_parent"
@@ -82,6 +87,9 @@
             android:text="Confirmar equipo"
             android:layout_alignParentBottom="true"
             android:layout_margin="16dp"
-            android:visibility="gone" />
+            android:visibility="gone"
+            android:backgroundTint="#ffcc00"
+            android:textColor="#000000"
+            android:textStyle="bold" />
 
 </RelativeLayout>

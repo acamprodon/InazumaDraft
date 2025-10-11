@@ -52,8 +52,27 @@ val formations = listOf(
     Formation("2-3-5", listOf(
         "PT", "DF", "DF", "MC", "MC", "MC", "DL", "DL", "DL", "DL", "DL")
 ),
-    Formation("3-4-3", listOf("PT", "DF", "DF", "MC", "MC", "MC", "MC", "DL", "DL", "DL"))
+    Formation("3-4-3", listOf("PT", "DF", "DF", "MC", "MC", "MC", "MC", "DL", "DL", "DL")),
+            Formation(
+            name = "5-3-2",
+    positions = listOf(
+        "PT",
+        "DF","DF","DF","DF","DF", // 5 DF (incluye laterales)
+        "MC","MC","MC",// 3 MC
+        "DL","DL"                            // 2 DL
+)), Formation(
+        name = "4-2-3-1",
+        positions = listOf(
+            "PT",
+            "DF","DF","DF","DF",           // 4 DF
+            "MC","MC",                 // 2 pivotes
+            "MC","MC","MC",// 3 medias puntas/extremos
+            "DL"                                        // 1 DL
+        )
+    )
+
 )
+
 
 /**
  * Coordenadas proporcionales (x,y) dentro del campo [0..1].
@@ -89,5 +108,68 @@ val formationCoordinates = mapOf(
         0.40f to 0.62f, 0.60f to 0.62f, // 2 MID (pivotes)
         0.25f to 0.48f, 0.50f to 0.48f, 0.75f to 0.48f, // 3 MID (interiores/medias)
         0.40f to 0.18f, 0.60f to 0.18f // 2 FWD
+    ),
+    "5-3-2" to listOf(
+        0.50f to 0.95f, // GK
+        0.20f to 0.72f, // LWB
+        0.35f to 0.78f, // LCB
+        0.50f to 0.78f, // CB
+        0.65f to 0.78f, // RCB
+        0.80f to 0.72f, // RWB
+        0.30f to 0.50f, // CM-L
+        0.50f to 0.50f, // CM
+        0.70f to 0.50f, // CM-R
+        0.45f to 0.18f, // ST-L
+        0.55f to 0.18f  // ST-R
+    ),
+
+    // 4-2-3-1 (2 pivotes + 3 MP/EXT + 1 punta)
+    "4-2-3-1" to listOf(
+        0.50f to 0.95f, // GK
+        0.15f to 0.78f, // LB
+        0.35f to 0.78f, // LCB
+        0.65f to 0.78f, // RCB
+        0.85f to 0.78f, // RB
+        0.40f to 0.62f, // CDM-L
+        0.60f to 0.62f, // CDM-R
+        0.20f to 0.38f, // LW
+        0.50f to 0.38f, // CAM
+        0.80f to 0.38f, // RW
+        0.50f to 0.16f  // ST
+    ),
+    "2-3-5" to listOf(
+        0.50f to 0.95f, // GK
+
+        0.30f to 0.80f, // DF-L
+        0.70f to 0.80f, // DF-R
+
+        0.25f to 0.60f, // MC-L
+        0.50f to 0.58f, // MC-C
+        0.75f to 0.60f, // MC-R
+
+        0.18f to 0.24f, // DL-L (Extremo izq)
+        0.36f to 0.20f, // DL-IL (Interior izq)
+        0.50f to 0.16f, // DL-C  (Delantero centro)
+        0.64f to 0.20f, // DL-IR (Interior dcha)
+        0.82f to 0.24f  // DL-R (Extremo dcha)
+    ),
+    // 3-4-3: 3 centrales, 4 medios (dos carriles + dos interiores), tridente arriba
+    "3-4-3" to listOf(
+        0.50f to 0.95f, // GK
+
+        0.28f to 0.80f, // CB-L
+        0.50f to 0.80f, // CB-C
+        0.72f to 0.80f, // CB-R
+
+        0.20f to 0.56f, // WM-L (carrilero izq)
+        0.40f to 0.52f, // CM-L
+        0.60f to 0.52f, // CM-R
+        0.80f to 0.56f, // WM-R (carrilero dcha)
+
+        0.25f to 0.22f, // DL-L (extremo izq)
+        0.50f to 0.16f, // DL-C (punta)
+        0.75f to 0.22f  // DL-R (extremo dcha)
     )
+
+
 )
