@@ -21,6 +21,7 @@ class DraftActivity : AppCompatActivity() {
     private lateinit var btnFormation1: Button
     private lateinit var btnFormation2: Button
     private lateinit var btnFormation3: Button
+    private lateinit var btnFormation4: Button
     private lateinit var rvOptions: RecyclerView
     private lateinit var btnNext: Button
     private lateinit var roundTitle: TextView
@@ -29,34 +30,38 @@ class DraftActivity : AppCompatActivity() {
     private val selectedPlayers: MutableList<Player> = mutableListOf()
     private var captain: Player? = null
 
-    // ✅ Posiciones pendientes tras elegir capitán (en códigos PT/DF/MC/DL)
+    // Posiciones pendientes tras elegir capitán (PT/DF/MC/DL)
     private var pendingPositions: MutableList<String> = mutableListOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_draft)
 
+        // Vistas
         fieldLayout = findViewById(R.id.fieldLayout)
         btnFormation1 = findViewById(R.id.btnFormation1)
         btnFormation2 = findViewById(R.id.btnFormation2)
         btnFormation3 = findViewById(R.id.btnFormation3)
+        btnFormation4 = findViewById(R.id.btnFormation4)
         rvOptions = findViewById(R.id.rvOptions)
         btnNext = findViewById(R.id.btnNext)
         roundTitle = findViewById(R.id.roundTitle)
 
+        // Grid 2x2 para ver 4 opciones sin scroll
         rvOptions.layoutManager = GridLayoutManager(this, 2)
 
-        btnFormation1.setOnClickListener { selectFormation(0) }
-        btnFormation2.setOnClickListener { selectFormation(1) }
-        btnFormation3.setOnClickListener { selectFormation(2) }
+        // Formaciones (índices 0..3)
+        btnFormation1.setOnClickListener { selectFormation(0) } // 3-2-1
+        btnFormation2.setOnClickListener { selectFormation(1) } // 2-3-1
+        btnFormation3.setOnClickListener { selectFormation(2) } // 3-1-2
+        btnFormation4.setOnClickListener { selectFormation(3) } // 2-2-2
 
+        // Confirmar equipo
         btnNext.setOnClickListener {
             val formation = selectedFormation ?: return@setOnClickListener
-            // Validación: capitán + todos los pendientes
             if (captain != null && selectedPlayers.size == pendingPositions.size) {
                 val intent = Intent(this, FinalTeamActivity::class.java)
 
-                // Construye el equipo final en el orden de la formación original
                 val orderedTeam = buildFinalTeamOrdered(formation, captain!!, selectedPlayers)
 
                 intent.putParcelableArrayListExtra("finalTeam", ArrayList(orderedTeam))
@@ -72,7 +77,11 @@ class DraftActivity : AppCompatActivity() {
         selectedPlayers.clear()
         captain = null
         pendingPositions.clear()
-        roundTitle.text = "Elige tu capitán"
+        rvOptions.visibility = View.GONE
+        btnNext.visibility = View.GONE
+        fieldLayout.visibility = View.GONE
+
+        roundTitle.text = "Elige tu capitán (Fútbol 7: ${selectedFormation!!.name})"
         showCaptainOptions()
     }
 
@@ -85,42 +94,39 @@ class DraftActivity : AppCompatActivity() {
         else -> pos.trim().uppercase()
     }
 
-    // 🟡 PRIMERA RONDA: Elección de capitán
+    // 1) Capitán (4 opciones aleatorias)
     private fun showCaptainOptions() {
         rvOptions.visibility = View.VISIBLE
         btnNext.visibility = View.GONE
 
         val options = PlayerRepository.players.shuffled().take(4)
-        rvOptions.adapter = com.inazumadraft.ui.OptionAdapter(options) { player ->
+        rvOptions.adapter = OptionAdapter(options) { player ->
             captain = player
+
             // Construir posiciones pendientes = formación - (una ocurrencia de la posición del capitán)
             val formation = selectedFormation ?: return@OptionAdapter
             pendingPositions = formation.positions.map { toCode(it) }.toMutableList()
-            // Quita UNA sola ocurrencia del rol del capitán
             pendingPositions.remove(captain!!.position.uppercase())
 
-            roundTitle.text = "Capitán: ${player.name}\nAhora elige tus jugadores"
+            roundTitle.text = "Capitán: ${player.name}\nAhora elige tus jugadores (${pendingPositions.size} restantes)"
             showNextPositionOptions()
         }
     }
 
-    // ⚽ Siguientes rondas: por la siguiente posición pendiente
+    // 2) Rondas por posición (siempre 4 opciones)
     private fun showNextPositionOptions() {
         rvOptions.visibility = View.VISIBLE
         btnNext.visibility = View.GONE
 
         if (pendingPositions.isEmpty()) {
-            // Nada pendiente (no debería ocurrir aquí)
             rvOptions.visibility = View.GONE
             btnNext.visibility = View.VISIBLE
             return
         }
 
-        // La siguiente posición a cubrir es la de índice == selectedPlayers.size
         val nextIndex = selectedPlayers.size
         val positionCode = pendingPositions[nextIndex] // PT/DF/MC/DL
 
-        // Filtra opciones válidas para esa posición
         val options = PlayerRepository.players
             .filter {
                 it.position.equals(positionCode, ignoreCase = true) &&
@@ -130,13 +136,19 @@ class DraftActivity : AppCompatActivity() {
             .shuffled()
             .take(4)
 
-        roundTitle.text = "Elige: $positionCode (${nextIndex + 1}/${pendingPositions.size})"
+        val posLabel = when (positionCode) {
+            "PT" -> "Portero"
+            "DF" -> "Defensa"
+            "MC" -> "Centrocampista"
+            "DL" -> "Delantero"
+            else -> positionCode
+        }
+        roundTitle.text = "Elige: $posLabel (${nextIndex + 1}/${pendingPositions.size})"
 
-        rvOptions.adapter = com.inazumadraft.ui.OptionAdapter(options) { player ->
+        rvOptions.adapter = OptionAdapter(options) { player ->
             selectedPlayers.add(player)
 
             if (selectedPlayers.size == pendingPositions.size) {
-                // ✅ Equipo completo: capitán + todos los pendientes
                 roundTitle.text = "Equipo completo. Capitán: ${captain!!.name}"
                 rvOptions.visibility = View.GONE
                 btnNext.visibility = View.VISIBLE
@@ -146,7 +158,7 @@ class DraftActivity : AppCompatActivity() {
         }
     }
 
-    // Construye el equipo en el orden de la formación (incluyendo capitán en su sitio)
+    // Construye el equipo en el orden de la formación (capitán en su sitio)
     private fun buildFinalTeamOrdered(
         formation: Formation,
         captain: Player,
@@ -154,30 +166,26 @@ class DraftActivity : AppCompatActivity() {
     ): List<Player> {
         val result = mutableListOf<Player>()
         val used = mutableSetOf<Player>()
-        val othersMutable = others.toMutableList()
+        val pool = others.toMutableList()
 
         formation.positions.forEach { posName ->
             val code = toCode(posName)
-
             val chosen = when {
-                captain.position.equals(code, ignoreCase = true) && !used.contains(captain) -> {
-                    captain
-                }
+                captain.position.equals(code, ignoreCase = true) && !used.contains(captain) -> captain
                 else -> {
-                    val idx = othersMutable.indexOfFirst {
+                    val idx = pool.indexOfFirst {
                         it.position.equals(code, ignoreCase = true) && !used.contains(it)
                     }
-                    if (idx >= 0) othersMutable.removeAt(idx) else null
+                    if (idx >= 0) pool.removeAt(idx) else null
                 }
             }
-
             if (chosen != null) {
                 result.add(chosen)
                 used.add(chosen)
             }
         }
 
-        // Por seguridad: si faltara alguno, rellena con restantes
+        // Relleno de seguridad
         if (result.size < formation.positions.size) {
             (listOf(captain) + others)
                 .filterNot { it in result }

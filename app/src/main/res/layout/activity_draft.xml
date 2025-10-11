@@ -10,14 +10,14 @@
             android:id="@+id/roundTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Elige una formación"
+            android:text="Elige una formación (Fútbol 7)"
             android:textSize="20sp"
             android:textStyle="bold"
             android:textColor="@android:color/white"
             android:layout_centerHorizontal="true"
             android:layout_marginTop="16dp" />
 
-    <!-- Botones de formaciones -->
+    <!-- Botones de formaciones (4) -->
     <LinearLayout
             android:id="@+id/formationButtonsLayout"
             android:layout_width="match_parent"
@@ -25,28 +25,36 @@
             android:orientation="horizontal"
             android:layout_below="@id/roundTitle"
             android:gravity="center"
-            android:layout_marginTop="8dp">
+            android:layout_marginTop="8dp"
+            android:padding="8dp">
 
         <Button
                 android:id="@+id/btnFormation1"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="1-2-1" />
+                android:text="3-2-1" />
 
         <Button
                 android:id="@+id/btnFormation2"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="2-1-1" />
+                android:text="2-3-1" />
 
         <Button
                 android:id="@+id/btnFormation3"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="1-1-2" />
+                android:text="3-1-2" />
+
+        <Button
+                android:id="@+id/btnFormation4"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="2-2-2" />
     </LinearLayout>
 
     <!-- Cuadrícula de jugadores disponibles -->

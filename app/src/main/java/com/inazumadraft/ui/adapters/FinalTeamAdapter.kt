@@ -7,6 +7,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.inazumadraft.R
 import com.inazumadraft.model.Player // Asegúrate de que Player exista y sea Parcelable
+import android.widget.ImageView
 
 class FinalTeamAdapter(private val players: List<Player>) :
     RecyclerView.Adapter<FinalTeamAdapter.PlayerViewHolder>() {
@@ -14,6 +15,9 @@ class FinalTeamAdapter(private val players: List<Player>) :
     class PlayerViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val txtPlayerName: TextView = itemView.findViewById(R.id.txtPlayerName)
         val txtPlayerPosition: TextView = itemView.findViewById(R.id.txtPlayerPosition)
+        val txtStats: TextView = itemView.findViewById(R.id.txtStats)
+        val imgPlayer: ImageView = itemView.findViewById(R.id.imgPlayer)
+        val imgElement: ImageView = itemView.findViewById(R.id.imgElement)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PlayerViewHolder {
@@ -28,5 +32,9 @@ class FinalTeamAdapter(private val players: List<Player>) :
         val player = players[position]
         holder.txtPlayerName.text = player.name
         holder.txtPlayerPosition.text = player.position
+        holder.imgPlayer.setImageResource(player.image)
+        holder.imgElement.setImageResource(player.element)
+        holder.txtStats.text =
+            "Tiro: ${player.kick} | Vel: ${player.speed} | Ctrl: ${player.control} | Def: ${player.defense}"
     }
 }
