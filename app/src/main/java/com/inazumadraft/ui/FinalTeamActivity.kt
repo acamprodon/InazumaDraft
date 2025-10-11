@@ -10,57 +10,54 @@ import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.inazumadraft.R
 import com.inazumadraft.data.formations
 import com.inazumadraft.model.Player
 
 class FinalTeamActivity : AppCompatActivity() {
-    private lateinit var btnNewTeam: com.google.android.material.floatingactionbutton.FloatingActionButton
 
     private lateinit var fieldLayout: RelativeLayout
     private lateinit var btnToggleView: Button
+    private lateinit var btnNewTeam: FloatingActionButton
     private lateinit var recyclerFinalTeam: RecyclerView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_final_team)
 
+        // Bind views
         fieldLayout = findViewById(R.id.fieldLayout)
         btnToggleView = findViewById(R.id.btnToggleView)
         recyclerFinalTeam = findViewById(R.id.recyclerFinalTeam)
         btnNewTeam = findViewById(R.id.btnNewTeam)
-        btnNewTeam.setOnClickListener {
-            val intent = Intent(this@FinalTeamActivity, DraftActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
-            startActivity(intent)
-            finish()
-        }
 
+        // Datos recibidos
         val team = intent.getParcelableArrayListExtra<Player>("finalTeam") ?: arrayListOf()
         val formationName = intent.getStringExtra("formation") ?: "4-4-2"
         val captainName = intent.getStringExtra("captainName")
 
-        // Pintar el campo cuando ya tenemos medidas
+        // Dibuja el campo cuando ya haya medidas
         fieldLayout.post { drawTemplateAndFill(team, formationName, captainName) }
 
-        // Stats list
+        // Configura lista de estadísticas
         recyclerFinalTeam.layoutManager = LinearLayoutManager(this)
         recyclerFinalTeam.adapter = FinalTeamAdapter(team)
 
-        // Toggle campo <-> stats
+        // Botón alternar vista
         btnToggleView.setOnClickListener {
             if (recyclerFinalTeam.visibility == View.GONE) {
                 recyclerFinalTeam.visibility = View.VISIBLE
                 fieldLayout.visibility = View.GONE
-                btnToggleView.text = "Ver campo"
+                btnToggleView.text = "VER CAMPO"
             } else {
                 recyclerFinalTeam.visibility = View.GONE
                 fieldLayout.visibility = View.VISIBLE
-                btnToggleView.text = "Ver estadísticas"
+                btnToggleView.text = "VER ESTADÍSTICAS"
             }
         }
 
-        // Botón pequeño para crear nuevo equipo
+        // Botón crear nuevo equipo
         btnNewTeam.setOnClickListener {
             val intent = Intent(this@FinalTeamActivity, DraftActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
@@ -87,16 +84,14 @@ class FinalTeamActivity : AppCompatActivity() {
     }
 
     /**
-     * Dibuja la plantilla uniforme del campo con jugadores o huecos vacíos.
+     * Dibuja el campo con los jugadores en su formación.
      */
     private fun drawTemplateAndFill(playersIn: List<Player>, formationName: String, captainName: String?) {
         fieldLayout.removeAllViews()
 
-        // 1) Leer formación
         val formation = formations.firstOrNull { it.name == formationName } ?: return
         val codes = formation.positions.map { toCode(it) }
 
-        // 2) Calcular filas por tipo
         val nPT = codes.count { it == "PT" }
         val nDF = codes.count { it == "DF" }
         val nMC = codes.count { it == "MC" }
@@ -126,7 +121,6 @@ class FinalTeamActivity : AppCompatActivity() {
         }
         if (rowSpec.isEmpty()) return
 
-        // Orden de roles por fila
         val dlStart = 0
         val mcStart = dlStart + dlRows.size
         val dfStart = mcStart + mcRows.size
@@ -138,7 +132,6 @@ class FinalTeamActivity : AppCompatActivity() {
             else -> "PT"
         }
 
-        // 3) Ordenar jugadores
         val pool = playersIn.toMutableList()
         fun takeOne(role: String): Player? {
             val idx = pool.indexOfFirst { it.position.equals(role, ignoreCase = true) }
@@ -152,13 +145,14 @@ class FinalTeamActivity : AppCompatActivity() {
             repeat(nPT) { add(takeOne("PT")) }
         }
 
-        // 4) Medidas visuales
         val d = resources.displayMetrics.density
         var cardW = 100f * d
         var cardH = cardW * 1.25f
         val hGap = 8f * d
-        val topPad = fieldLayout.height * 0.10f
-        val bottomPad = fieldLayout.height * 0.90f
+
+        // Compactamos el espacio vertical
+        val topPad = fieldLayout.height * 0.20f
+        val bottomPad = fieldLayout.height * 0.80f
 
         val maxCols = rowSpec.maxOrNull() ?: 1
         val rowWidthNeeded = maxCols * cardW + (maxCols - 1) * hGap
@@ -168,12 +162,9 @@ class FinalTeamActivity : AppCompatActivity() {
         }
 
         val rowsCount = rowSpec.size
-        val yCenters = (0 until rowsCount).map { r ->
-            val t = if (rowsCount == 1) 0.5f else r / (rowsCount - 1f)
-            topPad + t * (bottomPad - topPad)
-        }
+        val spacing = (bottomPad - topPad) / (rowsCount.coerceAtLeast(1))
+        val yCenters = (0 until rowsCount).map { r -> topPad + r * spacing }
 
-        // 5) Dibujar slots
         var globalIndex = 0
         rowSpec.forEachIndexed { rowIdx, cols ->
             val n = cols
