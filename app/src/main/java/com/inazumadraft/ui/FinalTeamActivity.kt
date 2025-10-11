@@ -78,9 +78,12 @@ class FinalTeamActivity : AppCompatActivity() {
                 imgPlayer.setBackgroundResource(R.drawable.captain_border)
             }
 
-            val params = RelativeLayout.LayoutParams(200, 240)
-            params.leftMargin = (fieldLayout.width * x - 100).toInt()
-            params.topMargin = (fieldLayout.height * y - 120).toInt()
+            val d = resources.displayMetrics.density
+            val w = (120 * d).toInt()
+            val h = (150 * d).toInt()
+            val params = RelativeLayout.LayoutParams(w, h)
+            params.leftMargin = (fieldLayout.width * x - w / 2f).toInt()
+            params.topMargin  = (fieldLayout.height * y - h / 2f).toInt()
             playerView.layoutParams = params
 
             fieldLayout.addView(playerView)
