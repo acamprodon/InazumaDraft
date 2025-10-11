@@ -29,11 +29,12 @@ class OptionAdapter(
     inner class OptionViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val txtPlayerName: TextView = itemView.findViewById(R.id.txtPlayerName)
         private val imgPlayer: ImageView = itemView.findViewById(R.id.imgPlayer)
+        private val imgElement: ImageView = itemView.findViewById(R.id.imgElement)
 
         fun bind(player: Player) {
             txtPlayerName.text = player.name
-            imgPlayer.setImageResource(player.image) // Asegúrate de que Player tenga imageRes: Int
+            imgPlayer.setImageResource(player.image)
+            imgElement.setImageResource(player.element)
             itemView.setOnClickListener { onClick(player) }
         }
-    }
-}
+    }}
