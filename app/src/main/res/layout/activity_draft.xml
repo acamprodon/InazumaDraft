@@ -2,8 +2,10 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/draftLayout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:background="#202a44">
 
+    <!-- Título -->
     <TextView
             android:id="@+id/roundTitle"
             android:layout_width="wrap_content"
@@ -11,9 +13,11 @@
             android:text="Elige una formación"
             android:textSize="20sp"
             android:textStyle="bold"
+            android:textColor="@android:color/white"
             android:layout_centerHorizontal="true"
             android:layout_marginTop="16dp" />
 
+    <!-- Botones de formaciones -->
     <LinearLayout
             android:id="@+id/formationButtonsLayout"
             android:layout_width="match_parent"
@@ -33,7 +37,7 @@
         <Button
                 android:id="@+id/btnFormation2"
                 android:layout_width="0dp"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="2-1-1" />
 
@@ -45,24 +49,40 @@
                 android:text="1-1-2" />
     </LinearLayout>
 
-    <!-- Campo de fútbol -->
+    <!-- Cuadrícula de jugadores disponibles -->
+    <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvOptions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/formationButtonsLayout"
+            android:layout_marginTop="16dp"
+            android:padding="8dp"
+            android:visibility="gone"
+            android:background="#151c30"
+            android:minHeight="400dp" />
+
+    <!-- Campo de fútbol donde se mostrarán los jugadores -->
     <RelativeLayout
             android:id="@+id/fieldLayout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_below="@id/formationButtonsLayout"
+            android:layout_below="@id/rvOptions"
             android:layout_above="@id/btnNext"
             android:layout_marginTop="16dp"
             android:visibility="gone"
             android:background="@drawable/football_field" />
 
+    <!-- Botón para confirmar equipo -->
     <Button
             android:id="@+id/btnNext"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Confirmar equipo"
             android:layout_alignParentBottom="true"
+            android:layout_margin="16dp"
             android:visibility="gone"
-            android:layout_margin="16dp" />
+            android:backgroundTint="#ffcc00"
+            android:textColor="#000000"
+            android:textStyle="bold" />
 
 </RelativeLayout>

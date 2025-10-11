@@ -2,17 +2,19 @@
         android:id="@+id/finalTeamLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
-    <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerFinalTeam"
+
+    <!-- Campo de fútbol de fondo -->
+    <ImageView
+            android:id="@+id/footballField"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:padding="16dp" />
-    <!-- Campo de fútbol -->
+            android:scaleType="fitXY"
+            android:src="@drawable/football_field" />
+
+    <!-- Aquí se colocarán los jugadores en el campo -->
     <RelativeLayout
             android:id="@+id/fieldLayout"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@drawable/football_field">
-    </RelativeLayout>
+            android:layout_height="match_parent" />
 
 </RelativeLayout>
