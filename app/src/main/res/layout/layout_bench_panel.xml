@@ -6,7 +6,7 @@
         android:visibility="gone"
         android:clickable="false">
 
-    <!-- SCRIM: tapa el fondo y cierra al tocar -->
+    <!-- SCRIM -->
     <View
             android:id="@+id/benchScrim"
             android:layout_width="match_parent"
@@ -18,34 +18,71 @@
     <!-- DRAWER derecho -->
     <LinearLayout
             android:id="@+id/benchDrawer"
-            android:layout_width="260dp"
+            android:layout_width="280dp"
             android:layout_height="match_parent"
             android:layout_gravity="end"
             android:orientation="vertical"
             android:padding="12dp"
             android:background="#ee151c30"
             android:elevation="12dp"
-            android:translationX="260dp"
+            android:translationX="280dp"
             android:clickable="true">
 
         <TextView
                 android:id="@+id/txtBenchTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Banquillo"
+                android:text="Banquillo (0/5)"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:textColor="@android:color/white"
                 android:layout_marginBottom="8dp" />
 
-        <!-- Player picks en grilla -->
+        <!-- Seleccionados (drag source/target) -->
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Seleccionados"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:layout_marginBottom="6dp"/>
+
         <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvBench"
+                android:id="@+id/rvBenchSelected"
+                android:layout_width="match_parent"
+                android:layout_height="120dp"
+                android:overScrollMode="never"
+                android:clipToPadding="false"
+                android:paddingBottom="6dp" />
+
+        <!-- Picks de 4 -->
+        <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="6dp"
+                android:layout_marginBottom="4dp">
+
+            <TextView
+                    android:id="@+id/txtBenchPicks"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:text="Picks (4)"
+                    android:textColor="@android:color/white"
+                    android:textStyle="bold"/>
+
+
+
+        </LinearLayout>
+
+        <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvBenchOptions"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
                 android:overScrollMode="never"
-                android:paddingBottom="8dp"
                 android:clipToPadding="false" />
 
         <Button
