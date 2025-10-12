@@ -159,11 +159,13 @@ class DraftActivity : AppCompatActivity() {
     // ------------------------------------------------------------------------
     private fun showCaptainOptions() {
         rvOptions.visibility = View.VISIBLE
-        rvOptions.bringToFront()
+        rvOptions.bringToFront() // ✅ Asegura que el RecyclerView esté encima del campo
         btnNext.visibility = View.GONE
         fieldLayout.visibility = View.GONE
-
         val options = PlayerRepository.players.shuffled().take(4)
+
+        rvOptions.layoutManager = GridLayoutManager(this, 2)
+
         rvOptions.adapter = OptionAdapter(options) { player ->
             captain = player
             roundTitle.text = "Capitán: ${player.name}\nToca los huecos para rellenar la alineación"
@@ -182,6 +184,7 @@ class DraftActivity : AppCompatActivity() {
             }
         }
     }
+
 
     // ------------------------------------------------------------------------
     // Plantilla de slots y pintado del campo
