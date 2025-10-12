@@ -14,15 +14,15 @@ import com.inazumadraft.model.Player
 import java.util.Collections
 
 /**
- * - Muestra SIEMPRE 5 huecos (lista con Player?).
- * - Click SIEMPRE llama a onClickSlot(index) para abrir el picker.
- * - Long press sólo si hay jugador => inicia drag (label "benchPlayer").
+ * Banquillo con 5 huecos (Player?):
+ * - Click SIEMPRE abre el picker para ese hueco (onClickSlot(index)).
+ * - Long-press sólo si hay jugador: inicia drag (label "benchPlayer", localState = index).
  * - Drop:
- *      · desde CAMPO -> callback onDropFromField(toIndex, fromFieldIndex)
- *      · desde BANQUILLO -> swap/move dentro de banquillo
+ *    · desde CAMPO -> onDropFromField(toIndex, fromFieldIndex)
+ *    · desde BANQUILLO -> swap/move dentro del banquillo (respeta null como hueco).
  */
 class BenchSelectedAdapter(
-    private val benchPlayers: MutableList<Player?>,                     // tamaño 5 con nulls
+    private val benchPlayers: MutableList<Player?>,                     // tamaño siempre 5
     private val onChanged: () -> Unit,
     private val onDropFromField: (toIndex: Int, fromFieldIndex: Int) -> Unit,
     private val onClickSlot: (index: Int) -> Unit
@@ -51,7 +51,7 @@ class BenchSelectedAdapter(
         private val elem = itemView.findViewById<ImageView>(R.id.imgElement)
 
         fun bind(p: Player?, index: Int) {
-            // Click SIEMPRE abre picker del slot
+            // Tap: abrir picker para este hueco
             itemView.setOnClickListener { onClickSlot(index) }
 
             if (p == null) {
@@ -76,7 +76,7 @@ class BenchSelectedAdapter(
                 when (event.action) {
                     DragEvent.ACTION_DRAG_STARTED -> true
                     DragEvent.ACTION_DRAG_ENTERED -> { v.alpha = 0.85f; true }
-                    DragEvent.ACTION_DRAG_EXITED -> { v.alpha = 1f; true }
+                    DragEvent.ACTION_DRAG_EXITED  -> { v.alpha = 1f; true }
                     DragEvent.ACTION_DROP -> {
                         val fromBench = event.clipDescription?.label == "benchPlayer"
                         if (fromBench) {
@@ -84,23 +84,22 @@ class BenchSelectedAdapter(
                             if (fromIdx == index) return@setOnDragListener true
                             val a = benchPlayers.getOrNull(fromIdx) ?: return@setOnDragListener true
                             val b = benchPlayers.getOrNull(index)
-                            if (index >= benchPlayers.size) {
-                                benchPlayers.removeAt(fromIdx)
-                                benchPlayers.add(a)
+                            if (b == null) {
+                                // mover a hueco vacío
+                                benchPlayers[index] = a
+                                benchPlayers[fromIdx] = null
                             } else {
-                                // si había null en destino, es "mover"; si había jugador, swap
-                                if (b == null) {
-                                    benchPlayers[index] = a
-                                    benchPlayers[fromIdx] = null
-                                } else {
-                                    Collections.swap(benchPlayers, fromIdx, index)
-                                }
+                                // swap
+                                Collections.swap(benchPlayers, fromIdx, index)
                             }
-                            notifyDataSetChanged()
+                            notifyItemChanged(index)
+                            notifyItemChanged(fromIdx)
                             onChanged()
                         } else {
                             val fromFieldIndex = (event.localState as? Int) ?: return@setOnDragListener true
                             onDropFromField(index, fromFieldIndex)
+                            notifyItemChanged(index)
+                            onChanged()
                         }
                         v.alpha = 1f
                         true

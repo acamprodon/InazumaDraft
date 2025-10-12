@@ -5,9 +5,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.view.DragEvent
-import android.view.GestureDetector
 import android.view.Gravity
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
@@ -15,7 +13,9 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.RelativeLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewGroupCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -26,6 +26,8 @@ import com.inazumadraft.data.formations
 import com.inazumadraft.data.formationCoordinates
 import com.inazumadraft.model.Player
 import com.inazumadraft.model.canPlay
+import com.inazumadraft.ui.adapters.BenchSelectedAdapter
+
 
 class FinalTeamActivity : AppCompatActivity() {
 
@@ -39,6 +41,18 @@ class FinalTeamActivity : AppCompatActivity() {
 
     private var formationName: String = "4-4-2"
     private var captainName: String? = null
+
+    // PERF
+    private val slotViews: MutableList<View> = mutableListOf()
+    private var drawPending = false
+    private fun requestDrawField() {
+        if (drawPending) return
+        drawPending = true
+        fieldLayout.post {
+            drawPending = false
+            drawTemplateAndFillInternal()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,7 +70,7 @@ class FinalTeamActivity : AppCompatActivity() {
         playerSlots.clear()
         playerSlots.addAll(team)
 
-        fieldLayout.post { drawTemplateAndFill() }
+        fieldLayout.post { requestDrawField() }
 
         recyclerFinalTeam.layoutManager = LinearLayoutManager(this)
         recyclerFinalTeam.adapter = FinalTeamAdapter(team)
@@ -108,7 +122,7 @@ class FinalTeamActivity : AppCompatActivity() {
             options,
             onClick = { chosen ->
                 benchPlayers[slotIndex] = chosen
-                findViewById<RecyclerView?>(R.id.rvBenchSelected)?.adapter?.notifyDataSetChanged()
+                findViewById<RecyclerView?>(R.id.rvBenchSelected)?.adapter?.notifyItemChanged(slotIndex)
                 findViewById<TextView?>(R.id.txtBenchTitle)?.text = "Banquillo (${benchCount()}/5)"
                 dialog.dismiss()
             }
@@ -131,11 +145,13 @@ class FinalTeamActivity : AppCompatActivity() {
             scrim.visibility = View.GONE
         }
         scrim.setOnClickListener {
-            drawer.animate().translationX(drawer.width.toFloat()).setDuration(220).withEndAction {
-                scrim.visibility = View.GONE
-                root.visibility = View.GONE
-                onClose()
-            }.start()
+            drawer.animate().translationX(drawer.width.toFloat()).setDuration(220)
+                .withEndAction {
+                    scrim.visibility = View.GONE
+                    root.visibility = View.GONE
+                    drawer.setLayerType(View.LAYER_TYPE_NONE, null)
+                    onClose()
+                }.start()
         }
 
         val d = handleParent.resources.displayMetrics.density
@@ -151,7 +167,11 @@ class FinalTeamActivity : AppCompatActivity() {
                 root.visibility = View.VISIBLE
                 root.bringToFront()
                 scrim.visibility = View.VISIBLE
-                drawer.animate().translationX(0f).setDuration(220).withStartAction { onOpen() }.start()
+                drawer.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+                drawer.animate().translationX(0f).setDuration(220)
+                    .withStartAction { onOpen() }
+                    .withEndAction { drawer.setLayerType(View.LAYER_TYPE_NONE, null) }
+                    .start()
             }
         }
         val lp = FrameLayout.LayoutParams((44 * d).toInt(), (120 * d).toInt()).apply {
@@ -179,34 +199,36 @@ class FinalTeamActivity : AppCompatActivity() {
         updateTitle()
 
         rvSel.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        rvSel.itemAnimator = null
         rvSel.adapter = com.inazumadraft.ui.adapters.BenchSelectedAdapter(
             benchPlayers = benchPlayers,
-            onChanged = { updateTitle(); drawTemplateAndFill() },
+            onChanged = { updateTitle(); requestDrawField() },
             onDropFromField = { toIndex, fromFieldIndex ->
                 val p = playerSlots.getOrNull(fromFieldIndex) ?: return@BenchSelectedAdapter
                 val replaced = benchPlayers[toIndex]
                 benchPlayers[toIndex] = p
                 playerSlots[fromFieldIndex] = replaced
-                rvSel.adapter?.notifyDataSetChanged()
+                rvSel.adapter?.notifyItemChanged(toIndex)
                 updateTitle()
-                drawTemplateAndFill()
+                requestDrawField()
             },
             onClickSlot = { index -> showBenchOptionsForSlotFinal(index) }
         )
 
-        // No usamos la grilla inferior (se rellena tocando slots)
+        // No usamos “Picks (4)” aquí, los picks salen al tocar los huecos
         rvOpts.layoutManager = GridLayoutManager(this, 2)
         rvOpts.adapter = OptionAdapter(
             emptyList(),
             onClick = { _: com.inazumadraft.model.Player -> }
         )
 
-
         btnClose.setOnClickListener {
-            drawer.animate().translationX(drawer.width.toFloat()).setDuration(200).withEndAction {
-                scrim.visibility = View.GONE
-                root.visibility = View.GONE
-            }.start()
+            drawer.animate().translationX(drawer.width.toFloat()).setDuration(200)
+                .withEndAction {
+                    scrim.visibility = View.GONE
+                    root.visibility = View.GONE
+                    drawer.setLayerType(View.LAYER_TYPE_NONE, null)
+                }.start()
         }
 
         val activityRoot: ViewGroup = findViewById(android.R.id.content)
@@ -223,7 +245,7 @@ class FinalTeamActivity : AppCompatActivity() {
         )
     }
 
-    // ----------------- CAMPO + DnD -----------------
+    // ----------------- CAMPO + DnD (optimizado) -----------------
     private fun toCode(pos: String): String = when (pos.trim().lowercase()) {
         "portero", "pt" -> "PT"
         "defensa", "df" -> "DF"
@@ -235,9 +257,11 @@ class FinalTeamActivity : AppCompatActivity() {
         "PT" -> "Portero"; "DF" -> "Defensa"; "MC" -> "Centrocampista"; "DL" -> "Delantero"; else -> code
     }
 
-    private fun drawTemplateAndFill() {
-        fieldLayout.removeAllViews()
-        val formation = formations.firstOrNull { it.name == formationName } ?: return
+    private fun drawTemplateAndFillInternal() {
+        if (fieldLayout.width == 0 || fieldLayout.height == 0) {
+            fieldLayout.post { drawTemplateAndFillInternal() }
+            return
+        }
 
         val d = resources.displayMetrics.density
         var cardW = 100f * d
@@ -245,17 +269,36 @@ class FinalTeamActivity : AppCompatActivity() {
         val hGap = 8f * d
         val maxCols = 4
         val rowWidthNeeded = maxCols * cardW + (maxCols - 1) * hGap
-        if (rowWidthNeeded > fieldLayout.width) { cardW = (fieldLayout.width - (maxCols - 1) * hGap) / maxCols; cardH = cardW * 1.25f }
+        if (rowWidthNeeded > fieldLayout.width) {
+            cardW = (fieldLayout.width - (maxCols - 1) * hGap) / maxCols
+            cardH = cardW * 1.25f
+        }
 
+        val formation = formations.firstOrNull { it.name == formationName } ?: return
         val coords = formationCoordinates[formationName]
+
+        ViewGroupCompat.suppressLayout(fieldLayout, true)
+
+        val totalSlots = formation.positions.size
+        while (slotViews.size < totalSlots) {
+            val v = layoutInflater.inflate(R.layout.item_player_field, fieldLayout, false)
+            slotViews.add(v)
+            fieldLayout.addView(v)
+        }
+        while (slotViews.size > totalSlots) {
+            val last = slotViews.removeLast()
+            fieldLayout.removeView(last)
+        }
+
         if (coords != null && coords.size == formation.positions.size) {
             val topBand = 0.08f
             val bottomBand = 0.96f
             fun mapY(y: Float): Float = (topBand + y * (bottomBand - topBand)).coerceIn(0f, 1f)
 
-            coords.forEachIndexed { i, (x, yRaw) ->
+            formation.positions.forEachIndexed { i, _ ->
+                val (x, yRaw) = coords[i]
                 val y = mapY(yRaw)
-                val view = layoutInflater.inflate(R.layout.item_player_field, fieldLayout, false)
+                val view = slotViews[i]
                 bindSlotView(view, i)
 
                 val lp = RelativeLayout.LayoutParams(cardW.toInt(), cardH.toInt())
@@ -264,59 +307,58 @@ class FinalTeamActivity : AppCompatActivity() {
                 view.layoutParams = lp
 
                 attachDragLogicToFieldView(view, i)
-                fieldLayout.addView(view)
             }
-            return
-        }
+        } else {
+            // Fallback por filas: 4-4-2 aprox
+            val codes = formation.positions.map { toCode(it) }
+            val nPT = codes.count { it == "PT" }
+            val nDF = codes.count { it == "DF" }
+            val nMC = codes.count { it == "MC" }
+            val nDL = codes.count { it == "DL" }
 
-        // Fallback por filas (si no hay coords)
-        val codes = formation.positions.map { toCode(it) }
-        val nPT = codes.count { it == "PT" }
-        val nDF = codes.count { it == "DF" }
-        val nMC = codes.count { it == "MC" }
-        val nDL = codes.count { it == "DL" }
+            fun split(count: Int, maxPerRow: Int): List<Int> {
+                if (count <= 0) return emptyList()
+                val rows = mutableListOf<Int>()
+                var left = count
+                while (left > 0) { val take = left.coerceAtMost(maxPerRow); rows.add(take); left -= take }
+                return rows
+            }
+            val dlRows = split(nDL, 3)
+            val mcRows = split(nMC, 4)
+            val dfRows = split(nDF, 4)
+            val ptRows = if (nPT > 0) listOf(nPT) else emptyList()
+            val rowSpec = buildList { addAll(dlRows); addAll(mcRows); addAll(dfRows); addAll(ptRows) }
 
-        fun split(count: Int, maxPerRow: Int): List<Int> {
-            if (count <= 0) return emptyList()
-            val rows = mutableListOf<Int>()
-            var left = count
-            while (left > 0) { val take = left.coerceAtMost(maxPerRow); rows.add(take); left -= take }
-            return rows
-        }
-        val dlRows = split(nDL, 3)
-        val mcRows = split(nMC, 4)
-        val dfRows = split(nDF, 4)
-        val ptRows = if (nPT > 0) listOf(nPT) else emptyList()
-        val rowSpec = buildList { addAll(dlRows); addAll(mcRows); addAll(dfRows); addAll(ptRows) }
+            val topPad = fieldLayout.height * 0.10f
+            val bottomPad = fieldLayout.height * 0.95f
+            val rowsCount = rowSpec.size
+            val spacing = (bottomPad - topPad) / (rowsCount.coerceAtLeast(1))
+            val yCenters = (0 until rowsCount).map { r -> topPad + r * spacing }
 
-        val topPad = fieldLayout.height * 0.10f
-        val bottomPad = fieldLayout.height * 0.95f
-        val rowsCount = rowSpec.size
-        val spacing = (bottomPad - topPad) / (rowsCount.coerceAtLeast(1))
-        val yCenters = (0 until rowsCount).map { r -> topPad + r * spacing }
+            var globalIndex = 0
+            rowSpec.forEachIndexed { rowIdx, cols ->
+                val n = cols
+                val rowWidth = n * cardW + (n - 1) * hGap
+                val startX = (fieldLayout.width - rowWidth) / 2f
+                val yCenter = yCenters[rowIdx]
 
-        var globalIndex = 0
-        rowSpec.forEachIndexed { rowIdx, cols ->
-            val n = cols
-            val rowWidth = n * cardW + (n - 1) * hGap
-            val startX = (fieldLayout.width - rowWidth) / 2f
-            val yCenter = yCenters[rowIdx]
+                repeat(n) { i ->
+                    val index = globalIndex
+                    val view = slotViews[index]
+                    bindSlotView(view, index)
 
-            repeat(n) { i ->
-                val index = globalIndex
-                val view = layoutInflater.inflate(R.layout.item_player_field, fieldLayout, false)
-                bindSlotView(view, index)
+                    val lp = RelativeLayout.LayoutParams(cardW.toInt(), cardH.toInt())
+                    lp.leftMargin = (startX + i * (cardW + hGap)).toInt()
+                    lp.topMargin = (yCenter - cardH / 2f).toInt()
+                    view.layoutParams = lp
 
-                val lp = RelativeLayout.LayoutParams(cardW.toInt(), cardH.toInt())
-                lp.leftMargin = (startX + i * (cardW + hGap)).toInt()
-                lp.topMargin = (yCenter - cardH / 2f).toInt()
-                view.layoutParams = lp
-
-                attachDragLogicToFieldView(view, index)
-                fieldLayout.addView(view)
-                globalIndex++
+                    attachDragLogicToFieldView(view, index)
+                    globalIndex++
+                }
             }
         }
+
+        ViewGroupCompat.suppressLayout(fieldLayout, false)
     }
 
     private fun bindSlotView(view: View, i: Int) {
@@ -330,11 +372,12 @@ class FinalTeamActivity : AppCompatActivity() {
             img.setImageResource(p.image)
             name.text = p.nickname
             elem.setImageResource(p.element)
-            if (p.name == captainName) img.setBackgroundResource(R.drawable.captain_border)
+            if (p.name == captainName) img.setBackgroundResource(R.drawable.captain_border) else img.background = null
         } else {
             name.text = codeToNice(toCode(formation.positions[i]))
             elem.setImageResource(0)
             img.setImageResource(0)
+            img.background = null
         }
     }
 
@@ -352,25 +395,31 @@ class FinalTeamActivity : AppCompatActivity() {
                 it.alpha = 0.5f
                 true
             }
+        } else {
+            view.setOnLongClickListener(null)
         }
 
         view.setOnDragListener { v, event ->
             when (event.action) {
                 DragEvent.ACTION_DRAG_STARTED -> true
                 DragEvent.ACTION_DRAG_ENTERED -> { v.alpha = 0.7f; true }
-                DragEvent.ACTION_DRAG_EXITED -> { v.alpha = 1f; true }
+                DragEvent.ACTION_DRAG_EXITED  -> { v.alpha = 1f; true }
                 DragEvent.ACTION_DROP -> {
                     val fromBench = event.clipDescription?.label == "benchPlayer"
                     if (fromBench) {
-                        val benchIdx = event.localState as Int
-                        val player = benchPlayers.getOrNull(benchIdx) ?: return@setOnDragListener true
-                        val bp = player ?: return@setOnDragListener true
-                        if (!bp.canPlay(dstRoleCode)) { shakeView(v); return@setOnDragListener true }
+                        val benchIdx = event.localState as? Int
+                        if (benchIdx == null || benchIdx !in benchPlayers.indices) { shakeView(v); return@setOnDragListener true }
+                        val player = benchPlayers[benchIdx] ?: run { shakeView(v); return@setOnDragListener true }
+                        if (!player.canPlay(dstRoleCode)) {
+                            shakeView(v)
+                            Toast.makeText(this@FinalTeamActivity, "No puede jugar en esta posición", Toast.LENGTH_SHORT).show()
+                            return@setOnDragListener true
+                        }
                         val replaced = playerSlots[index]
-                        playerSlots[index] = bp
+                        playerSlots[index] = player
                         benchPlayers[benchIdx] = replaced
-                        findViewById<RecyclerView?>(R.id.rvBenchSelected)?.adapter?.notifyDataSetChanged()
-                        drawTemplateAndFill()
+                        findViewById<RecyclerView?>(R.id.rvBenchSelected)?.adapter?.notifyItemChanged(benchIdx)
+                        requestDrawField()
                     } else {
                         val fromIdx = event.localState as? Int ?: return@setOnDragListener true
                         if (fromIdx == index) return@setOnDragListener true
@@ -382,7 +431,7 @@ class FinalTeamActivity : AppCompatActivity() {
                             val tmp = playerSlots[fromIdx]
                             playerSlots[fromIdx] = playerSlots[index]
                             playerSlots[index] = tmp
-                            drawTemplateAndFill()
+                            requestDrawField()
                         } else shakeView(v)
                     }
                     true
