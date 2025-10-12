@@ -221,7 +221,7 @@ class DraftActivity : AppCompatActivity() {
         repeat(nDF) { slots.add(Slot("DF")) }
         repeat(nPT) { slots.add(Slot("PT")) }
 
-        // 👉 Coloca al capitán en el primer hueco compatible (principal o secundario)
+        // Coloca capitán en primer hueco compatible (principal o secundario)
         captain?.let { cap ->
             val idx = slots.indexOfFirst { slot -> slot.player == null && cap.canPlay(slot.role) }
             if (idx >= 0) {
@@ -316,7 +316,7 @@ class DraftActivity : AppCompatActivity() {
                     }
                 }
 
-                // DRAG LISTENER: drop/intercambio con localState
+                // DRAG LISTENER con VALIDACIÓN de posiciones
                 slotView.setOnDragListener { v, event ->
                     when (event.action) {
                         DragEvent.ACTION_DRAG_STARTED -> true
@@ -325,10 +325,24 @@ class DraftActivity : AppCompatActivity() {
                         DragEvent.ACTION_DROP -> {
                             val from = event.localState as? Int
                             if (from != null && from != indexForClick) {
-                                val temp = slots[from].player
-                                slots[from].player = slots[indexForClick].player
-                                slots[indexForClick].player = temp
-                                drawSlots()
+                                val src = slots[from].player
+                                val dst = slots[indexForClick].player
+                                val srcRole = slots[indexForClick].role // destino
+                                val dstRole = slots[from].role          // origen
+
+                                val okSrc = src?.canPlay(srcRole) ?: true
+                                val okDst = dst?.canPlay(dstRole) ?: true
+
+                                if (okSrc && okDst) {
+                                    val temp = slots[from].player
+                                    slots[from].player = slots[indexForClick].player
+                                    slots[indexForClick].player = temp
+                                    drawSlots()
+                                } else {
+                                    v.animate().translationX(12f).setDuration(50).withEndAction {
+                                        v.animate().translationX(0f).setDuration(50).start()
+                                    }.start()
+                                }
                             }
                             true
                         }
@@ -430,18 +444,14 @@ class DraftActivity : AppCompatActivity() {
 
     private fun reopenSamePlayerPicker(slotIndex: Int, sameOptions: List<Player>) {
         val slot = slots[slotIndex]
-
         val dialogView = layoutInflater.inflate(R.layout.layout_player_picker, null)
         val dialog = android.app.Dialog(this, R.style.CenterDialogTheme)
         dialog.setContentView(dialogView)
-
         val title = dialogView.findViewById<TextView>(R.id.txtTitle)
         val rvPicker = dialogView.findViewById<RecyclerView>(R.id.rvPickerOptions)
-
         title.text = "Elige ${codeToLabel(slot.role)}"
         rvPicker.layoutManager = GridLayoutManager(this, 2)
         rvPicker.setHasFixedSize(true)
-
         rvPicker.adapter = OptionAdapter(
             sameOptions,
             onClick = { chosen ->
@@ -454,7 +464,6 @@ class DraftActivity : AppCompatActivity() {
                 showPreviewOnLongPress(slotIndex, player, dialog, sameOptions)
             }
         )
-
         dialog.show()
     }
 

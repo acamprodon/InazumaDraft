@@ -47,7 +47,7 @@ class FinalTeamActivity : AppCompatActivity() {
         playerSlots.clear()
         playerSlots.addAll(team)
 
-        fieldLayout.post { drawTemplateAndFill(team, formationName, captainName) }
+        fieldLayout.post { drawTemplateAndFill(formationName, captainName) }
 
         recyclerFinalTeam.layoutManager = LinearLayoutManager(this)
         recyclerFinalTeam.adapter = FinalTeamAdapter(team)
@@ -89,13 +89,15 @@ class FinalTeamActivity : AppCompatActivity() {
     }
 
     /**
-     * Dibuja el campo con jugadores + drag & drop.
+     * Dibuja el campo con jugadores, SIN reordenar internamente playerSlots,
+     * y valida el swap según roles.
      */
-    private fun drawTemplateAndFill(playersIn: List<Player>, formationName: String, captainName: String?) {
+    private fun drawTemplateAndFill(formationName: String, captainName: String?) {
         fieldLayout.removeAllViews()
 
         val formation = formations.firstOrNull { it.name == formationName } ?: return
 
+        // Medidas carta
         val d = resources.displayMetrics.density
         var cardW = 100f * d
         var cardH = cardW * 1.25f
@@ -107,29 +109,12 @@ class FinalTeamActivity : AppCompatActivity() {
             cardH = cardW * 1.25f
         }
 
-        // --- Coordenadas si existen ---
+        // Coordenadas si existen
         val coords = formationCoordinates[formationName]
         if (coords != null && coords.size == formation.positions.size) {
             val topBand = 0.08f
             val bottomBand = 0.96f
             fun mapY(y: Float): Float = (topBand + y * (bottomBand - topBand)).coerceIn(0f, 1f)
-
-            // Ordenar jugadores por formación usando multiposición
-            val pool = playerSlots.toMutableList()
-            fun take(role: String): Player? {
-                val i = pool.indexOfFirst { it?.canPlay(role) == true }
-                return if (i >= 0) pool.removeAt(i) else null
-            }
-
-            val playersByFormationOrder: List<Player?> = formation.positions.map { pos ->
-                when (toCode(pos)) {
-                    "PT" -> take("PT")
-                    "DF" -> take("DF")
-                    "MC" -> take("MC")
-                    "DL" -> take("DL")
-                    else -> null
-                }
-            }
 
             coords.forEachIndexed { i, (x, yRaw) ->
                 val y = mapY(yRaw)
@@ -138,7 +123,8 @@ class FinalTeamActivity : AppCompatActivity() {
                 val name = view.findViewById<TextView>(R.id.txtPlayerNickname)
                 val elem = view.findViewById<ImageView>(R.id.imgElement)
 
-                val p = playersByFormationOrder[i]
+                // 👇 Usar SIEMPRE playerSlots[i] para no reordenar
+                val p = playerSlots.getOrNull(i)
                 if (p != null) {
                     img.setImageResource(p.image)
                     name.text = p.nickname
@@ -179,10 +165,25 @@ class FinalTeamActivity : AppCompatActivity() {
                         DragEvent.ACTION_DROP -> {
                             val from = event.localState as? Int
                             if (from != null && from != i) {
-                                val tmp = playerSlots[from]
-                                playerSlots[from] = playerSlots[i]
-                                playerSlots[i] = tmp
-                                drawTemplateAndFill(playersIn, formationName, captainName)
+                                val src = playerSlots[from]
+                                val dst = playerSlots[i]
+                                val srcRole = toCode(formation.positions[i])      // rol destino
+                                val dstRole = toCode(formation.positions[from])   // rol origen
+
+                                val okSrc = src?.canPlay(srcRole) ?: true
+                                val okDst = dst?.canPlay(dstRole) ?: true
+
+                                if (okSrc && okDst) {
+                                    val tmp = playerSlots[from]
+                                    playerSlots[from] = playerSlots[i]
+                                    playerSlots[i] = tmp
+                                    drawTemplateAndFill(formationName, captainName)
+                                } else {
+                                    // feedback si no válido
+                                    v.animate().translationX(12f).setDuration(50).withEndAction {
+                                        v.animate().translationX(0f).setDuration(50).start()
+                                    }.start()
+                                }
                             }
                             true
                         }
@@ -193,11 +194,10 @@ class FinalTeamActivity : AppCompatActivity() {
 
                 fieldLayout.addView(view)
             }
-
             return
         }
 
-        // --- Fallback por filas (con multiposición) ---
+        // Fallback por filas (sin reordenar + validación)
         val codes = formation.positions.map { toCode(it) }
 
         val nPT = codes.count { it == "PT" }
@@ -221,37 +221,8 @@ class FinalTeamActivity : AppCompatActivity() {
         val mcRows = split(nMC, 4)
         val dfRows = split(nDF, 4)
         val ptRows = if (nPT > 0) listOf(nPT) else emptyList()
-        val rowSpec = buildList {
-            addAll(dlRows)
-            addAll(mcRows)
-            addAll(dfRows)
-            addAll(ptRows)
-        }
+        val rowSpec = buildList { addAll(dlRows); addAll(mcRows); addAll(dfRows); addAll(ptRows) }
         if (rowSpec.isEmpty()) return
-
-        val dlStart = 0
-        val mcStart = dlStart + dlRows.size
-        val dfStart = mcStart + mcRows.size
-        val ptStart = dfStart + dfRows.size
-        fun roleForRow(rowIdx: Int): String = when {
-            rowIdx < mcStart -> "DL"
-            rowIdx < dfStart -> "MC"
-            rowIdx < ptStart -> "DF"
-            else -> "PT"
-        }
-
-        val pool = playerSlots.toMutableList()
-        fun takeOne(role: String): Player? {
-            val idx = pool.indexOfFirst { it?.canPlay(role) == true }
-            return if (idx >= 0) pool.removeAt(idx) else null
-        }
-
-        val orderedForTemplate = mutableListOf<Player?>().apply {
-            repeat(nDL) { add(takeOne("DL")) }
-            repeat(nMC) { add(takeOne("MC")) }
-            repeat(nDF) { add(takeOne("DF")) }
-            repeat(nPT) { add(takeOne("PT")) }
-        }
 
         val topPad = fieldLayout.height * 0.10f
         val bottomPad = fieldLayout.height * 0.95f
@@ -267,8 +238,8 @@ class FinalTeamActivity : AppCompatActivity() {
             val yCenter = yCenters[rowIdx]
 
             repeat(n) { i ->
-                val p = orderedForTemplate.getOrNull(globalIndex)
                 val index = globalIndex
+                val p = playerSlots.getOrNull(index)
                 globalIndex++
 
                 val view = layoutInflater.inflate(R.layout.item_player_field, fieldLayout, false)
@@ -280,11 +251,16 @@ class FinalTeamActivity : AppCompatActivity() {
                     img.setImageResource(p.image)
                     name.text = p.nickname
                     elem.setImageResource(p.element)
-                    // captain border
-                    val capName = captainName
-                    if (capName != null && p.name == capName) img.setBackgroundResource(R.drawable.captain_border)
+                    if (p.name == captainName) img.setBackgroundResource(R.drawable.captain_border)
                 } else {
-                    name.text = codeToNice(roleForRow(rowIdx))
+                    val role = when {
+                        // filas DL, MC, DF, PT en ese orden
+                        rowIdx < dlRows.size -> "DL"
+                        rowIdx < dlRows.size + mcRows.size -> "MC"
+                        rowIdx < dlRows.size + mcRows.size + dfRows.size -> "DF"
+                        else -> "PT"
+                    }
+                    name.text = codeToNice(role)
                     elem.setImageResource(0)
                     img.setImageResource(0)
                 }
@@ -294,7 +270,6 @@ class FinalTeamActivity : AppCompatActivity() {
                 lp.topMargin = (yCenter - cardH / 2f).toInt()
                 view.layoutParams = lp
 
-                // Drag & drop
                 if (p != null) {
                     view.setOnLongClickListener {
                         val clipData = ClipData.newPlainText("fromIndex", index.toString())
@@ -318,10 +293,40 @@ class FinalTeamActivity : AppCompatActivity() {
                         DragEvent.ACTION_DROP -> {
                             val from = event.localState as? Int
                             if (from != null && from != index) {
-                                val tmp = playerSlots[from]
-                                playerSlots[from] = playerSlots[index]
-                                playerSlots[index] = tmp
-                                drawTemplateAndFill(playersIn, formationName, captainName)
+                                val src = playerSlots[from]
+                                val dst = playerSlots[index]
+
+                                // Calcula rol por fila destino y origen:
+                                val dstRole = when {
+                                    rowIdx < dlRows.size -> "DL"
+                                    rowIdx < dlRows.size + mcRows.size -> "MC"
+                                    rowIdx < dlRows.size + mcRows.size + dfRows.size -> "DF"
+                                    else -> "PT"
+                                }
+                                // Para el origen necesitamos deducir su fila original:
+                                fun roleOfIndex(idx: Int): String {
+                                    var acc = 0
+                                    fun inBlock(count: Int): Boolean { val r = idx < acc + count; acc += count; return r }
+                                    acc = 0; if (inBlock(nDL)) return "DL"
+                                    acc = nDL; if (inBlock(nMC)) return "MC"
+                                    acc = nDL + nMC; if (inBlock(nDF)) return "DF"
+                                    return "PT"
+                                }
+                                val srcRole = roleOfIndex(from)
+
+                                val okSrc = src?.canPlay(dstRole) ?: true
+                                val okDst = dst?.canPlay(srcRole) ?: true
+
+                                if (okSrc && okDst) {
+                                    val tmp = playerSlots[from]
+                                    playerSlots[from] = playerSlots[index]
+                                    playerSlots[index] = tmp
+                                    drawTemplateAndFill(formationName, captainName)
+                                } else {
+                                    v.animate().translationX(12f).setDuration(50).withEndAction {
+                                        v.animate().translationX(0f).setDuration(50).start()
+                                    }.start()
+                                }
                             }
                             true
                         }
