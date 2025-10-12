@@ -14,18 +14,18 @@ import com.inazumadraft.model.Player
 import java.util.Collections
 
 /**
- * Muestra SIEMPRE 5 huecos. Si no hay jugador en una posición, renderiza "Hueco".
- * Soporta:
- *  - Long press sobre un hueco con jugador => inicia drag (label "benchPlayer") con localState = index.
- *  - Drop sobre un hueco:
- *      · desde CAMPO (localState = fromFieldIndex, label != "benchPlayer") -> onDropFromField(toIndex, fromFieldIndex).
- *      · desde BANQUILLO (label == "benchPlayer", localState = fromBenchIndex) -> swap/move dentro del banquillo.
+ * - Muestra SIEMPRE 5 huecos (lista con Player?).
+ * - Click SIEMPRE llama a onClickSlot(index) para abrir el picker.
+ * - Long press sólo si hay jugador => inicia drag (label "benchPlayer").
+ * - Drop:
+ *      · desde CAMPO -> callback onDropFromField(toIndex, fromFieldIndex)
+ *      · desde BANQUILLO -> swap/move dentro de banquillo
  */
 class BenchSelectedAdapter(
-    private val benchPlayers: MutableList<Player>,                // lista con 0..5 elementos
-    private val onChanged: () -> Unit,                            // para actualizar título/UI
+    private val benchPlayers: MutableList<Player?>,                     // tamaño 5 con nulls
+    private val onChanged: () -> Unit,
     private val onDropFromField: (toIndex: Int, fromFieldIndex: Int) -> Unit,
-
+    private val onClickSlot: (index: Int) -> Unit
 ) : RecyclerView.Adapter<BenchSelectedAdapter.VH>() {
 
     override fun getItemCount(): Int = 5
@@ -33,7 +33,6 @@ class BenchSelectedAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
         val v = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_player_field, parent, false)
-        // un poco más compacto en el drawer
         val d = parent.resources.displayMetrics.density
         v.layoutParams = v.layoutParams.apply {
             width = (90 * d).toInt()
@@ -52,6 +51,9 @@ class BenchSelectedAdapter(
         private val elem = itemView.findViewById<ImageView>(R.id.imgElement)
 
         fun bind(p: Player?, index: Int) {
+            // Click SIEMPRE abre picker del slot
+            itemView.setOnClickListener { onClickSlot(index) }
+
             if (p == null) {
                 img.setImageResource(0)
                 elem.setImageResource(0)
@@ -61,8 +63,6 @@ class BenchSelectedAdapter(
                 img.setImageResource(p.image)
                 elem.setImageResource(p.element)
                 name.text = p.nickname
-
-                // Drag desde banquillo
                 itemView.setOnLongClickListener {
                     val clip = ClipData.newPlainText("benchPlayer", "benchPlayer")
                     val shadow = View.DragShadowBuilder(it)
@@ -72,7 +72,6 @@ class BenchSelectedAdapter(
                 }
             }
 
-            // Drop sobre este slot
             itemView.setOnDragListener { v, event ->
                 when (event.action) {
                     DragEvent.ACTION_DRAG_STARTED -> true
@@ -83,17 +82,19 @@ class BenchSelectedAdapter(
                         if (fromBench) {
                             val fromIdx = event.localState as Int
                             if (fromIdx == index) return@setOnDragListener true
-
                             val a = benchPlayers.getOrNull(fromIdx) ?: return@setOnDragListener true
                             val b = benchPlayers.getOrNull(index)
-
                             if (index >= benchPlayers.size) {
-                                // mover al final (o posición nueva) y quitar del origen
                                 benchPlayers.removeAt(fromIdx)
                                 benchPlayers.add(a)
                             } else {
-                                // ambos existen -> swap
-                                Collections.swap(benchPlayers, fromIdx, index)
+                                // si había null en destino, es "mover"; si había jugador, swap
+                                if (b == null) {
+                                    benchPlayers[index] = a
+                                    benchPlayers[fromIdx] = null
+                                } else {
+                                    Collections.swap(benchPlayers, fromIdx, index)
+                                }
                             }
                             notifyDataSetChanged()
                             onChanged()
