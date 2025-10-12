@@ -248,7 +248,6 @@ class DraftActivity : AppCompatActivity() {
                 .shuffled()
                 .take(5)
         )
-        // Actualiza título si el panel existe
         findViewById<TextView?>(R.id.txtBenchTitle)?.text = "Banquillo (${benchPlayers.size}/5)"
         findViewById<RecyclerView?>(R.id.rvBench)?.adapter?.notifyDataSetChanged()
     }
@@ -539,19 +538,33 @@ class DraftActivity : AppCompatActivity() {
         rvBenchView.layoutManager = LinearLayoutManager(this)
         rvBenchView.adapter = FinalTeamAdapter(benchPlayers)
 
-        // Botón flotante para abrir el panel
-        FloatingActionButton(this).apply {
+        // Botón flotante para abrir el panel (anclado de forma segura)
+        val btnShowBench = FloatingActionButton(this).apply {
             setImageResource(android.R.drawable.ic_menu_sort_by_size)
             contentDescription = "Abrir banquillo"
             setOnClickListener { benchPanelView.animate().translationX(0f).setDuration(200).start() }
-            (findViewById<ViewGroup>(R.id.fieldLayout)).addView(this)
         }
+
+        val rootContainer: ViewGroup? = findViewById(R.id.draftLayout) // root del XML
+        val safeParent: ViewGroup = (rootContainer ?: fieldLayout)
+        val d = resources.displayMetrics.density
+        val lp = RelativeLayout.LayoutParams(
+            RelativeLayout.LayoutParams.WRAP_CONTENT,
+            RelativeLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            addRule(RelativeLayout.ALIGN_PARENT_END)
+            addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
+            marginEnd = (16 * d).toInt()
+            bottomMargin = (16 * d).toInt()
+        }
+        btnShowBench.layoutParams = lp
+        safeParent.addView(btnShowBench)
 
         btnClose.setOnClickListener {
             benchPanelView.animate().translationX(benchPanelView.width.toFloat()).setDuration(200).start()
         }
 
-        // Drop CAMPO → BANQUILLO
+        // Drop CAMPO → BANQUILLO (acepta swap si está lleno y se suelta encima)
         rvBenchView.setOnDragListener { _, event ->
             when (event.action) {
                 DragEvent.ACTION_DROP -> {
@@ -567,13 +580,11 @@ class DraftActivity : AppCompatActivity() {
                             slots[fromIdx].player = null
                         }
                         hoveredPos != RecyclerView.NO_POSITION -> {
-                            // swap si está lleno y se suelta encima de uno
                             val tmp = benchPlayers[hoveredPos]
                             benchPlayers[hoveredPos] = p
                             slots[fromIdx].player = tmp
                         }
                         else -> {
-                            // lleno y sin hover → feedback
                             shakeView(rvBenchView)
                             return@setOnDragListener true
                         }

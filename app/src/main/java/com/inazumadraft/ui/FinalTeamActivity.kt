@@ -31,14 +31,13 @@ class FinalTeamActivity : AppCompatActivity() {
     private lateinit var btnNewTeam: FloatingActionButton
     private lateinit var recyclerFinalTeam: RecyclerView
 
-    // Banquillo (máx 5, sin restricción por posición)
+    // Banquillo
     private val benchPlayers = mutableListOf<Player>()
-    private lateinit var rvBench: RecyclerView
-    private lateinit var benchPanel: View
-    private lateinit var btnCloseBench: Button
-    private lateinit var txtBenchTitle: TextView
+    private var rvBench: RecyclerView? = null
+    private var benchPanel: View? = null
+    private var btnCloseBench: Button? = null
+    private var txtBenchTitle: TextView? = null
 
-    // Titulares en slots de la formación (posición fija + posible null si vacío)
     private val playerSlots = mutableListOf<Player?>()
 
     private var formationName: String = "4-4-2"
@@ -53,13 +52,12 @@ class FinalTeamActivity : AppCompatActivity() {
         recyclerFinalTeam = findViewById(R.id.recyclerFinalTeam)
         btnNewTeam = findViewById(R.id.btnNewTeam)
 
-        // --- Panel banquillo (layout_bench_panel.xml incluido en activity_final_team.xml) ---
+        // Panel banquillo (puede no existir si no se incluyó)
         benchPanel = findViewById(R.id.benchPanel)
         rvBench = findViewById(R.id.rvBench)
         btnCloseBench = findViewById(R.id.btnCloseBench)
         txtBenchTitle = findViewById(R.id.txtBenchTitle)
 
-        // Datos recibidos
         val team = intent.getParcelableArrayListExtra<Player>("finalTeam") ?: arrayListOf()
         formationName = intent.getStringExtra("formation") ?: "4-4-2"
         captainName = intent.getStringExtra("captainName")
@@ -76,14 +74,11 @@ class FinalTeamActivity : AppCompatActivity() {
                 .take(5)
         )
 
-        // Dibujar campo
         fieldLayout.post { drawTemplateAndFill() }
 
-        // Lista de estadísticas
         recyclerFinalTeam.layoutManager = LinearLayoutManager(this)
         recyclerFinalTeam.adapter = FinalTeamAdapter(team)
 
-        // Toggle campo / stats
         btnToggleView.setOnClickListener {
             if (recyclerFinalTeam.visibility == View.GONE) {
                 recyclerFinalTeam.visibility = View.VISIBLE
@@ -96,7 +91,6 @@ class FinalTeamActivity : AppCompatActivity() {
             }
         }
 
-        // Nuevo equipo
         btnNewTeam.setOnClickListener {
             val intent = Intent(this@FinalTeamActivity, DraftActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
@@ -108,61 +102,70 @@ class FinalTeamActivity : AppCompatActivity() {
     }
 
     // ====================== BANQUILLO ======================
-
     private fun setupBenchPanel() {
-        txtBenchTitle.text = "Banquillo (${benchPlayers.size}/5)"
-        rvBench.layoutManager = LinearLayoutManager(this)
-        rvBench.adapter = FinalTeamAdapter(benchPlayers)
+        val benchPanelView = benchPanel ?: return
+        val rvBenchView = rvBench ?: return
+        val btnClose = btnCloseBench ?: return
+        val txtTitle = txtBenchTitle ?: return
 
-        // Botón flotante para abrir el panel
+        txtTitle.text = "Banquillo (${benchPlayers.size}/5)"
+        rvBenchView.layoutManager = LinearLayoutManager(this)
+        rvBenchView.adapter = FinalTeamAdapter(benchPlayers)
+
+        // FAB para abrir panel (anclado a fieldLayout como parent seguro)
         val btnShowBench = FloatingActionButton(this).apply {
             setImageResource(android.R.drawable.ic_menu_sort_by_size)
             contentDescription = "Abrir banquillo"
-            setOnClickListener {
-                benchPanel.animate().translationX(0f).setDuration(200).start()
-            }
-        }
-        (findViewById<ViewGroup>(R.id.fieldLayout)).addView(btnShowBench)
-
-        // Cerrar panel
-        btnCloseBench.setOnClickListener {
-            closeBench()
+            setOnClickListener { benchPanelView.animate().translationX(0f).setDuration(200).start() }
         }
 
-        // Acepta soltar jugadores del CAMPO → BANQUILLO
-        rvBench.setOnDragListener { _, event ->
+        val d = resources.displayMetrics.density
+        val lp = RelativeLayout.LayoutParams(
+            RelativeLayout.LayoutParams.WRAP_CONTENT,
+            RelativeLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            addRule(RelativeLayout.ALIGN_PARENT_END)
+            addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
+            marginEnd = (16 * d).toInt()
+            bottomMargin = (16 * d).toInt()
+        }
+        btnShowBench.layoutParams = lp
+        fieldLayout.addView(btnShowBench)
+
+        btnClose.setOnClickListener {
+            benchPanelView.animate().translationX(benchPanelView.width.toFloat()).setDuration(200).start()
+        }
+
+        // Acepta soltar jugadores del CAMPO → BANQUILLO (con swap si lleno)
+        rvBenchView.setOnDragListener { _, event ->
             when (event.action) {
                 DragEvent.ACTION_DRAG_STARTED -> true
                 DragEvent.ACTION_DROP -> {
-                    // Si el origen NO es "benchPlayer", viene del campo
                     val fromFieldIndex = event.localState as? Int
                     val fromBench = event.clipDescription?.label == "benchPlayer"
                     if (fromFieldIndex != null && !fromBench) {
                         val p = playerSlots.getOrNull(fromFieldIndex) ?: return@setOnDragListener true
 
-                        val child = rvBench.findChildViewUnder(event.x, event.y)
-                        val hoveredPos = if (child != null) rvBench.getChildAdapterPosition(child) else RecyclerView.NO_POSITION
+                        val child = rvBenchView.findChildViewUnder(event.x, event.y)
+                        val hoveredPos = if (child != null) rvBenchView.getChildAdapterPosition(child) else RecyclerView.NO_POSITION
 
                         when {
                             benchPlayers.size < 5 -> {
-                                // Añadir si hay hueco
                                 benchPlayers.add(p)
                                 playerSlots[fromFieldIndex] = null
                             }
                             hoveredPos != RecyclerView.NO_POSITION -> {
-                                // Swap con el elemento sobre el que se suelta
                                 val tmp = benchPlayers[hoveredPos]
                                 benchPlayers[hoveredPos] = p
                                 playerSlots[fromFieldIndex] = tmp
                             }
                             else -> {
-                                // Lleno y sin hover → feedback
-                                shakeView(rvBench)
+                                shakeView(rvBenchView)
                                 return@setOnDragListener true
                             }
                         }
-                        rvBench.adapter?.notifyDataSetChanged()
-                        txtBenchTitle.text = "Banquillo (${benchPlayers.size}/5)"
+                        rvBenchView.adapter?.notifyDataSetChanged()
+                        txtTitle.text = "Banquillo (${benchPlayers.size}/5)"
                         drawTemplateAndFill()
                     }
                     true
@@ -172,40 +175,33 @@ class FinalTeamActivity : AppCompatActivity() {
             }
         }
 
-        // Permite iniciar drag desde BANQUILLO → CAMPO
-        val gestureDetector =
-            GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
-                override fun onLongPress(e: MotionEvent) {
-                    val child = rvBench.findChildViewUnder(e.x, e.y) ?: return
-                    val pos = rvBench.getChildAdapterPosition(child)
-                    if (pos == RecyclerView.NO_POSITION) return
+        // Long-press BANQUILLO → CAMPO con GestureDetector
+        val gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onLongPress(e: MotionEvent) {
+                val child = rvBenchView.findChildViewUnder(e.x, e.y) ?: return
+                val pos = rvBenchView.getChildAdapterPosition(child)
+                if (pos == RecyclerView.NO_POSITION) return
 
-                    // Iniciar drag desde BANQUILLO → CAMPO
-                    val clip = ClipData.newPlainText("benchPlayer", "benchPlayer")
-                    val shadow = View.DragShadowBuilder(child)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
-                        child.startDragAndDrop(clip, shadow, pos, 0)
-                    else @Suppress("DEPRECATION")
-                    child.startDrag(clip, shadow, pos, 0)
-                }
-            })
-
-        rvBench.addOnItemTouchListener(object : RecyclerView.OnItemTouchListener {
+                val clip = ClipData.newPlainText("benchPlayer", "benchPlayer")
+                val shadow = View.DragShadowBuilder(child)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+                    child.startDragAndDrop(clip, shadow, pos, 0)
+                else @Suppress("DEPRECATION")
+                child.startDrag(clip, shadow, pos, 0)
+            }
+        })
+        rvBenchView.addOnItemTouchListener(object : RecyclerView.OnItemTouchListener {
             override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
                 gestureDetector.onTouchEvent(e)
                 return false
             }
-            override fun onTouchEvent(rv: RecyclerView, e: MotionEvent) {
-                // no-op
-            }
-            override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
-                // no-op
-            }
+            override fun onTouchEvent(rv: RecyclerView, e: MotionEvent) {}
+            override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {}
         })
     }
 
     private fun closeBench() {
-        benchPanel.animate().translationX(benchPanel.width.toFloat()).setDuration(200).start()
+        benchPanel?.animate()?.translationX(benchPanel!!.width.toFloat())?.setDuration(200)?.start()
     }
 
     private fun shakeView(v: View) {
@@ -217,7 +213,6 @@ class FinalTeamActivity : AppCompatActivity() {
     }
 
     // ====================== UTILIDADES ======================
-
     private fun toCode(pos: String): String = when (pos.trim().lowercase()) {
         "portero", "pt" -> "PT"
         "defensa", "df" -> "DF"
@@ -235,12 +230,6 @@ class FinalTeamActivity : AppCompatActivity() {
     }
 
     // ====================== CAMPO + DRAG & DROP ======================
-
-    /**
-     * Dibuja el campo con los slots de la formación y gestiona drag & drop:
-     * - Campo → Campo (validado por roles)
-     * - Banquillo → Campo (validado por roles)
-     */
     private fun drawTemplateAndFill() {
         fieldLayout.removeAllViews()
 
@@ -280,7 +269,7 @@ class FinalTeamActivity : AppCompatActivity() {
             return
         }
 
-        // Fallback por filas (si faltan coords)
+        // Fallback por filas si faltan coords
         val codes = formation.positions.map { toCode(it) }
         val nPT = codes.count { it == "PT" }
         val nDF = codes.count { it == "DF" }
@@ -398,11 +387,11 @@ class FinalTeamActivity : AppCompatActivity() {
                         } else {
                             benchPlayers[benchIdx] = replaced
                         }
-                        rvBench.adapter?.notifyDataSetChanged()
-                        txtBenchTitle.text = "Banquillo (${benchPlayers.size}/5)"
+                        rvBench?.adapter?.notifyDataSetChanged()
+                        txtBenchTitle?.text = "Banquillo (${benchPlayers.size}/5)"
                         drawTemplateAndFill()
                     } else {
-                        // CAMPO → CAMPO (swap con validación)
+                        // CAMPO → CAMPO
                         val fromIdx = event.localState as? Int
                         if (fromIdx == null || fromIdx == index) return@setOnDragListener true
                         val src = playerSlots[fromIdx]
