@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.view.DragEvent
+import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
@@ -172,17 +173,33 @@ class FinalTeamActivity : AppCompatActivity() {
         }
 
         // Permite iniciar drag desde BANQUILLO → CAMPO
-        rvBench.addOnItemTouchListener(object : RecyclerView.SimpleOnItemTouchListener() {
-            override fun onLongPress(e: MotionEvent) {
-                val child = rvBench.findChildViewUnder(e.x, e.y) ?: return
-                val pos = rvBench.getChildAdapterPosition(child)
-                if (pos == RecyclerView.NO_POSITION) return
-                val clip = ClipData.newPlainText("benchPlayer", "benchPlayer")
-                val shadow = View.DragShadowBuilder(child)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
-                    child.startDragAndDrop(clip, shadow, pos, 0)
-                else @Suppress("DEPRECATION")
-                child.startDrag(clip, shadow, pos, 0)
+        val gestureDetector =
+            GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+                override fun onLongPress(e: MotionEvent) {
+                    val child = rvBench.findChildViewUnder(e.x, e.y) ?: return
+                    val pos = rvBench.getChildAdapterPosition(child)
+                    if (pos == RecyclerView.NO_POSITION) return
+
+                    // Iniciar drag desde BANQUILLO → CAMPO
+                    val clip = ClipData.newPlainText("benchPlayer", "benchPlayer")
+                    val shadow = View.DragShadowBuilder(child)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+                        child.startDragAndDrop(clip, shadow, pos, 0)
+                    else @Suppress("DEPRECATION")
+                    child.startDrag(clip, shadow, pos, 0)
+                }
+            })
+
+        rvBench.addOnItemTouchListener(object : RecyclerView.OnItemTouchListener {
+            override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
+                gestureDetector.onTouchEvent(e)
+                return false
+            }
+            override fun onTouchEvent(rv: RecyclerView, e: MotionEvent) {
+                // no-op
+            }
+            override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
+                // no-op
             }
         })
     }

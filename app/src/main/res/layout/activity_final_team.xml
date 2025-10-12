@@ -57,6 +57,5 @@
                 android:backgroundTint="#ffcc00" />
     </LinearLayout>
 
-
+    <include layout="@layout/layout_bench_panel"/>
 </RelativeLayout>
-<include layout="@layout/layout_bench_panel"/>
