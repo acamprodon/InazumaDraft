@@ -40,6 +40,9 @@ class DraftActivity : AppCompatActivity() {
 
     private var rowSpec: List<Int> = emptyList()
 
+    // Nuevo flag para bloquear clicks durante el preview
+    private var isPreviewing = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_draft)
@@ -284,6 +287,7 @@ class DraftActivity : AppCompatActivity() {
 
                 val indexForClick = slotGlobalIndex
                 slotView.setOnClickListener {
+                    if (isPreviewing) return@setOnClickListener
                     if (slots[indexForClick].player == null) {
                         showOptionsForSlot(indexForClick)
                     }
@@ -341,58 +345,53 @@ class DraftActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    // ---------- PREVIEW DINÁMICO SIN RETARDO ----------
+    // ---------- PREVIEW CON BLOQUEO ----------
     private fun showPreviewOnLongPress(
         slotIndex: Int,
         player: Player,
         dialog: android.app.Dialog,
         currentOptions: List<Player>
     ) {
-        val backupSlots = slots.map { it.copy() }
+        val backup = slots.map { it.copy() }
 
+        // Bloquear interacciones
+        isPreviewing = true
+
+        // Cerrar el diálogo y mostrar preview
         dialog.dismiss()
-
-        // Mostrar jugador temporal en el campo
         slots[slotIndex].player = player
         drawSlots()
 
-        // Resaltar jugador
+        // Resalta jugador
         fieldLayout.post {
-            val slotView = fieldLayout.getChildAt(slotIndex)
-            slotView?.findViewById<ImageView>(R.id.imgPlayer)
+            fieldLayout.getChildAt(slotIndex)
+                ?.findViewById<ImageView>(R.id.imgPlayer)
                 ?.setBackgroundResource(R.drawable.captain_border)
         }
 
-        // Mostrar overlay
+        // Mostrar overlay y capturar todos los toques
         overlayPreview.visibility = View.VISIBLE
         overlayPreview.alpha = 0.25f
 
-        // 🔥 Detectar cuando se levanta el dedo directamente
-        fieldLayout.setOnTouchListener { _, event ->
-            if (event.action == MotionEvent.ACTION_UP || event.action == MotionEvent.ACTION_CANCEL) {
-                restoreAndReopen(slotIndex, backupSlots, currentOptions)
-                true
-            } else {
-                false
+        overlayPreview.setOnTouchListener { _, event ->
+            when (event.action) {
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    // Restaurar campo
+                    for (i in slots.indices) slots[i].player = backup[i].player
+                    drawSlots()
+
+                    // Desbloquear e invisibilizar
+                    isPreviewing = false
+                    overlayPreview.visibility = View.GONE
+                    overlayPreview.setOnTouchListener(null)
+
+                    // Reabrir picker con mismas opciones
+                    reopenSamePlayerPicker(slotIndex, currentOptions)
+                    true
+                }
+                else -> true // Consumir todos los toques
             }
         }
-    }
-
-    private fun restoreAndReopen(
-        slotIndex: Int,
-        backupSlots: List<Slot>,
-        currentOptions: List<Player>
-    ) {
-        // Restaurar campo
-        for (i in slots.indices) {
-            slots[i].player = backupSlots[i].player
-        }
-        drawSlots()
-
-        overlayPreview.visibility = View.GONE
-        fieldLayout.setOnTouchListener(null)
-
-        reopenSamePlayerPicker(slotIndex, currentOptions)
     }
 
     private fun reopenSamePlayerPicker(slotIndex: Int, sameOptions: List<Player>) {
@@ -425,7 +424,7 @@ class DraftActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    // ---------- BUILD FINAL TEAM ----------
+    // ---------- FINAL TEAM ----------
     private fun buildFinalTeamFromSlots(formation: Formation): List<Player> {
         val result = mutableListOf<Player>()
         val tmp = slots.toMutableList()
