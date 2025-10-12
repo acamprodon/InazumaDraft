@@ -341,22 +341,37 @@ class DraftActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    // ---------- PREVIEW ----------
+    // ---------- PREVIEW DINÁMICO ----------
     private fun showPreviewOnLongPress(slotIndex: Int, player: Player, dialog: android.app.Dialog) {
         val slot = slots[slotIndex]
         val backupSlots = slots.map { it.copy() }
 
-        dialog.dismiss() // cerramos el diálogo para ver el campo real
+        // Cerramos el diálogo para que el campo quede visible
+        dialog.dismiss()
 
+        // Mostramos el jugador en el campo real
         slots[slotIndex].player = player
         drawSlots()
 
+        // Borde dorado temporal
+        fieldLayout.post {
+            val slotView = fieldLayout.getChildAt(slotIndex)
+            slotView?.findViewById<ImageView>(R.id.imgPlayer)
+                ?.setBackgroundResource(R.drawable.captain_border)
+        }
+
+        // Efecto de entrada (fade-in)
+        fieldLayout.animate().alpha(1f).setDuration(150).start()
+
+        // Activamos el overlay sutil
         overlayPreview.visibility = View.VISIBLE
         overlayPreview.alpha = 0f
-        overlayPreview.animate().alpha(0.3f).setDuration(150).start()
+        overlayPreview.animate().alpha(0.25f).setDuration(150).start()
 
+        // Al soltar el dedo, restauramos y reabrimos automáticamente el player picker
         overlayPreview.setOnTouchListener { _, event ->
             if (event.action == MotionEvent.ACTION_UP || event.action == MotionEvent.ACTION_CANCEL) {
+                // Restaurar alineación
                 for (i in slots.indices) {
                     slots[i].player = backupSlots[i].player
                 }
@@ -364,17 +379,16 @@ class DraftActivity : AppCompatActivity() {
 
                 overlayPreview.animate().alpha(0f).setDuration(150).withEndAction {
                     overlayPreview.visibility = View.GONE
-                }.start()
-
-                overlayPreview.postDelayed({
+                    // Reabrimos el diálogo automáticamente
                     reopenPlayerPicker(slotIndex)
-                }, 200)
+                }.start()
 
                 overlayPreview.setOnTouchListener(null)
             }
             true
         }
     }
+
 
     private fun reopenPlayerPicker(slotIndex: Int) {
         val slot = slots[slotIndex]
