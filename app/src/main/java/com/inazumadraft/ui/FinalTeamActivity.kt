@@ -15,7 +15,6 @@ import android.widget.RelativeLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewGroupCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -27,7 +26,6 @@ import com.inazumadraft.data.formationCoordinates
 import com.inazumadraft.model.Player
 import com.inazumadraft.model.canPlay
 import com.inazumadraft.ui.adapters.BenchSelectedAdapter
-
 
 class FinalTeamActivity : AppCompatActivity() {
 
@@ -42,7 +40,7 @@ class FinalTeamActivity : AppCompatActivity() {
     private var formationName: String = "4-4-2"
     private var captainName: String? = null
 
-    // PERF
+    // PERF: cache + debounce simple
     private val slotViews: MutableList<View> = mutableListOf()
     private var drawPending = false
     private fun requestDrawField() {
@@ -90,15 +88,33 @@ class FinalTeamActivity : AppCompatActivity() {
         btnNewTeam.setOnClickListener {
             val intent = Intent(this@FinalTeamActivity, DraftActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
-            startActivity(intent); finish()
+            startActivity(intent)
+            finish()
         }
 
         setupBenchPanel()
     }
 
-    // ----------------- HELPERS BANQUILLO -----------------
+    // ----------------- Helpers -----------------
+    private fun toCode(pos: String): String = when (pos.trim().lowercase()) {
+        "portero", "pt" -> "PT"
+        "defensa", "df" -> "DF"
+        "centrocampista", "mc" -> "MC"
+        "delantero", "dl" -> "DL"
+        else -> pos.trim().uppercase()
+    }
+
+    private fun codeToNice(code: String): String = when (code.uppercase()) {
+        "PT" -> "Portero"
+        "DF" -> "Defensa"
+        "MC" -> "Centrocampista"
+        "DL" -> "Delantero"
+        else -> code
+    }
+
     private fun benchCount(): Int = benchPlayers.count { it != null }
 
+    // ----------------- Banquillo: picks por hueco -----------------
     private fun showBenchOptionsForSlotFinal(slotIndex: Int) {
         val usados = mutableSetOf<Player>().apply {
             addAll(playerSlots.filterNotNull())
@@ -131,6 +147,7 @@ class FinalTeamActivity : AppCompatActivity() {
         dialog.show()
     }
 
+    // ----------------- Drawer del banquillo -----------------
     private fun setupBenchDrawerBasics(
         root: View,
         drawer: View,
@@ -185,7 +202,6 @@ class FinalTeamActivity : AppCompatActivity() {
         }
     }
 
-    // ----------------- BANQUILLO (drawer+listas) -----------------
     private fun setupBenchPanel() {
         val root   = findViewById<View?>(R.id.benchPanel) ?: return
         val drawer = findViewById<View?>(R.id.benchDrawer) ?: return
@@ -200,7 +216,7 @@ class FinalTeamActivity : AppCompatActivity() {
 
         rvSel.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
         rvSel.itemAnimator = null
-        rvSel.adapter = com.inazumadraft.ui.adapters.BenchSelectedAdapter(
+        rvSel.adapter = BenchSelectedAdapter(
             benchPlayers = benchPlayers,
             onChanged = { updateTitle(); requestDrawField() },
             onDropFromField = { toIndex, fromFieldIndex ->
@@ -215,11 +231,11 @@ class FinalTeamActivity : AppCompatActivity() {
             onClickSlot = { index -> showBenchOptionsForSlotFinal(index) }
         )
 
-        // No usamos “Picks (4)” aquí, los picks salen al tocar los huecos
+        // No usamos “Picks (4)” aquí: los picks salen al tocar cada hueco
         rvOpts.layoutManager = GridLayoutManager(this, 2)
         rvOpts.adapter = OptionAdapter(
             emptyList(),
-            onClick = { _: com.inazumadraft.model.Player -> }
+            onClick = { _: Player -> }
         )
 
         btnClose.setOnClickListener {
@@ -245,18 +261,7 @@ class FinalTeamActivity : AppCompatActivity() {
         )
     }
 
-    // ----------------- CAMPO + DnD (optimizado) -----------------
-    private fun toCode(pos: String): String = when (pos.trim().lowercase()) {
-        "portero", "pt" -> "PT"
-        "defensa", "df" -> "DF"
-        "centrocampista", "mc" -> "MC"
-        "delantero", "dl" -> "DL"
-        else -> pos.trim().uppercase()
-    }
-    private fun codeToNice(code: String): String = when (code.uppercase()) {
-        "PT" -> "Portero"; "DF" -> "Defensa"; "MC" -> "Centrocampista"; "DL" -> "Delantero"; else -> code
-    }
-
+    // ----------------- Campo + DnD -----------------
     private fun drawTemplateAndFillInternal() {
         if (fieldLayout.width == 0 || fieldLayout.height == 0) {
             fieldLayout.post { drawTemplateAndFillInternal() }
@@ -277,8 +282,7 @@ class FinalTeamActivity : AppCompatActivity() {
         val formation = formations.firstOrNull { it.name == formationName } ?: return
         val coords = formationCoordinates[formationName]
 
-        ViewGroupCompat.suppressLayout(fieldLayout, true)
-
+        // Asegura vistas
         val totalSlots = formation.positions.size
         while (slotViews.size < totalSlots) {
             val v = layoutInflater.inflate(R.layout.item_player_field, fieldLayout, false)
@@ -309,7 +313,7 @@ class FinalTeamActivity : AppCompatActivity() {
                 attachDragLogicToFieldView(view, i)
             }
         } else {
-            // Fallback por filas: 4-4-2 aprox
+            // Fallback por filas si no hay coordenadas
             val codes = formation.positions.map { toCode(it) }
             val nPT = codes.count { it == "PT" }
             val nDF = codes.count { it == "DF" }
@@ -357,8 +361,6 @@ class FinalTeamActivity : AppCompatActivity() {
                 }
             }
         }
-
-        ViewGroupCompat.suppressLayout(fieldLayout, false)
     }
 
     private fun bindSlotView(view: View, i: Int) {

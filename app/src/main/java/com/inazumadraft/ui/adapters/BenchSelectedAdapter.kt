@@ -22,7 +22,7 @@ import java.util.Collections
  *    · desde BANQUILLO -> swap/move dentro del banquillo (respeta null como hueco).
  */
 class BenchSelectedAdapter(
-    private val benchPlayers: MutableList<Player?>,                     // tamaño siempre 5
+    private val benchPlayers: MutableList<Player?>, // tamaño siempre 5
     private val onChanged: () -> Unit,
     private val onDropFromField: (toIndex: Int, fromFieldIndex: Int) -> Unit,
     private val onClickSlot: (index: Int) -> Unit
