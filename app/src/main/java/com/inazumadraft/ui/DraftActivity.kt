@@ -578,7 +578,7 @@ class DraftActivity : AppCompatActivity() {
                 updateTitle()
                 drawSlots()
             },
-            canAcceptFromField = { _, _ -> true } // en banquillo la posición no importa
+
         )
 
 

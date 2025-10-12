@@ -25,7 +25,7 @@ class BenchSelectedAdapter(
     private val benchPlayers: MutableList<Player>,                // lista con 0..5 elementos
     private val onChanged: () -> Unit,                            // para actualizar título/UI
     private val onDropFromField: (toIndex: Int, fromFieldIndex: Int) -> Unit,
-    canAcceptFromField: Any
+
 ) : RecyclerView.Adapter<BenchSelectedAdapter.VH>() {
 
     override fun getItemCount(): Int = 5
