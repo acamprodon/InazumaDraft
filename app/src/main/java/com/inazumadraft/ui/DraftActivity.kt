@@ -334,7 +334,7 @@ class DraftActivity : AppCompatActivity() {
                 fieldLayout.post { drawSlots() }
             },
             onLongClick = { player ->
-                showPreviewOnLongPress(slotIndex, player, dialog)
+                showPreviewOnLongPress(slotIndex, player, dialog, options)
             }
         )
 
@@ -342,14 +342,19 @@ class DraftActivity : AppCompatActivity() {
     }
 
     // ---------- PREVIEW DINÁMICO ----------
-    private fun showPreviewOnLongPress(slotIndex: Int, player: Player, dialog: android.app.Dialog) {
+    private fun showPreviewOnLongPress(
+        slotIndex: Int,
+        player: Player,
+        dialog: android.app.Dialog,
+        currentOptions: List<Player>
+    ) {
         val slot = slots[slotIndex]
         val backupSlots = slots.map { it.copy() }
 
-        // Cerramos el diálogo para que el campo quede visible
+        // Cerramos el diálogo
         dialog.dismiss()
 
-        // Mostramos el jugador en el campo real
+        // Mostrar el jugador en el campo real
         slots[slotIndex].player = player
         drawSlots()
 
@@ -360,27 +365,22 @@ class DraftActivity : AppCompatActivity() {
                 ?.setBackgroundResource(R.drawable.captain_border)
         }
 
-        // Efecto de entrada (fade-in)
-        fieldLayout.animate().alpha(1f).setDuration(150).start()
-
-        // Activamos el overlay sutil
+        // Activar overlay (detectar cuando suelta el dedo)
         overlayPreview.visibility = View.VISIBLE
         overlayPreview.alpha = 0f
-        overlayPreview.animate().alpha(0.25f).setDuration(150).start()
+        overlayPreview.animate().alpha(0.25f).setDuration(100).start()
 
-        // Al soltar el dedo, restauramos y reabrimos automáticamente el player picker
         overlayPreview.setOnTouchListener { _, event ->
             if (event.action == MotionEvent.ACTION_UP || event.action == MotionEvent.ACTION_CANCEL) {
-                // Restaurar alineación
+                // Restaurar campo original
                 for (i in slots.indices) {
                     slots[i].player = backupSlots[i].player
                 }
                 drawSlots()
 
-                overlayPreview.animate().alpha(0f).setDuration(150).withEndAction {
+                overlayPreview.animate().alpha(0f).setDuration(100).withEndAction {
                     overlayPreview.visibility = View.GONE
-                    // Reabrimos el diálogo automáticamente
-                    reopenPlayerPicker(slotIndex)
+                    reopenSamePlayerPicker(slotIndex, currentOptions)
                 }.start()
 
                 overlayPreview.setOnTouchListener(null)
@@ -389,19 +389,8 @@ class DraftActivity : AppCompatActivity() {
         }
     }
 
-
-    private fun reopenPlayerPicker(slotIndex: Int) {
+    private fun reopenSamePlayerPicker(slotIndex: Int, sameOptions: List<Player>) {
         val slot = slots[slotIndex]
-
-        val updatedOptions = PlayerRepository.players
-            .filter {
-                it.position.equals(slot.role, ignoreCase = true) &&
-                        it != captain &&
-                        it !in selectedPlayers &&
-                        it !in slots.mapNotNull { s -> s.player }
-            }
-            .shuffled()
-            .take(4)
 
         val dialogView = layoutInflater.inflate(R.layout.layout_player_picker, null)
         val dialog = android.app.Dialog(this, R.style.CenterDialogTheme)
@@ -409,13 +398,13 @@ class DraftActivity : AppCompatActivity() {
 
         val title = dialogView.findViewById<TextView>(R.id.txtTitle)
         val rvPicker = dialogView.findViewById<RecyclerView>(R.id.rvPickerOptions)
-        title.text = "Elige ${codeToLabel(slot.role)}"
 
+        title.text = "Elige ${codeToLabel(slot.role)}"
         rvPicker.layoutManager = GridLayoutManager(this, 2)
         rvPicker.setHasFixedSize(true)
 
         rvPicker.adapter = OptionAdapter(
-            updatedOptions,
+            sameOptions,
             onClick = { chosen ->
                 slots[slotIndex].player = chosen
                 selectedPlayers.add(chosen)
@@ -423,7 +412,7 @@ class DraftActivity : AppCompatActivity() {
                 fieldLayout.post { drawSlots() }
             },
             onLongClick = { player ->
-                showPreviewOnLongPress(slotIndex, player, dialog)
+                showPreviewOnLongPress(slotIndex, player, dialog, sameOptions)
             }
         )
 
