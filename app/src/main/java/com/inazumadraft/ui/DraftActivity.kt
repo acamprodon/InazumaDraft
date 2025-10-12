@@ -14,7 +14,7 @@ import com.inazumadraft.data.Formation
 import com.inazumadraft.data.PlayerRepository
 import com.inazumadraft.data.formations
 import com.inazumadraft.model.Player
-
+import android.widget.ImageView
 class DraftActivity : AppCompatActivity() {
 
 
@@ -161,23 +161,30 @@ class DraftActivity : AppCompatActivity() {
 
         rvOptions.layoutManager = GridLayoutManager(this, 2)
 
-        rvOptions.adapter = OptionAdapter(options) { player ->
-            captain = player
-            roundTitle.text = "Capitán: ${player.name}\nToca los huecos para rellenar la alineación"
+        rvOptions.adapter = OptionAdapter(
+            players = options,
+            onClick = { player ->
+                captain = player
+                roundTitle.text = "Capitán: ${player.name}\nToca los huecos para rellenar la alineación"
 
-            // Construir plantilla de slots y colocar capitán
-            buildSlotsTemplateAndPlaceCaptain()
+                buildSlotsTemplateAndPlaceCaptain()
 
-            // Mostrar campo y dibujar cuando ya tenga medidas
-            fieldLayout.visibility = View.VISIBLE
-            rvOptions.visibility = View.GONE
-            btnNext.visibility = View.GONE
+                fieldLayout.visibility = View.VISIBLE
+                rvOptions.visibility = View.GONE
+                btnNext.visibility = View.GONE
 
-            fieldLayout.post {
-                fieldLayout.bringToFront()
-                drawSlots()
+                fieldLayout.post {
+                    fieldLayout.bringToFront()
+                    drawSlots()
+                }
+            },
+            onLongClick = { player ->
+                // 👇 aquí puedes hacer algo visual si lo deseas (por ejemplo, mostrar el campo)
+                fieldLayout.visibility = View.VISIBLE
+                rvOptions.alpha = 0.4f // mostrar parcialmente la lista mientras se ve el campo
             }
-        }
+        )
+
     }
 
 
@@ -328,9 +335,9 @@ class DraftActivity : AppCompatActivity() {
             .shuffled()
             .take(4)
 
-        // 🧩 Creamos un BottomSheet flotante
+        // 🧩 Creamos un diálogo centrado
         val dialogView = layoutInflater.inflate(R.layout.layout_player_picker, null)
-        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        val dialog = android.app.Dialog(this, R.style.CenterDialogTheme)
         dialog.setContentView(dialogView)
 
         val title = dialogView.findViewById<TextView>(R.id.txtTitle)
@@ -340,25 +347,24 @@ class DraftActivity : AppCompatActivity() {
         title.text = "Elige ${codeToLabel(role)}"
         rvPicker.layoutManager = GridLayoutManager(this, 2)
 
-        rvPicker.adapter = OptionAdapter(options) { chosen ->
-            slots[slotIndex].player = chosen
-            selectedPlayers.add(chosen)
-            dialog.dismiss()
-            fieldLayout.post { drawSlots() }
-        }
-
-        // 👇 Si mantiene presionado un jugador, se muestra la vista previa del campo
-        rvPicker.addOnItemTouchListener(
-            androidx.recyclerview.widget.RecyclerView.SimpleOnItemTouchListener()
+        rvPicker.adapter = OptionAdapter(
+            options,
+            onClick = { chosen ->
+                slots[slotIndex].player = chosen
+                selectedPlayers.add(chosen)
+                dialog.dismiss()
+                fieldLayout.post { drawSlots() }
+            },
+            onLongClick = {
+                // 👇 Si se mantiene pulsado, se muestra la vista previa del campo
+                preview.visibility = View.VISIBLE
+                preview.bringToFront()
+            }
         )
-
-        // Configura evento de mantener pulsado
-        (rvPicker.adapter as OptionAdapter).apply {
-            // Reutiliza tu adaptador añadiendo un callback opcional
-        }
 
         dialog.show()
     }
+
 
     // ------------------------------------------------------------------------
     // Construcción del equipo final según el orden de la formación

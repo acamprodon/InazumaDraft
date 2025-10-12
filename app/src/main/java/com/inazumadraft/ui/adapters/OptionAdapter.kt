@@ -11,7 +11,8 @@ import com.inazumadraft.model.Player
 
 class OptionAdapter(
     private val players: List<Player>,
-    private val onClick: (Player) -> Unit
+    private val onClick: (Player) -> Unit,
+    private val onLongClick: ((Player) -> Unit)? = null // 👈 Nuevo parámetro
 ) : RecyclerView.Adapter<OptionAdapter.OptionViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): OptionViewHolder {
@@ -35,6 +36,14 @@ class OptionAdapter(
             txtPlayerName.text = player.name
             imgPlayer.setImageResource(player.image)
             imgElement.setImageResource(player.element)
+
             itemView.setOnClickListener { onClick(player) }
+
+            // 👇 Nuevo: mantener pulsado muestra el campo
+            itemView.setOnLongClickListener {
+                onLongClick?.invoke(player)
+                true
+            }
         }
-    }}
+    }
+}

@@ -1,0 +1,8 @@
+<resources>
+    <style name="CenterDialogTheme" parent="Theme.AppCompat.Dialog">
+        <item name="android:windowMinWidthMajor">80%</item>
+        <item name="android:windowMinWidthMinor">80%</item>
+        <item name="android:windowBackground">@drawable/bg_dialog_center</item>
+        <item name="android:backgroundDimEnabled">true</item>
+    </style>
+</resources>
