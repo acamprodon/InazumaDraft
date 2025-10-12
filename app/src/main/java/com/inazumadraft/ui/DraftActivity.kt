@@ -19,6 +19,7 @@ import com.inazumadraft.model.Player
 
 class DraftActivity : AppCompatActivity() {
 
+    private lateinit var overlayPreview: View
     private lateinit var fieldLayout: RelativeLayout
     private lateinit var btnFormation1: Button
     private lateinit var btnFormation2: Button
@@ -74,6 +75,7 @@ class DraftActivity : AppCompatActivity() {
         rvOptions.visibility = View.GONE
         fieldLayout.visibility = View.GONE
         findViewById<View>(R.id.formationButtonsLayout).bringToFront()
+        overlayPreview = findViewById(R.id.overlayPreview)
         formationLocked = false
     }
 
@@ -322,23 +324,45 @@ class DraftActivity : AppCompatActivity() {
                 fieldLayout.post { drawSlots() }
             },
             onLongClick = { player ->
-                // Preview dinámico en el campo real
+                dialog.dismiss() // cerramos el diálogo para ver el campo
+
                 val backupSlots = slots.map { it.copy() }
+
+                // Mostramos el jugador en el campo real
                 slots[slotIndex].player = player
+                fieldLayout.visibility = View.VISIBLE
                 drawSlots()
 
-                rvPicker.setOnTouchListener { _, event ->
+                // Mostramos overlay para oscurecer el fondo
+                overlayPreview.visibility = View.VISIBLE
+                overlayPreview.animate().alpha(0.3f).setDuration(150).start()
+
+                // Esperamos a que suelte el dedo
+                overlayPreview.setOnTouchListener { _, event ->
                     if (event.action == MotionEvent.ACTION_UP || event.action == MotionEvent.ACTION_CANCEL) {
                         // Restaurar alineación original
                         for (i in slots.indices) {
                             slots[i].player = backupSlots[i].player
                         }
                         drawSlots()
-                        rvPicker.setOnTouchListener(null)
+
+                        // Ocultamos overlay
+                        overlayPreview.animate().alpha(0f).setDuration(150).withEndAction {
+                            overlayPreview.visibility = View.GONE
+                        }.start()
+
+                        // Volvemos a abrir el diálogo de elección
+                        showOptionsForSlot(slotIndex)
+
+                        overlayPreview.setOnTouchListener(null)
                     }
-                    false
+                    true
                 }
-            }
+
+
+
+    }
+
         )
 
         dialog.show()
