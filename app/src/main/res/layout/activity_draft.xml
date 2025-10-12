@@ -4,7 +4,7 @@
         android:id="@+id/draftLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#202a44"><include layout="@layout/layout_bench_panel"/>
+        android:background="#202a44">
     <View
             android:id="@+id/overlayPreview"
             android:layout_width="match_parent"
@@ -195,7 +195,7 @@
         </LinearLayout>
 
     </GridLayout>
-
+    <include layout="@layout/layout_bench_panel"/>
 
 </RelativeLayout>
 
