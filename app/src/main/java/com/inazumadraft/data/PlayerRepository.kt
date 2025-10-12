@@ -30,6 +30,15 @@ object PlayerRepository {
         Player("Thomas Feldt","Feldt", "PT", R.drawable.bosque, 65, 70, 75, 84, R.drawable.feldt),
         Player("Nathan Jones", "Mask", "PT", R.drawable.aire, 63, 78, 75, 80, R.drawable.mask ),
         Player("Troy Moon", "Wolfy", "MC", R.drawable.fuego, 78, 82, 79, 70, R.drawable.wolfy),
+        Player("Russell Walk", "Styx", "DF", R.drawable.bosque,62, 74, 70, 75, R.drawable.styx ),
+        Player("Jason Jones", "Creepy", "DF", R.drawable.aire, 58, 72,68,71,R.drawable.creepy),
+        Player("Ken Furan", "Franky", "DF", R.drawable.earth, 50, 35, 65, 77, R.drawable.franky) ,
+        Player("Jerry Fulton", "Undead", "DF", R.drawable.fuego, 51, 51, 59, 71, R.drawable.undead),
+        Player("Ray Mannigs", "Jiangshi", "MC", R.drawable.aire, 65, 72, 70, 62, R.drawable.jiangshi),
+        Player("Robert Mayer", "Mummy", "MC", R.drawable.bosque, 66, 68, 71, 64, R.drawable.mummy),
+        Player("Alexander Brave", "Grave", "MC", R.drawable.aire, 55 ,72, 67 ,75, R.drawable.grave),
+        Player("Johan Tassman", "Talisman", "DL", R.drawable.bosque, 85, 80, 75, 65, R.drawable.talisman),
+        Player("Burt Wolf", "Blood", "MC", R.drawable.earth, 79, 80 ,77, 75, R.drawable.blood),
 
         )
 
