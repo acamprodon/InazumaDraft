@@ -9,13 +9,20 @@
             android:id="@+id/rvOptions"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@id/formationButtonsLayout"
+            android:layout_below="@id/roundTitle"
             android:layout_marginTop="16dp"
             android:padding="8dp"
             android:visibility="gone"
             android:background="#151c30" />
 
-
+    <RelativeLayout
+            android:id="@+id/fieldLayout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_above="@id/btnNext"
+            android:layout_below="@id/rvOptions"
+            android:background="@drawable/football_field"
+            android:visibility="gone" />
     <!-- Título -->
     <TextView
             android:id="@+id/roundTitle"

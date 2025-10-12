@@ -44,7 +44,7 @@ class DraftActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_draft)
 
-        // 1️⃣ Inicializar vistas primero
+        // ✅ 1️⃣ Inicializar TODAS las vistas antes de usarlas
         fieldLayout = findViewById(R.id.fieldLayout)
         btnFormation1 = findViewById(R.id.btnFormation1)
         btnFormation2 = findViewById(R.id.btnFormation2)
@@ -54,10 +54,10 @@ class DraftActivity : AppCompatActivity() {
         btnNext = findViewById(R.id.btnNext)
         roundTitle = findViewById(R.id.roundTitle)
 
-        // 2️⃣ Ahora que todo está inicializado, ya puedes usar fieldLayout
+        // ✅ 2️⃣ Ahora ya puedes llamar a refreshVisibleFormations()
         refreshVisibleFormations()
 
-        // 3️⃣ Configurar listeners
+        // ✅ 3️⃣ Configurar listeners
         btnFormation1.setOnClickListener { selectFormationByIndex(0) }
         btnFormation2.setOnClickListener { selectFormationByIndex(1) }
         btnFormation3.setOnClickListener { selectFormationByIndex(2) }
@@ -75,6 +75,7 @@ class DraftActivity : AppCompatActivity() {
             }
         }
     }
+
 
 
     // ------------------------------------------------------------------------
