@@ -335,18 +335,13 @@ class DraftActivity : AppCompatActivity() {
             },
             onLongClick = { player ->
                 showPreviewOnLongPress(slotIndex, player, dialog, options)
-            },
-            onReleaseAfterLongClick = {
-                // Cuando suelta el dedo, reabrimos el picker con los mismos jugadores
-                reopenSamePlayerPicker(slotIndex, options)
             }
         )
-
 
         dialog.show()
     }
 
-    // ---------- PREVIEW DINÁMICO ----------
+    // ---------- PREVIEW FLUIDO ----------
     private fun showPreviewOnLongPress(
         slotIndex: Int,
         player: Player,
@@ -355,45 +350,38 @@ class DraftActivity : AppCompatActivity() {
     ) {
         val backupSlots = slots.map { it.copy() }
 
-        // Cerrar el diálogo actual para liberar el foco
+        // Cerrar diálogo para mostrar campo
         dialog.dismiss()
 
-        // Mostrar el jugador en el campo real
+        // Mostrar jugador temporal
         slots[slotIndex].player = player
         drawSlots()
 
-        // Resaltar jugador temporalmente
+        // Borde dorado
         fieldLayout.post {
             val slotView = fieldLayout.getChildAt(slotIndex)
             slotView?.findViewById<ImageView>(R.id.imgPlayer)
                 ?.setBackgroundResource(R.drawable.captain_border)
         }
 
-        // Mostrar overlay visual suave
         overlayPreview.visibility = View.VISIBLE
         overlayPreview.alpha = 0f
         overlayPreview.animate().alpha(0.25f).setDuration(100).start()
 
-        // ⚡ Espera 300 ms para que el usuario vea el preview
+        // Pequeño retardo y reapertura sincronizada
         overlayPreview.postDelayed({
-            // Restaurar alineación original
             for (i in slots.indices) {
                 slots[i].player = backupSlots[i].player
             }
             drawSlots()
 
-            // Quitar overlay con animación suave
             overlayPreview.animate().alpha(0f).setDuration(150).withEndAction {
                 overlayPreview.visibility = View.GONE
                 overlayPreview.setOnTouchListener(null)
-
-                // Reabrir el mismo player picker con las mismas opciones
                 reopenSamePlayerPicker(slotIndex, currentOptions)
             }.start()
         }, 300)
     }
-
-
 
     private fun reopenSamePlayerPicker(slotIndex: Int, sameOptions: List<Player>) {
         val slot = slots[slotIndex]
