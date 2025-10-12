@@ -16,8 +16,9 @@ import com.inazumadraft.data.Formation
 import com.inazumadraft.data.PlayerRepository
 import com.inazumadraft.data.formations
 import com.inazumadraft.model.Player
+import com.inazumadraft.model.canPlay
 
-// Drag & drop imports
+// Drag & drop
 import android.content.ClipData
 import android.os.Build
 import android.view.DragEvent
@@ -42,10 +43,8 @@ class DraftActivity : AppCompatActivity() {
     private val slots: MutableList<Slot> = mutableListOf()
     private val selectedPlayers: MutableList<Player> = mutableListOf()
     private var captain: Player? = null
-
     private var rowSpec: List<Int> = emptyList()
 
-    // Flag para bloquear clicks durante el preview
     private var isPreviewing = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -169,7 +168,6 @@ class DraftActivity : AppCompatActivity() {
         rvOptions.layoutManager = GridLayoutManager(this, 2)
         rvOptions.setHasFixedSize(true)
 
-        // IMPORTANTE: pasar onClick (requerido por OptionAdapter)
         rvOptions.adapter = OptionAdapter(
             players = options,
             onClick = { player ->
@@ -223,8 +221,9 @@ class DraftActivity : AppCompatActivity() {
         repeat(nDF) { slots.add(Slot("DF")) }
         repeat(nPT) { slots.add(Slot("PT")) }
 
+        // 👉 Coloca al capitán en el primer hueco compatible (principal o secundario)
         captain?.let { cap ->
-            val idx = slots.indexOfFirst { it.role.equals(cap.position, ignoreCase = true) && it.player == null }
+            val idx = slots.indexOfFirst { slot -> slot.player == null && cap.canPlay(slot.role) }
             if (idx >= 0) {
                 slots[idx].player = cap
                 selectedPlayers.add(cap)
@@ -293,7 +292,7 @@ class DraftActivity : AppCompatActivity() {
 
                 val indexForClick = slotGlobalIndex
 
-                // CLICK NORMAL: si está vacío, abrir selector
+                // CLICK: si está vacío, abrir selector
                 slotView.setOnClickListener {
                     if (isPreviewing) return@setOnClickListener
                     if (slots[indexForClick].player == null) {
@@ -301,7 +300,7 @@ class DraftActivity : AppCompatActivity() {
                     }
                 }
 
-                // LONG CLICK PARA INICIAR DRAG (solo si hay jugador)
+                // LONG CLICK: iniciar arrastre si hay jugador
                 if (slot.player != null) {
                     slotView.setOnLongClickListener {
                         val shadow = View.DragShadowBuilder(it)
@@ -317,7 +316,7 @@ class DraftActivity : AppCompatActivity() {
                     }
                 }
 
-                // DRAG LISTENER (drop/intercambio usando localState)
+                // DRAG LISTENER: drop/intercambio con localState
                 slotView.setOnDragListener { v, event ->
                     when (event.action) {
                         DragEvent.ACTION_DRAG_STARTED -> true
@@ -354,11 +353,11 @@ class DraftActivity : AppCompatActivity() {
         val role = slot.role.uppercase()
 
         val options = PlayerRepository.players
-            .filter {
-                it.position.equals(role, ignoreCase = true) &&
-                        it != captain &&
-                        it !in selectedPlayers &&
-                        it !in slots.mapNotNull { s -> s.player }
+            .filter { p ->
+                p.canPlay(role) &&
+                        p != captain &&
+                        p !in selectedPlayers &&
+                        p !in slots.mapNotNull { s -> s.player }
             }
             .shuffled()
             .take(4)
@@ -390,7 +389,7 @@ class DraftActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    // ---------- PREVIEW CON BLOQUEO ----------
+    // ---------- PREVIEW ----------
     private fun showPreviewOnLongPress(
         slotIndex: Int,
         player: Player,
@@ -398,43 +397,33 @@ class DraftActivity : AppCompatActivity() {
         currentOptions: List<Player>
     ) {
         val backup = slots.map { it.copy() }
-
-        // Bloquear interacciones
         isPreviewing = true
-
-        // Cerrar el diálogo y mostrar preview
         dialog.dismiss()
+
         slots[slotIndex].player = player
         drawSlots()
 
-        // Resalta jugador
         fieldLayout.post {
             fieldLayout.getChildAt(slotIndex)
                 ?.findViewById<ImageView>(R.id.imgPlayer)
                 ?.setBackgroundResource(R.drawable.captain_border)
         }
 
-        // Mostrar overlay y capturar todos los toques
         overlayPreview.visibility = View.VISIBLE
         overlayPreview.alpha = 0.25f
 
         overlayPreview.setOnTouchListener { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    // Restaurar campo
                     for (i in slots.indices) slots[i].player = backup[i].player
                     drawSlots()
-
-                    // Desbloquear e invisibilizar
                     isPreviewing = false
                     overlayPreview.visibility = View.GONE
                     overlayPreview.setOnTouchListener(null)
-
-                    // Reabrir picker con mismas opciones
                     reopenSamePlayerPicker(slotIndex, currentOptions)
                     true
                 }
-                else -> true // Consumir todos los toques
+                else -> true
             }
         }
     }

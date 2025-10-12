@@ -15,8 +15,9 @@ import com.inazumadraft.R
 import com.inazumadraft.data.formations
 import com.inazumadraft.data.formationCoordinates
 import com.inazumadraft.model.Player
+import com.inazumadraft.model.canPlay
 
-// Drag & drop imports
+// Drag & drop
 import android.content.ClipData
 import android.os.Build
 import android.view.DragEvent
@@ -28,36 +29,29 @@ class FinalTeamActivity : AppCompatActivity() {
     private lateinit var btnNewTeam: FloatingActionButton
     private lateinit var recyclerFinalTeam: RecyclerView
 
-    // Trabajamos con una lista mutable para poder intercambiar al vuelo
     private val playerSlots = mutableListOf<Player?>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_final_team)
 
-        // Bind views
         fieldLayout = findViewById(R.id.fieldLayout)
         btnToggleView = findViewById(R.id.btnToggleView)
         recyclerFinalTeam = findViewById(R.id.recyclerFinalTeam)
         btnNewTeam = findViewById(R.id.btnNewTeam)
 
-        // Datos recibidos
         val team = intent.getParcelableArrayListExtra<Player>("finalTeam") ?: arrayListOf()
         val formationName = intent.getStringExtra("formation") ?: "4-4-2"
         val captainName = intent.getStringExtra("captainName")
 
-        // Inicializamos slots
         playerSlots.clear()
         playerSlots.addAll(team)
 
-        // Dibuja el campo cuando ya haya medidas
-        fieldLayout.post { drawTemplateAndFill(formationName, captainName) }
+        fieldLayout.post { drawTemplateAndFill(team, formationName, captainName) }
 
-        // Configura lista de estadísticas
         recyclerFinalTeam.layoutManager = LinearLayoutManager(this)
         recyclerFinalTeam.adapter = FinalTeamAdapter(team)
 
-        // Botón alternar vista
         btnToggleView.setOnClickListener {
             if (recyclerFinalTeam.visibility == View.GONE) {
                 recyclerFinalTeam.visibility = View.VISIBLE
@@ -70,7 +64,6 @@ class FinalTeamActivity : AppCompatActivity() {
             }
         }
 
-        // Botón crear nuevo equipo
         btnNewTeam.setOnClickListener {
             val intent = Intent(this@FinalTeamActivity, DraftActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
@@ -96,14 +89,13 @@ class FinalTeamActivity : AppCompatActivity() {
     }
 
     /**
-     * Dibuja el campo con los jugadores en su formación + drag & drop entre slots.
+     * Dibuja el campo con jugadores + drag & drop.
      */
-    private fun drawTemplateAndFill(formationName: String, captainName: String?) {
+    private fun drawTemplateAndFill(playersIn: List<Player>, formationName: String, captainName: String?) {
         fieldLayout.removeAllViews()
 
         val formation = formations.firstOrNull { it.name == formationName } ?: return
 
-        // --- Medidas de la carta ---
         val d = resources.displayMetrics.density
         var cardW = 100f * d
         var cardH = cardW * 1.25f
@@ -115,31 +107,45 @@ class FinalTeamActivity : AppCompatActivity() {
             cardH = cardW * 1.25f
         }
 
-        // Intento con coordenadas reales si existen
+        // --- Coordenadas si existen ---
         val coords = formationCoordinates[formationName]
         if (coords != null && coords.size == formation.positions.size) {
-
-            // Banda visible del campo (compacta verticalmente)
             val topBand = 0.08f
             val bottomBand = 0.96f
             fun mapY(y: Float): Float = (topBand + y * (bottomBand - topBand)).coerceIn(0f, 1f)
 
-            coords.forEachIndexed { index, (x, yRaw) ->
+            // Ordenar jugadores por formación usando multiposición
+            val pool = playerSlots.toMutableList()
+            fun take(role: String): Player? {
+                val i = pool.indexOfFirst { it?.canPlay(role) == true }
+                return if (i >= 0) pool.removeAt(i) else null
+            }
+
+            val playersByFormationOrder: List<Player?> = formation.positions.map { pos ->
+                when (toCode(pos)) {
+                    "PT" -> take("PT")
+                    "DF" -> take("DF")
+                    "MC" -> take("MC")
+                    "DL" -> take("DL")
+                    else -> null
+                }
+            }
+
+            coords.forEachIndexed { i, (x, yRaw) ->
                 val y = mapY(yRaw)
                 val view = layoutInflater.inflate(R.layout.item_player_field, fieldLayout, false)
                 val img = view.findViewById<ImageView>(R.id.imgPlayer)
-                // ⚠️ Usa SIEMPRE txtPlayerNickname (tu layout no tiene txtPlayerName)
                 val name = view.findViewById<TextView>(R.id.txtPlayerNickname)
                 val elem = view.findViewById<ImageView>(R.id.imgElement)
 
-                val p = playerSlots.getOrNull(index)
+                val p = playersByFormationOrder[i]
                 if (p != null) {
                     img.setImageResource(p.image)
                     name.text = p.nickname
                     elem.setImageResource(p.element)
                     if (p.name == captainName) img.setBackgroundResource(R.drawable.captain_border)
                 } else {
-                    name.text = codeToNice(toCode(formation.positions[index]))
+                    name.text = codeToNice(toCode(formation.positions[i]))
                     elem.setImageResource(0)
                     img.setImageResource(0)
                 }
@@ -149,16 +155,16 @@ class FinalTeamActivity : AppCompatActivity() {
                 lp.topMargin = (fieldLayout.height * y - cardH / 2f).toInt()
                 view.layoutParams = lp
 
-                // --- DRAG & DROP CONFIG ---
+                // Drag & drop
                 if (p != null) {
                     view.setOnLongClickListener {
-                        val clipData = ClipData.newPlainText("fromIndex", index.toString())
+                        val clipData = ClipData.newPlainText("fromIndex", i.toString())
                         val shadow = View.DragShadowBuilder(it)
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                            it.startDragAndDrop(clipData, shadow, index, 0)
+                            it.startDragAndDrop(clipData, shadow, i, 0)
                         } else {
                             @Suppress("DEPRECATION")
-                            it.startDrag(clipData, shadow, index, 0)
+                            it.startDrag(clipData, shadow, i, 0)
                         }
                         it.alpha = 0.5f
                         true
@@ -172,11 +178,11 @@ class FinalTeamActivity : AppCompatActivity() {
                         DragEvent.ACTION_DRAG_EXITED -> { v.alpha = 1f; true }
                         DragEvent.ACTION_DROP -> {
                             val from = event.localState as? Int
-                            if (from != null && from != index) {
+                            if (from != null && from != i) {
                                 val tmp = playerSlots[from]
-                                playerSlots[from] = playerSlots[index]
-                                playerSlots[index] = tmp
-                                drawTemplateAndFill(formationName, captainName)
+                                playerSlots[from] = playerSlots[i]
+                                playerSlots[i] = tmp
+                                drawTemplateAndFill(playersIn, formationName, captainName)
                             }
                             true
                         }
@@ -188,10 +194,10 @@ class FinalTeamActivity : AppCompatActivity() {
                 fieldLayout.addView(view)
             }
 
-            return // Ya dibujado con coordenadas
+            return
         }
 
-        // --- Fallback por filas (por si no hay coordenadas) ---
+        // --- Fallback por filas (con multiposición) ---
         val codes = formation.positions.map { toCode(it) }
 
         val nPT = codes.count { it == "PT" }
@@ -234,12 +240,12 @@ class FinalTeamActivity : AppCompatActivity() {
             else -> "PT"
         }
 
-        // Ordenar players en el mismo orden que los slots
         val pool = playerSlots.toMutableList()
         fun takeOne(role: String): Player? {
-            val idx = pool.indexOfFirst { it?.position.equals(role, ignoreCase = true) }
+            val idx = pool.indexOfFirst { it?.canPlay(role) == true }
             return if (idx >= 0) pool.removeAt(idx) else null
         }
+
         val orderedForTemplate = mutableListOf<Player?>().apply {
             repeat(nDL) { add(takeOne("DL")) }
             repeat(nMC) { add(takeOne("MC")) }
@@ -267,7 +273,6 @@ class FinalTeamActivity : AppCompatActivity() {
 
                 val view = layoutInflater.inflate(R.layout.item_player_field, fieldLayout, false)
                 val img = view.findViewById<ImageView>(R.id.imgPlayer)
-                // ⚠️ Usa SIEMPRE txtPlayerNickname
                 val name = view.findViewById<TextView>(R.id.txtPlayerNickname)
                 val elem = view.findViewById<ImageView>(R.id.imgElement)
 
@@ -275,7 +280,9 @@ class FinalTeamActivity : AppCompatActivity() {
                     img.setImageResource(p.image)
                     name.text = p.nickname
                     elem.setImageResource(p.element)
-                    if (p.name == captainName) img.setBackgroundResource(R.drawable.captain_border)
+                    // captain border
+                    val capName = captainName
+                    if (capName != null && p.name == capName) img.setBackgroundResource(R.drawable.captain_border)
                 } else {
                     name.text = codeToNice(roleForRow(rowIdx))
                     elem.setImageResource(0)
@@ -287,7 +294,7 @@ class FinalTeamActivity : AppCompatActivity() {
                 lp.topMargin = (yCenter - cardH / 2f).toInt()
                 view.layoutParams = lp
 
-                // ----- DRAG & DROP -----
+                // Drag & drop
                 if (p != null) {
                     view.setOnLongClickListener {
                         val clipData = ClipData.newPlainText("fromIndex", index.toString())
@@ -314,7 +321,7 @@ class FinalTeamActivity : AppCompatActivity() {
                                 val tmp = playerSlots[from]
                                 playerSlots[from] = playerSlots[index]
                                 playerSlots[index] = tmp
-                                drawTemplateAndFill(formationName, captainName)
+                                drawTemplateAndFill(playersIn, formationName, captainName)
                             }
                             true
                         }

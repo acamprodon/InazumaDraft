@@ -6,7 +6,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.inazumadraft.R
-import com.inazumadraft.model.Player // Asegúrate de que Player exista y sea Parcelable
+import com.inazumadraft.model.Player
 import android.widget.ImageView
 
 class FinalTeamAdapter(private val players: List<Player>) :
@@ -29,12 +29,33 @@ class FinalTeamAdapter(private val players: List<Player>) :
     override fun getItemCount(): Int = players.size
 
     override fun onBindViewHolder(holder: PlayerViewHolder, position: Int) {
-        val player = players[position]
-        holder.txtPlayerName.text = player.name
-        holder.txtPlayerPosition.text = player.position
-        holder.imgPlayer.setImageResource(player.image)
-        holder.imgElement.setImageResource(player.element)
+        val p = players[position]
+
+        // Imagen y nombre
+        holder.imgPlayer.setImageResource(p.image)
+        holder.imgElement.setImageResource(p.element)
+        holder.txtPlayerName.text = p.name
+
+        // ---- Posición principal + secundarias ----
+        fun label(code: String): String = when (code.trim().uppercase()) {
+            "PT" -> "PT"
+            "DF" -> "DF"
+            "MC" -> "MC"
+            "DL" -> "DL"
+            else -> code.uppercase()
+        }
+
+        val primary = label(p.position)
+        val seconds = p.secondaryPositions
+            .filter { it.isNotBlank() }
+            .map { label(it) }
+
+        holder.txtPlayerPosition.text =
+            if (seconds.isNotEmpty()) "$primary (${seconds.joinToString(", ")})"
+            else primary
+
+        // Stats
         holder.txtStats.text =
-            "Tiro: ${player.kick} | Vel: ${player.speed} | Ctrl: ${player.control} | Def: ${player.defense}"
+            "Tiro: ${p.kick} | Vel: ${p.speed} | Ctrl: ${p.control} | Def: ${p.defense}"
     }
 }
