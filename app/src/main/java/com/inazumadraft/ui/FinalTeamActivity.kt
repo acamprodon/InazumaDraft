@@ -136,13 +136,14 @@ class FinalTeamActivity : AppCompatActivity() {
                 val y = mapY(yRaw)
                 val view = layoutInflater.inflate(R.layout.item_player_field, fieldLayout, false)
                 val img = view.findViewById<ImageView>(R.id.imgPlayer)
-                val name = view.findViewById<TextView>(R.id.txtPlayerName)
+                val name = view.findViewById<TextView>(R.id.txtPlayerNickname)
                 val elem = view.findViewById<ImageView>(R.id.imgElement)
+
 
                 val p = playersByFormationOrder[i]
                 if (p != null) {
                     img.setImageResource(p.image)
-                    name.text = p.name
+                    name.text = p.nickname
                     elem.setImageResource(p.element)
                     if (p.name == captainName) img.setBackgroundResource(R.drawable.captain_border)
                 } else {
