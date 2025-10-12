@@ -356,27 +356,46 @@ class DraftActivity : AppCompatActivity() {
         val slot = slots[slotIndex]
         val backupSlots = slots.map { it.copy() }
 
-        // Cerramos el diálogo
-        dialog.dismiss()
+        // ⚡ Hacemos el diálogo invisible (no lo destruimos)
+        dialog.window?.decorView?.alpha = 0f
 
-        // Mostrar el jugador en el campo real
+        // Mostramos al jugador en el campo real
         slots[slotIndex].player = player
         drawSlots()
 
-        // Borde dorado temporal
+        // Resaltamos el jugador temporalmente
         fieldLayout.post {
             val slotView = fieldLayout.getChildAt(slotIndex)
             slotView?.findViewById<ImageView>(R.id.imgPlayer)
                 ?.setBackgroundResource(R.drawable.captain_border)
         }
 
-        // Activar overlay (detectar cuando suelta el dedo)
+        // Pequeña animación de enfoque
         overlayPreview.visibility = View.VISIBLE
         overlayPreview.alpha = 0f
         overlayPreview.animate().alpha(0.25f).setDuration(100).start()
 
+        // Detectar cuándo el usuario suelta el dedo (ACTION_UP)
+        overlayPreview.setOnTouchListener { _, event ->
+            if (event.action == MotionEvent.ACTION_UP || event.action == MotionEvent.ACTION_CANCEL) {
+                // Restaurar alineación original
+                for (i in slots.indices) {
+                    slots[i].player = backupSlots[i].player
+                }
+                drawSlots()
 
+                // Quitamos overlay y reabrimos diálogo
+                overlayPreview.animate().alpha(0f).setDuration(150).withEndAction {
+                    overlayPreview.visibility = View.GONE
+                    dialog.window?.decorView?.animate()?.alpha(1f)?.setDuration(150)?.start()
+                }.start()
+
+                overlayPreview.setOnTouchListener(null)
+            }
+            true
+        }
     }
+
 
     private fun reopenSamePlayerPicker(slotIndex: Int, sameOptions: List<Player>) {
         val slot = slots[slotIndex]
