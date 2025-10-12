@@ -5,10 +5,12 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.view.DragEvent
+import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.RelativeLayout
 import android.widget.TextView
@@ -518,8 +520,6 @@ class DraftActivity : AppCompatActivity() {
         return result
     }
 
-    // ---------- BANQUILLO: drawer con picks fijos ----------
-    // ---------- BANQUILLO: drawer con 5 huecos fijos + pestaña ----------
     private fun setupBenchPanel() {
         val root   = findViewById<View?>(R.id.benchPanel) ?: return
         val drawer = findViewById<View?>(R.id.benchDrawer) ?: return
@@ -530,59 +530,39 @@ class DraftActivity : AppCompatActivity() {
         val txtTitle = findViewById<TextView?>(R.id.txtBenchTitle) ?: return
 
         fun updateTitle() { txtTitle.text = "Banquillo (${benchPlayers.size}/5)" }
-        updateTitle()
 
-        // ------- Pestaña lateral fija (siempre visible) -------
-        // un botón angosto pegado al borde derecho, a mitad de altura
-        val handle = Button(this).apply {
-            text = "BANQUILLO"
-            rotation = -90f
-            setAllCaps(true)
-            setBackgroundColor(0xff_ff_cc_00.toInt())
-            setTextColor(0xff_00_00_00.toInt())
-            setOnClickListener {
-                root.visibility = View.VISIBLE
-                scrim.visibility = View.VISIBLE
-                drawer.animate().translationX(0f).setDuration(220).start()
+        // Asegura que HAY picks (4 fijos) en cuanto el panel vaya a abrirse, incluso si aún no hay todo el once.
+        fun ensureBenchPicks() {
+            if (benchPickOptions.isEmpty()) {
+                val usados = mutableSetOf<Player>().apply {
+                    captain?.let { add(it) }
+                    addAll(slots.mapNotNull { it.player })      // lo que lleves en campo (aunque no esté completo)
+                    addAll(benchPlayers)                         // ya seleccionados
+                }
+                benchPickOptions.clear()
+                benchPickOptions.addAll(
+                    PlayerRepository.players.filter { it !in usados }.shuffled().take(4)
+                )
             }
         }
-        val rootContainer: ViewGroup = findViewById(R.id.draftLayout) // padre real
-        val d = resources.displayMetrics.density
-        val lpH = RelativeLayout.LayoutParams((44 * d).toInt(), (120 * d).toInt()).apply {
-            addRule(RelativeLayout.ALIGN_PARENT_END)
-            addRule(RelativeLayout.CENTER_VERTICAL)
-            marginEnd = (4 * d).toInt()
-        }
-        handle.layoutParams = lpH
-        // evita duplicados si ya existe por recreación
-        if (handle.parent == null) rootContainer.addView(handle)
 
-        // ------- Lista de "Seleccionados" (5 huecos fijos) -------
+        // “Seleccionados” (5 huecos fijos, arrastrable)
         rvSel.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
         rvSel.adapter = com.inazumadraft.ui.adapters.BenchSelectedAdapter(
             benchPlayers = benchPlayers,
             onChanged = { updateTitle() },
             onDropFromField = { toIndex, fromFieldIndex ->
                 val p = slots.getOrNull(fromFieldIndex)?.player ?: return@BenchSelectedAdapter
-                // si ese índice aún no existe, expande lista con placeholders
-                while (benchPlayers.size < toIndex) benchPlayers.add(benchPlayers.lastOrNull() ?: return@BenchSelectedAdapter)
-                if (benchPlayers.size < 5 && benchPlayers.getOrNull(toIndex) == null) {
-                    benchPlayers.add(p) // hueco vacío -> añade al final
-                    slots[fromFieldIndex].player = null
-                } else {
-                    val replaced = if (toIndex < benchPlayers.size) benchPlayers[toIndex] else null
-                    if (toIndex < benchPlayers.size) benchPlayers[toIndex] = p else benchPlayers.add(p)
-                    slots[fromFieldIndex].player = replaced
-                }
+                val replaced = if (toIndex < benchPlayers.size) benchPlayers.getOrNull(toIndex) else null
+                if (toIndex < benchPlayers.size) benchPlayers[toIndex] = p else if (benchPlayers.size < 5) benchPlayers.add(p)
+                slots[fromFieldIndex].player = replaced
                 rvSel.adapter?.notifyDataSetChanged()
                 updateTitle()
                 drawSlots()
-            },
-
+            }
         )
 
-
-        // ------- Picks fijos (4) como antes -------
+        // “Picks (4)” fijos
         rvOpts.layoutManager = GridLayoutManager(this, 2)
         rvOpts.adapter = OptionAdapter(
             players = benchPickOptions,
@@ -597,15 +577,88 @@ class DraftActivity : AppCompatActivity() {
             }
         )
 
-        // ------- Cerrar drawer -------
-        fun closeDrawer() {
+        // Botón cerrar
+        btnClose.setOnClickListener {
             drawer.animate().translationX(drawer.width.toFloat()).setDuration(200).withEndAction {
                 scrim.visibility = View.GONE
                 root.visibility = View.GONE
             }.start()
         }
-        btnClose.setOnClickListener { closeDrawer() }
-        scrim.setOnClickListener { closeDrawer() }
+
+        // Tirador/handle SIEMPRE visible y por encima de todo
+        val activityRoot: ViewGroup = findViewById(android.R.id.content)
+        setupBenchDrawerBasics(
+            root = root,
+            drawer = drawer,
+            scrim = scrim,
+            handleParent = activityRoot,
+            onOpen = {
+                ensureBenchPicks()
+                updateTitle()
+                rvOpts.adapter?.notifyDataSetChanged()
+            },
+            onClose = { /* no-op */ }
+        )
+    }
+
+    private fun setupBenchDrawerBasics(
+        root: View,           // benchPanel (FrameLayout que tapa toda la pantalla)
+        drawer: View,         // benchDrawer (la columna derecha)
+        scrim: View,          // benchScrim  (oscurecedor)
+        handleParent: ViewGroup, // dónde colgar el tirador fijo
+        onOpen: () -> Unit,   // qué hacer al abrir (ej. refrescar títulos)
+        onClose: () -> Unit   // qué hacer al cerrar
+    ) {
+        // Estado inicial: drawer fuera de pantalla y panel invisible.
+        drawer.post {
+            drawer.translationX = drawer.width.toFloat()
+            root.visibility = View.GONE
+            scrim.visibility = View.GONE
+        }
+
+        // Cerrar con scrim
+        scrim.setOnClickListener {
+            drawer.animate().translationX(drawer.width.toFloat()).setDuration(220).withEndAction {
+                scrim.visibility = View.GONE
+                root.visibility = View.GONE
+                onClose()
+            }.start()
+        }
+
+        // Tirador/handle SIEMPRE visible (pegado al borde derecho)
+        val d = handleParent.resources.displayMetrics.density
+        val handle = Button(handleParent.context).apply {
+            text = "BANQUILLO"
+            rotation = -90f
+            setAllCaps(true)
+            setBackgroundColor(0xff_ff_cc_00.toInt())
+            setTextColor(0xff_00_00_00.toInt())
+            elevation = 16f
+            setOnClickListener {
+                // Trae panel al frente y abre
+                root.visibility = View.VISIBLE
+                root.bringToFront()
+                scrim.visibility = View.VISIBLE
+                drawer.animate().translationX(0f).setDuration(220).withStartAction { onOpen() }.start()
+            }
+            layoutParams = ViewGroup.MarginLayoutParams((44 * d).toInt(), (120 * d).toInt()).apply {
+                (this as? ViewGroup.MarginLayoutParams)?.marginEnd = (4 * d).toInt()
+            }
+        }
+
+        // Ancla el handle al contenedor de actividad (android.R.id.content) y colócalo a la derecha/centro
+        // Usamos FrameLayout.LayoutParams para que funcione en cualquier root.
+        val lp = FrameLayout.LayoutParams(handle.layoutParams).apply {
+            gravity = Gravity.END or Gravity.CENTER_VERTICAL
+        }
+        handle.layoutParams = lp
+
+        // Evita duplicarlo si ya existe (en recreaciones)
+        if (handleParent.findViewWithTag<View>("bench_handle") == null) {
+            handle.tag = "bench_handle"
+            handleParent.addView(handle)
+            handle.bringToFront()
+        }
     }
 
     private fun shakeView(v: View) {

@@ -6,10 +6,12 @@ import android.os.Build
 import android.os.Bundle
 import android.view.DragEvent
 import android.view.GestureDetector
+import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.RelativeLayout
 import android.widget.TextView
@@ -100,53 +102,33 @@ class FinalTeamActivity : AppCompatActivity() {
         val txtTitle = findViewById<TextView?>(R.id.txtBenchTitle) ?: return
 
         fun updateTitle() { txtTitle.text = "Banquillo (${benchPlayers.size}/5)" }
-        updateTitle()
 
-        // ------- Pestaña lateral visible siempre -------
-        val handle = Button(this).apply {
-            text = "BANQUILLO"
-            rotation = -90f
-            setAllCaps(true)
-            setBackgroundColor(0xff_ff_cc_00.toInt())
-            setTextColor(0xff_00_00_00.toInt())
-            setOnClickListener {
-                root.visibility = View.VISIBLE
-                scrim.visibility = View.VISIBLE
-                drawer.animate().translationX(0f).setDuration(220).start()
+        // Si no hay 4 picks (fijos), créalos excluyendo los titulares y lo ya seleccionado
+        if (benchPickOptions.isEmpty()) {
+            val usados = mutableSetOf<Player>().apply {
+                addAll(playerSlots.filterNotNull())
+                addAll(benchPlayers)
             }
+            benchPickOptions.addAll(
+                PlayerRepository.players.filter { it !in usados }.shuffled().take(4)
+            )
         }
-        val parent: ViewGroup = findViewById(android.R.id.content)
-        val d = resources.displayMetrics.density
-        val lpH = RelativeLayout.LayoutParams((44 * d).toInt(), (120 * d).toInt()).apply {
-            addRule(RelativeLayout.ALIGN_PARENT_END)
-            addRule(RelativeLayout.CENTER_VERTICAL)
-            marginEnd = (4 * d).toInt()
-        }
-        handle.layoutParams = lpH
-        if (handle.parent == null) (findViewById<RelativeLayout>(R.id.fieldLayout)).addView(handle)
 
-        // ------- Seleccionados (5 huecos fijos) -------
         rvSel.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
         rvSel.adapter = com.inazumadraft.ui.adapters.BenchSelectedAdapter(
             benchPlayers = benchPlayers,
             onChanged = { updateTitle(); drawTemplateAndFill() },
             onDropFromField = { toIndex, fromFieldIndex ->
                 val p = playerSlots.getOrNull(fromFieldIndex) ?: return@BenchSelectedAdapter
-                if (benchPlayers.size < 5 && benchPlayers.getOrNull(toIndex) == null && toIndex >= benchPlayers.size) {
-                    benchPlayers.add(p)
-                    playerSlots[fromFieldIndex] = null
-                } else {
-                    val replaced = benchPlayers.getOrNull(toIndex)
-                    if (toIndex < benchPlayers.size) benchPlayers[toIndex] = p else benchPlayers.add(p)
-                    playerSlots[fromFieldIndex] = replaced
-                }
+                val replaced = if (toIndex < benchPlayers.size) benchPlayers.getOrNull(toIndex) else null
+                if (toIndex < benchPlayers.size) benchPlayers[toIndex] = p else if (benchPlayers.size < 5) benchPlayers.add(p)
+                playerSlots[fromFieldIndex] = replaced
                 rvSel.adapter?.notifyDataSetChanged()
                 updateTitle()
                 drawTemplateAndFill()
             }
         )
 
-        // ------- Picks fijos (4) -------
         rvOpts.layoutManager = GridLayoutManager(this, 2)
         rvOpts.adapter = OptionAdapter(
             players = benchPickOptions,
@@ -160,16 +142,29 @@ class FinalTeamActivity : AppCompatActivity() {
             }
         )
 
-        // ------- Cerrar -------
-        fun closeDrawer() {
+        btnClose.setOnClickListener {
             drawer.animate().translationX(drawer.width.toFloat()).setDuration(200).withEndAction {
                 scrim.visibility = View.GONE
                 root.visibility = View.GONE
             }.start()
         }
-        btnClose.setOnClickListener { closeDrawer() }
-        scrim.setOnClickListener { closeDrawer() }
+
+        // Tirador SIEMPRE visible, pegado al borde derecho, encima del contenido (aunque cambies a “VER ESTADÍSTICAS”)
+        val activityRoot: ViewGroup = findViewById(android.R.id.content)
+        setupBenchDrawerBasics(
+            root = root,
+            drawer = drawer,
+            scrim = scrim,
+            handleParent = activityRoot,
+            onOpen = {
+                updateTitle()
+                rvSel.adapter?.notifyDataSetChanged()
+                rvOpts.adapter?.notifyDataSetChanged()
+            },
+            onClose = { /* no-op */ }
+        )
     }
+
 
 
     private fun shakeView(v: View) {
@@ -178,6 +173,65 @@ class FinalTeamActivity : AppCompatActivity() {
                 v.animate().translationX(0f).setDuration(40).start()
             }.start()
         }.start()
+    }
+    private fun setupBenchDrawerBasics(
+        root: View,           // benchPanel (FrameLayout que tapa toda la pantalla)
+        drawer: View,         // benchDrawer (la columna derecha)
+        scrim: View,          // benchScrim  (oscurecedor)
+        handleParent: ViewGroup, // dónde colgar el tirador fijo
+        onOpen: () -> Unit,   // qué hacer al abrir (ej. refrescar títulos)
+        onClose: () -> Unit   // qué hacer al cerrar
+    ) {
+        // Estado inicial: drawer fuera de pantalla y panel invisible.
+        drawer.post {
+            drawer.translationX = drawer.width.toFloat()
+            root.visibility = View.GONE
+            scrim.visibility = View.GONE
+        }
+
+        // Cerrar con scrim
+        scrim.setOnClickListener {
+            drawer.animate().translationX(drawer.width.toFloat()).setDuration(220).withEndAction {
+                scrim.visibility = View.GONE
+                root.visibility = View.GONE
+                onClose()
+            }.start()
+        }
+
+        // Tirador/handle SIEMPRE visible (pegado al borde derecho)
+        val d = handleParent.resources.displayMetrics.density
+        val handle = Button(handleParent.context).apply {
+            text = "BANQUILLO"
+            rotation = -90f
+            setAllCaps(true)
+            setBackgroundColor(0xff_ff_cc_00.toInt())
+            setTextColor(0xff_00_00_00.toInt())
+            elevation = 16f
+            setOnClickListener {
+                // Trae panel al frente y abre
+                root.visibility = View.VISIBLE
+                root.bringToFront()
+                scrim.visibility = View.VISIBLE
+                drawer.animate().translationX(0f).setDuration(220).withStartAction { onOpen() }.start()
+            }
+            layoutParams = ViewGroup.MarginLayoutParams((44 * d).toInt(), (120 * d).toInt()).apply {
+                (this as? ViewGroup.MarginLayoutParams)?.marginEnd = (4 * d).toInt()
+            }
+        }
+
+        // Ancla el handle al contenedor de actividad (android.R.id.content) y colócalo a la derecha/centro
+        // Usamos FrameLayout.LayoutParams para que funcione en cualquier root.
+        val lp = FrameLayout.LayoutParams(handle.layoutParams).apply {
+            gravity = Gravity.END or Gravity.CENTER_VERTICAL
+        }
+        handle.layoutParams = lp
+
+        // Evita duplicarlo si ya existe (en recreaciones)
+        if (handleParent.findViewWithTag<View>("bench_handle") == null) {
+            handle.tag = "bench_handle"
+            handleParent.addView(handle)
+            handle.bringToFront()
+        }
     }
 
     // ====================== CAMPO + DRAG & DROP ======================
