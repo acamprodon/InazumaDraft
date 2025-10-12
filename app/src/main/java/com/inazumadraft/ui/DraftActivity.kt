@@ -272,7 +272,7 @@ class DraftActivity : AppCompatActivity() {
                     val p = slot.player!!
                     img.setImageResource(p.image)
                     elem.setImageResource(p.element)
-                    name.text = p.name
+                    name.text = p.nickname
                     if (p == captain) img.setBackgroundResource(R.drawable.captain_border)
                 } else {
                     img.setImageResource(0)
