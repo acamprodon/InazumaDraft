@@ -1,26 +1,25 @@
-<LinearLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:orientation="vertical"
         android:gravity="center"
-        android:layout_gravity="center"
         android:padding="8dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@drawable/bg_player_option"
-        android:layout_margin="6dp">
+        android:background="@drawable/bg_player_option_selector"
+        android:layout_margin="8dp"
+        android:clipToOutline="true">
 
     <!-- Imagen del jugador -->
     <ImageView
             android:id="@+id/imgPlayer"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
-            android:scaleType="centerCrop"
-            android:background="@android:color/darker_gray"
-            android:layout_marginBottom="4dp"
-            android:clipToOutline="true"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:scaleType="fitCenter"
+            android:adjustViewBounds="true"
+            android:background="@android:color/transparent"
+            android:layout_marginBottom="6dp"
             android:contentDescription="Imagen del jugador" />
 
-    <!-- Nombre + Elemento -->
+    <!-- Nombre y elemento -->
     <LinearLayout
             android:orientation="horizontal"
             android:gravity="center"
@@ -35,12 +34,14 @@
                 android:textColor="@android:color/white"
                 android:textStyle="bold"
                 android:textSize="14sp"
+                android:ellipsize="end"
+                android:maxLines="1"
                 android:layout_marginEnd="6dp" />
 
         <ImageView
                 android:id="@+id/imgElement"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
                 android:contentDescription="Elemento del jugador" />
     </LinearLayout>
 </LinearLayout>

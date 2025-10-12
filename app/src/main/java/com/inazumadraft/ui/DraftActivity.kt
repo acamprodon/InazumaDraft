@@ -330,9 +330,17 @@ class DraftActivity : AppCompatActivity() {
                 dialog.dismiss()
                 fieldLayout.post { drawSlots() }
             },
-            onLongClick = {
-                preview.visibility = View.VISIBLE
-                preview.bringToFront()
+            onLongClick = { player ->
+                // Oculta la lista y muestra el campo real
+                dialog.dismiss()
+
+                // Muestra el campo y coloca al jugador temporalmente
+                slots[slotIndex].player = player
+                fieldLayout.visibility = View.VISIBLE
+                rvOptions.visibility = View.GONE
+
+                // Dibuja con ese jugador seleccionado
+                fieldLayout.post { drawSlots() }
             }
         )
 

@@ -39,11 +39,25 @@ class OptionAdapter(
 
             itemView.setOnClickListener { onClick(player) }
 
-            // 👇 Nuevo: mantener pulsado muestra el campo
+            // Animación suave al presionar
+            itemView.setOnTouchListener { v, event ->
+                when (event.action) {
+                    android.view.MotionEvent.ACTION_DOWN -> {
+                        v.animate().scaleX(0.96f).scaleY(0.96f).setDuration(100).start()
+                    }
+                    android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
+                        v.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
+                    }
+                }
+                false
+            }
+
+            // Mantener pulsado muestra el campo
             itemView.setOnLongClickListener {
                 onLongClick?.invoke(player)
                 true
             }
         }
+
     }
 }
