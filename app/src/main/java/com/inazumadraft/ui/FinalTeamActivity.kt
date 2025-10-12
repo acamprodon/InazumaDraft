@@ -8,6 +8,7 @@ import android.view.DragEvent
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.RelativeLayout
@@ -88,57 +89,78 @@ class FinalTeamActivity : AppCompatActivity() {
         setupBenchPanel()
     }
 
-    // ====================== BANQUILLO (drawer con picks fijos) ======================
+    // ====================== BANQUILLO (drawer con 5 huecos + pestaña) ======================
     private fun setupBenchPanel() {
-        val root = findViewById<View?>(R.id.benchPanel) ?: return
+        val root   = findViewById<View?>(R.id.benchPanel) ?: return
         val drawer = findViewById<View?>(R.id.benchDrawer) ?: return
-        val scrim = findViewById<View?>(R.id.benchScrim) ?: return
-        val rvSelected = findViewById<RecyclerView?>(R.id.rvBenchSelected) ?: return
-        val rvOptions  = findViewById<RecyclerView?>(R.id.rvBenchOptions) ?: return
-        val btnClose   = findViewById<Button?>(R.id.btnCloseBench) ?: return
-        val txtTitle   = findViewById<TextView?>(R.id.txtBenchTitle) ?: return
+        val scrim  = findViewById<View?>(R.id.benchScrim) ?: return
+        val rvSel  = findViewById<RecyclerView?>(R.id.rvBenchSelected) ?: return
+        val rvOpts = findViewById<RecyclerView?>(R.id.rvBenchOptions) ?: return
+        val btnClose = findViewById<Button?>(R.id.btnCloseBench) ?: return
+        val txtTitle = findViewById<TextView?>(R.id.txtBenchTitle) ?: return
 
         fun updateTitle() { txtTitle.text = "Banquillo (${benchPlayers.size}/5)" }
         updateTitle()
 
-        // Seleccionados
-        rvSelected.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
-        rvSelected.adapter = OptionAdapter(benchPlayers, onClick = { }, onLongClick = null)
-
-        // Picks fijos (4)
-        rvOptions.layoutManager = GridLayoutManager(this, 2)
-        rvOptions.adapter = OptionAdapter(
-            players = benchPickOptions,
-            onClick = { chosen ->
-                if (benchPlayers.size < 5) {
-                    benchPlayers.add(chosen)
-                    rvSelected.adapter?.notifyItemInserted(benchPlayers.lastIndex)
-                    updateTitle()
-                }
-            }
-        )
-
-        // FAB abrir
-        val fab = FloatingActionButton(this).apply {
-            setImageResource(android.R.drawable.ic_menu_sort_by_size)
-            contentDescription = "Abrir banquillo"
+        // ------- Pestaña lateral visible siempre -------
+        val handle = Button(this).apply {
+            text = "BANQUILLO"
+            rotation = -90f
+            setAllCaps(true)
+            setBackgroundColor(0xff_ff_cc_00.toInt())
+            setTextColor(0xff_00_00_00.toInt())
             setOnClickListener {
                 root.visibility = View.VISIBLE
                 scrim.visibility = View.VISIBLE
                 drawer.animate().translationX(0f).setDuration(220).start()
             }
         }
+        val parent: ViewGroup = findViewById(android.R.id.content)
         val d = resources.displayMetrics.density
-        val lp = RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT).apply {
+        val lpH = RelativeLayout.LayoutParams((44 * d).toInt(), (120 * d).toInt()).apply {
             addRule(RelativeLayout.ALIGN_PARENT_END)
-            addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
-            marginEnd = (16 * d).toInt()
-            bottomMargin = (16 * d).toInt()
+            addRule(RelativeLayout.CENTER_VERTICAL)
+            marginEnd = (4 * d).toInt()
         }
-        fab.layoutParams = lp
-        fieldLayout.addView(fab)
+        handle.layoutParams = lpH
+        if (handle.parent == null) (findViewById<RelativeLayout>(R.id.fieldLayout)).addView(handle)
 
-        // Cerrar
+        // ------- Seleccionados (5 huecos fijos) -------
+        rvSel.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        rvSel.adapter = com.inazumadraft.ui.adapters.BenchSelectedAdapter(
+            benchPlayers = benchPlayers,
+            onChanged = { updateTitle(); drawTemplateAndFill() },
+            onDropFromField = { toIndex, fromFieldIndex ->
+                val p = playerSlots.getOrNull(fromFieldIndex) ?: return@BenchSelectedAdapter
+                if (benchPlayers.size < 5 && benchPlayers.getOrNull(toIndex) == null && toIndex >= benchPlayers.size) {
+                    benchPlayers.add(p)
+                    playerSlots[fromFieldIndex] = null
+                } else {
+                    val replaced = benchPlayers.getOrNull(toIndex)
+                    if (toIndex < benchPlayers.size) benchPlayers[toIndex] = p else benchPlayers.add(p)
+                    playerSlots[fromFieldIndex] = replaced
+                }
+                rvSel.adapter?.notifyDataSetChanged()
+                updateTitle()
+                drawTemplateAndFill()
+            }
+        )
+
+        // ------- Picks fijos (4) -------
+        rvOpts.layoutManager = GridLayoutManager(this, 2)
+        rvOpts.adapter = OptionAdapter(
+            players = benchPickOptions,
+            onClick = { chosen ->
+                if (benchPlayers.size < 5) {
+                    benchPlayers.add(chosen)
+                    rvSel.adapter?.notifyDataSetChanged()
+                    updateTitle()
+                    drawTemplateAndFill()
+                } else shakeView(rvSel)
+            }
+        )
+
+        // ------- Cerrar -------
         fun closeDrawer() {
             drawer.animate().translationX(drawer.width.toFloat()).setDuration(200).withEndAction {
                 scrim.visibility = View.GONE
@@ -147,60 +169,8 @@ class FinalTeamActivity : AppCompatActivity() {
         }
         btnClose.setOnClickListener { closeDrawer() }
         scrim.setOnClickListener { closeDrawer() }
-
-        // CAMPO → SELECCIONADOS
-        rvSelected.setOnDragListener { _, event ->
-            when (event.action) {
-                DragEvent.ACTION_DRAG_STARTED -> true
-                DragEvent.ACTION_DROP -> {
-                    val fromFieldIndex = event.localState as? Int ?: return@setOnDragListener true
-                    val p = playerSlots.getOrNull(fromFieldIndex) ?: return@setOnDragListener true
-
-                    val child = rvSelected.findChildViewUnder(event.x, event.y)
-                    val hoveredPos = if (child != null) rvSelected.getChildAdapterPosition(child) else RecyclerView.NO_POSITION
-
-                    when {
-                        benchPlayers.size < 5 -> {
-                            benchPlayers.add(p); playerSlots[fromFieldIndex] = null
-                            rvSelected.adapter?.notifyItemInserted(benchPlayers.lastIndex)
-                        }
-                        hoveredPos != RecyclerView.NO_POSITION -> {
-                            val tmp = benchPlayers[hoveredPos]
-                            benchPlayers[hoveredPos] = p
-                            playerSlots[fromFieldIndex] = tmp
-                            rvSelected.adapter?.notifyItemChanged(hoveredPos)
-                        }
-                        else -> { shakeView(rvSelected); return@setOnDragListener true }
-                    }
-                    updateTitle()
-                    drawTemplateAndFill()
-                    true
-                }
-                DragEvent.ACTION_DRAG_ENDED -> true
-                else -> false
-            }
-        }
-
-        // SELECCIONADOS → CAMPO
-        val gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
-            override fun onLongPress(e: MotionEvent) {
-                val child = rvSelected.findChildViewUnder(e.x, e.y) ?: return
-                val pos = rvSelected.getChildAdapterPosition(child)
-                if (pos == RecyclerView.NO_POSITION) return
-                val clip = ClipData.newPlainText("benchPlayer", "benchPlayer")
-                val shadow = View.DragShadowBuilder(child)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) child.startDragAndDrop(clip, shadow, pos, 0)
-                else @Suppress("DEPRECATION") child.startDrag(clip, shadow, pos, 0)
-            }
-        })
-        rvSelected.addOnItemTouchListener(object : RecyclerView.OnItemTouchListener {
-            override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
-                gestureDetector.onTouchEvent(e); return false
-            }
-            override fun onTouchEvent(rv: RecyclerView, e: MotionEvent) {}
-            override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {}
-        })
     }
+
 
     private fun shakeView(v: View) {
         v.animate().translationX(12f).setDuration(40).withEndAction {

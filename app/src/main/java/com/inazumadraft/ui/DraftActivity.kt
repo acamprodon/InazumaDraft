@@ -4,9 +4,7 @@ import android.content.ClipData
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.view.DragEvent
-import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
@@ -18,7 +16,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.inazumadraft.R
 import com.inazumadraft.data.Formation
 import com.inazumadraft.data.PlayerRepository
@@ -522,62 +519,85 @@ class DraftActivity : AppCompatActivity() {
     }
 
     // ---------- BANQUILLO: drawer con picks fijos ----------
+    // ---------- BANQUILLO: drawer con 5 huecos fijos + pestaña ----------
     private fun setupBenchPanel() {
-        val root = findViewById<View?>(R.id.benchPanel)
-        val drawer = findViewById<View?>(R.id.benchDrawer)
-        val scrim = findViewById<View?>(R.id.benchScrim)
-        val rvSelected = findViewById<RecyclerView?>(R.id.rvBenchSelected)
-        val rvOptions  = findViewById<RecyclerView?>(R.id.rvBenchOptions)
-        val btnClose   = findViewById<Button?>(R.id.btnCloseBench)
-        val txtTitle   = findViewById<TextView?>(R.id.txtBenchTitle)
-
-        if (root == null || drawer == null || scrim == null || rvSelected == null || rvOptions == null || btnClose == null || txtTitle == null) {
-            Log.w("DraftActivity", "Bench panel layout not found. Skipping bench setup.")
-            return
-        }
+        val root   = findViewById<View?>(R.id.benchPanel) ?: return
+        val drawer = findViewById<View?>(R.id.benchDrawer) ?: return
+        val scrim  = findViewById<View?>(R.id.benchScrim) ?: return
+        val rvSel  = findViewById<RecyclerView?>(R.id.rvBenchSelected) ?: return
+        val rvOpts = findViewById<RecyclerView?>(R.id.rvBenchOptions) ?: return
+        val btnClose = findViewById<Button?>(R.id.btnCloseBench) ?: return
+        val txtTitle = findViewById<TextView?>(R.id.txtBenchTitle) ?: return
 
         fun updateTitle() { txtTitle.text = "Banquillo (${benchPlayers.size}/5)" }
         updateTitle()
 
-        // Seleccionados (scroll horizontal)
-        rvSelected.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
-        rvSelected.adapter = OptionAdapter(benchPlayers, onClick = { }, onLongClick = null)
-
-        // Picks fijos (4)
-        rvOptions.layoutManager = GridLayoutManager(this, 2)
-        rvOptions.adapter = OptionAdapter(
-            players = benchPickOptions,
-            onClick = { chosen ->
-                if (benchPlayers.size < 5) {
-                    benchPlayers.add(chosen)
-                    rvSelected.adapter?.notifyItemInserted(benchPlayers.lastIndex)
-                    updateTitle()
-                }
-            }
-        )
-
-        // FAB abrir
-        val fab = FloatingActionButton(this).apply {
-            setImageResource(android.R.drawable.ic_menu_sort_by_size)
-            contentDescription = "Abrir banquillo"
+        // ------- Pestaña lateral fija (siempre visible) -------
+        // un botón angosto pegado al borde derecho, a mitad de altura
+        val handle = Button(this).apply {
+            text = "BANQUILLO"
+            rotation = -90f
+            setAllCaps(true)
+            setBackgroundColor(0xff_ff_cc_00.toInt())
+            setTextColor(0xff_00_00_00.toInt())
             setOnClickListener {
                 root.visibility = View.VISIBLE
                 scrim.visibility = View.VISIBLE
                 drawer.animate().translationX(0f).setDuration(220).start()
             }
         }
-        val parent: ViewGroup = (findViewById<ViewGroup?>(R.id.draftLayout) ?: fieldLayout)
+        val rootContainer: ViewGroup = findViewById(R.id.draftLayout) // padre real
         val d = resources.displayMetrics.density
-        val lp = RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT).apply {
+        val lpH = RelativeLayout.LayoutParams((44 * d).toInt(), (120 * d).toInt()).apply {
             addRule(RelativeLayout.ALIGN_PARENT_END)
-            addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
-            marginEnd = (16 * d).toInt()
-            bottomMargin = (16 * d).toInt()
+            addRule(RelativeLayout.CENTER_VERTICAL)
+            marginEnd = (4 * d).toInt()
         }
-        fab.layoutParams = lp
-        parent.addView(fab)
+        handle.layoutParams = lpH
+        // evita duplicados si ya existe por recreación
+        if (handle.parent == null) rootContainer.addView(handle)
 
-        // Cerrar
+        // ------- Lista de "Seleccionados" (5 huecos fijos) -------
+        rvSel.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        rvSel.adapter = com.inazumadraft.ui.adapters.BenchSelectedAdapter(
+            benchPlayers = benchPlayers,
+            onChanged = { updateTitle() },
+            onDropFromField = { toIndex, fromFieldIndex ->
+                val p = slots.getOrNull(fromFieldIndex)?.player ?: return@BenchSelectedAdapter
+                // si ese índice aún no existe, expande lista con placeholders
+                while (benchPlayers.size < toIndex) benchPlayers.add(benchPlayers.lastOrNull() ?: return@BenchSelectedAdapter)
+                if (benchPlayers.size < 5 && benchPlayers.getOrNull(toIndex) == null) {
+                    benchPlayers.add(p) // hueco vacío -> añade al final
+                    slots[fromFieldIndex].player = null
+                } else {
+                    val replaced = if (toIndex < benchPlayers.size) benchPlayers[toIndex] else null
+                    if (toIndex < benchPlayers.size) benchPlayers[toIndex] = p else benchPlayers.add(p)
+                    slots[fromFieldIndex].player = replaced
+                }
+                rvSel.adapter?.notifyDataSetChanged()
+                updateTitle()
+                drawSlots()
+            },
+            canAcceptFromField = { _, _ -> true } // en banquillo la posición no importa
+        )
+
+
+        // ------- Picks fijos (4) como antes -------
+        rvOpts.layoutManager = GridLayoutManager(this, 2)
+        rvOpts.adapter = OptionAdapter(
+            players = benchPickOptions,
+            onClick = { chosen ->
+                if (benchPlayers.size < 5) {
+                    benchPlayers.add(chosen)
+                    rvSel.adapter?.notifyDataSetChanged()
+                    updateTitle()
+                } else {
+                    shakeView(rvSel)
+                }
+            }
+        )
+
+        // ------- Cerrar drawer -------
         fun closeDrawer() {
             drawer.animate().translationX(drawer.width.toFloat()).setDuration(200).withEndAction {
                 scrim.visibility = View.GONE
@@ -586,57 +606,6 @@ class DraftActivity : AppCompatActivity() {
         }
         btnClose.setOnClickListener { closeDrawer() }
         scrim.setOnClickListener { closeDrawer() }
-
-        // CAMPO → SELECCIONADOS (drop + swap si lleno)
-        rvSelected.setOnDragListener { _, event ->
-            when (event.action) {
-                DragEvent.ACTION_DROP -> {
-                    val fromIdx = event.localState as? Int ?: return@setOnDragListener true
-                    val p = slots.getOrNull(fromIdx)?.player ?: return@setOnDragListener true
-                    val child = rvSelected.findChildViewUnder(event.x, event.y)
-                    val hoveredPos = if (child != null) rvSelected.getChildAdapterPosition(child) else RecyclerView.NO_POSITION
-
-                    when {
-                        benchPlayers.size < 5 -> {
-                            benchPlayers.add(p)
-                            slots[fromIdx].player = null
-                            rvSelected.adapter?.notifyItemInserted(benchPlayers.lastIndex)
-                        }
-                        hoveredPos != RecyclerView.NO_POSITION -> {
-                            val tmp = benchPlayers[hoveredPos]
-                            benchPlayers[hoveredPos] = p
-                            slots[fromIdx].player = tmp
-                            rvSelected.adapter?.notifyItemChanged(hoveredPos)
-                        }
-                        else -> { shakeView(rvSelected); return@setOnDragListener true }
-                    }
-                    updateTitle()
-                    drawSlots()
-                    true
-                }
-                else -> true
-            }
-        }
-
-        // SELECCIONADOS → CAMPO (long-press)
-        val gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
-            override fun onLongPress(e: MotionEvent) {
-                val child = rvSelected.findChildViewUnder(e.x, e.y) ?: return
-                val pos = rvSelected.getChildAdapterPosition(child)
-                if (pos == RecyclerView.NO_POSITION) return
-                val clip = ClipData.newPlainText("benchPlayer", "benchPlayer")
-                val shadow = View.DragShadowBuilder(child)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) child.startDragAndDrop(clip, shadow, pos, 0)
-                else @Suppress("DEPRECATION") child.startDrag(clip, shadow, pos, 0)
-            }
-        })
-        rvSelected.addOnItemTouchListener(object : RecyclerView.OnItemTouchListener {
-            override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
-                gestureDetector.onTouchEvent(e); return false
-            }
-            override fun onTouchEvent(rv: RecyclerView, e: MotionEvent) {}
-            override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {}
-        })
     }
 
     private fun shakeView(v: View) {
