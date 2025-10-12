@@ -2,8 +2,10 @@ package com.inazumadraft.ui
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.MotionEvent
 import android.view.View
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -14,7 +16,6 @@ import com.inazumadraft.data.Formation
 import com.inazumadraft.data.PlayerRepository
 import com.inazumadraft.data.formations
 import com.inazumadraft.model.Player
-import android.widget.ImageView
 
 class DraftActivity : AppCompatActivity() {
 
@@ -70,7 +71,6 @@ class DraftActivity : AppCompatActivity() {
             }
         }
 
-        // 👇 Asegura que las vistas iniciales estén en el orden correcto
         rvOptions.visibility = View.GONE
         fieldLayout.visibility = View.GONE
         findViewById<View>(R.id.formationButtonsLayout).bringToFront()
@@ -155,13 +155,13 @@ class DraftActivity : AppCompatActivity() {
         val options = PlayerRepository.players.shuffled().take(4)
 
         rvOptions.layoutManager = GridLayoutManager(this, 2)
+        rvOptions.setHasFixedSize(true)
 
         rvOptions.adapter = OptionAdapter(
             players = options,
             onClick = { player ->
                 captain = player
                 roundTitle.text = "Capitán: ${player.name}\nToca los huecos para rellenar la alineación"
-
                 buildSlotsTemplateAndPlaceCaptain()
 
                 fieldLayout.visibility = View.VISIBLE
@@ -172,10 +172,6 @@ class DraftActivity : AppCompatActivity() {
                     fieldLayout.bringToFront()
                     drawSlots()
                 }
-            },
-            onLongClick = { player ->
-                fieldLayout.visibility = View.VISIBLE
-                rvOptions.alpha = 0.4f
             }
         )
     }
@@ -205,9 +201,7 @@ class DraftActivity : AppCompatActivity() {
         val mcRows = split(nMC, 4)
         val dfRows = split(nDF, 4)
         val ptRows = if (nPT > 0) listOf(nPT) else emptyList()
-        rowSpec = buildList {
-            addAll(dlRows); addAll(mcRows); addAll(dfRows); addAll(ptRows)
-        }
+        rowSpec = buildList { addAll(dlRows); addAll(mcRows); addAll(dfRows); addAll(ptRows) }
 
         slots.clear()
         repeat(nDL) { slots.add(Slot("DL")) }
@@ -231,7 +225,6 @@ class DraftActivity : AppCompatActivity() {
         }
 
         fieldLayout.removeAllViews()
-
         val d = resources.displayMetrics.density
         var cardW = 100f * d
         var cardH = cardW * 1.25f
@@ -284,8 +277,6 @@ class DraftActivity : AppCompatActivity() {
                 slotView.layoutParams = lp
 
                 val indexForClick = slotGlobalIndex
-                slotView.isClickable = slot.player == null
-                slotView.alpha = if (slot.player == null) 0.95f else 1f
                 slotView.setOnClickListener {
                     if (slots[indexForClick].player == null) {
                         showOptionsForSlot(indexForClick)
@@ -317,10 +308,10 @@ class DraftActivity : AppCompatActivity() {
 
         val title = dialogView.findViewById<TextView>(R.id.txtTitle)
         val rvPicker = dialogView.findViewById<RecyclerView>(R.id.rvPickerOptions)
-        val preview = dialogView.findViewById<ImageView>(R.id.previewField)
 
         title.text = "Elige ${codeToLabel(role)}"
         rvPicker.layoutManager = GridLayoutManager(this, 2)
+        rvPicker.setHasFixedSize(true)
 
         rvPicker.adapter = OptionAdapter(
             options,
@@ -331,14 +322,23 @@ class DraftActivity : AppCompatActivity() {
                 fieldLayout.post { drawSlots() }
             },
             onLongClick = { player ->
-                val imgPreview = dialogView.findViewById<ImageView>(R.id.imgPreviewPlayer)
-                val preview = dialogView.findViewById<View>(R.id.previewField)
-                imgPreview.setImageResource(player.image)
-                preview.visibility = View.VISIBLE
-                preview.alpha = 0f
-                preview.animate().alpha(1f).setDuration(150).start()
-            }
+                // Preview dinámico en el campo real
+                val backupSlots = slots.map { it.copy() }
+                slots[slotIndex].player = player
+                drawSlots()
 
+                rvPicker.setOnTouchListener { _, event ->
+                    if (event.action == MotionEvent.ACTION_UP || event.action == MotionEvent.ACTION_CANCEL) {
+                        // Restaurar alineación original
+                        for (i in slots.indices) {
+                            slots[i].player = backupSlots[i].player
+                        }
+                        drawSlots()
+                        rvPicker.setOnTouchListener(null)
+                    }
+                    false
+                }
+            }
         )
 
         dialog.show()
@@ -347,7 +347,6 @@ class DraftActivity : AppCompatActivity() {
     private fun buildFinalTeamFromSlots(formation: Formation): List<Player> {
         val result = mutableListOf<Player>()
         val tmp = slots.toMutableList()
-
         formation.positions.forEach { pos ->
             val idx = tmp.indexOfFirst { it.role.equals(pos, ignoreCase = true) && it.player != null }
             if (idx >= 0) {

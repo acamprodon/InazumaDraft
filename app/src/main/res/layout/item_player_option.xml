@@ -2,24 +2,22 @@
         android:orientation="vertical"
         android:gravity="center"
         android:padding="8dp"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@drawable/bg_player_option_selector"
         android:layout_margin="8dp"
         android:clipToOutline="true">
 
-    <!-- Imagen del jugador -->
     <ImageView
             android:id="@+id/imgPlayer"
-            android:layout_width="120dp"
-            android:layout_height="120dp"
-            android:scaleType="fitCenter"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
             android:adjustViewBounds="true"
-            android:background="@android:color/transparent"
-            android:layout_marginBottom="6dp"
-            android:contentDescription="Imagen del jugador" />
+            android:scaleType="fitCenter"
+            android:contentDescription="Imagen del jugador"
+            android:layout_marginBottom="6dp" />
 
-    <!-- Nombre y elemento -->
     <LinearLayout
             android:orientation="horizontal"
             android:gravity="center"
@@ -34,14 +32,12 @@
                 android:textColor="@android:color/white"
                 android:textStyle="bold"
                 android:textSize="14sp"
-                android:ellipsize="end"
-                android:maxLines="1"
                 android:layout_marginEnd="6dp" />
 
         <ImageView
                 android:id="@+id/imgElement"
                 android:layout_width="22dp"
                 android:layout_height="22dp"
-                android:contentDescription="Elemento del jugador" />
+                android:contentDescription="Elemento" />
     </LinearLayout>
 </LinearLayout>
