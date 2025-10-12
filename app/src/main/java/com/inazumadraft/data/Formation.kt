@@ -69,7 +69,11 @@ val formations = listOf(
             "MC","MC","MC",// 3 medias puntas/extremos
             "DL"                                        // 1 DL
         )
-    )
+    ),
+    Formation("4-3-2-1",
+        listOf("PT","DF","DF","DF","DF", "MC","MC","MC", "MC","MC","DL"  )
+    ),
+    Formation("4-2-4", listOf("PT","DF","DF","DF","DF", "MC","MC","DL", "DL","DL","DL"))
 
 )
 
