@@ -2,6 +2,7 @@ package com.inazumadraft.ui
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.DragEvent
 import android.view.MotionEvent
 import android.view.View
 import android.widget.Button
@@ -37,11 +38,10 @@ class DraftActivity : AppCompatActivity() {
     private val slots: MutableList<Slot> = mutableListOf()
     private val selectedPlayers: MutableList<Player> = mutableListOf()
     private var captain: Player? = null
-
     private var rowSpec: List<Int> = emptyList()
 
-    // Nuevo flag para bloquear clicks durante el preview
     private var isPreviewing = false
+    private var draggedSlotIndex: Int? = null // 👈 nuevo para arrastrar jugadores
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -106,7 +106,6 @@ class DraftActivity : AppCompatActivity() {
         selectedFormation = f
 
         findViewById<View>(R.id.formationButtonsLayout).visibility = View.GONE
-
         clearDraftState()
         roundTitle.text = "Elige tu capitán (${f.name})"
         showCaptainOptions()
@@ -286,10 +285,54 @@ class DraftActivity : AppCompatActivity() {
                 slotView.layoutParams = lp
 
                 val indexForClick = slotGlobalIndex
+
+                // ---------- CLICK NORMAL ----------
                 slotView.setOnClickListener {
                     if (isPreviewing) return@setOnClickListener
                     if (slots[indexForClick].player == null) {
                         showOptionsForSlot(indexForClick)
+                    }
+                }
+
+                // ---------- DRAG & DROP ----------
+                if (slot.player != null) {
+                    slotView.setOnLongClickListener {
+                        draggedSlotIndex = indexForClick
+                        val shadow = View.DragShadowBuilder(it)
+                        it.startDragAndDrop(null, shadow, null, 0)
+                        it.alpha = 0.5f
+                        true
+                    }
+                }
+
+                slotView.setOnDragListener { v, event ->
+                    when (event.action) {
+                        DragEvent.ACTION_DRAG_STARTED -> true
+                        DragEvent.ACTION_DRAG_ENTERED -> {
+                            v.alpha = 0.7f
+                            true
+                        }
+                        DragEvent.ACTION_DRAG_EXITED -> {
+                            v.alpha = 1f
+                            true
+                        }
+                        DragEvent.ACTION_DROP -> {
+                            val from = draggedSlotIndex
+                            if (from != null && from != indexForClick) {
+                                val temp = slots[from].player
+                                slots[from].player = slots[indexForClick].player
+                                slots[indexForClick].player = temp
+                                draggedSlotIndex = null
+                                drawSlots()
+                            }
+                            true
+                        }
+                        DragEvent.ACTION_DRAG_ENDED -> {
+                            v.alpha = 1f
+                            draggedSlotIndex = null
+                            true
+                        }
+                        else -> false
                     }
                 }
 
@@ -345,7 +388,7 @@ class DraftActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    // ---------- PREVIEW CON BLOQUEO ----------
+    // ---------- PREVIEW ----------
     private fun showPreviewOnLongPress(
         slotIndex: Int,
         player: Player,
@@ -353,61 +396,47 @@ class DraftActivity : AppCompatActivity() {
         currentOptions: List<Player>
     ) {
         val backup = slots.map { it.copy() }
-
-        // Bloquear interacciones
         isPreviewing = true
-
-        // Cerrar el diálogo y mostrar preview
         dialog.dismiss()
+
         slots[slotIndex].player = player
         drawSlots()
 
-        // Resalta jugador
         fieldLayout.post {
             fieldLayout.getChildAt(slotIndex)
                 ?.findViewById<ImageView>(R.id.imgPlayer)
                 ?.setBackgroundResource(R.drawable.captain_border)
         }
 
-        // Mostrar overlay y capturar todos los toques
         overlayPreview.visibility = View.VISIBLE
         overlayPreview.alpha = 0.25f
 
         overlayPreview.setOnTouchListener { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    // Restaurar campo
                     for (i in slots.indices) slots[i].player = backup[i].player
                     drawSlots()
-
-                    // Desbloquear e invisibilizar
                     isPreviewing = false
                     overlayPreview.visibility = View.GONE
                     overlayPreview.setOnTouchListener(null)
-
-                    // Reabrir picker con mismas opciones
                     reopenSamePlayerPicker(slotIndex, currentOptions)
                     true
                 }
-                else -> true // Consumir todos los toques
+                else -> true
             }
         }
     }
 
     private fun reopenSamePlayerPicker(slotIndex: Int, sameOptions: List<Player>) {
         val slot = slots[slotIndex]
-
         val dialogView = layoutInflater.inflate(R.layout.layout_player_picker, null)
         val dialog = android.app.Dialog(this, R.style.CenterDialogTheme)
         dialog.setContentView(dialogView)
-
         val title = dialogView.findViewById<TextView>(R.id.txtTitle)
         val rvPicker = dialogView.findViewById<RecyclerView>(R.id.rvPickerOptions)
-
         title.text = "Elige ${codeToLabel(slot.role)}"
         rvPicker.layoutManager = GridLayoutManager(this, 2)
         rvPicker.setHasFixedSize(true)
-
         rvPicker.adapter = OptionAdapter(
             sameOptions,
             onClick = { chosen ->
@@ -420,7 +449,6 @@ class DraftActivity : AppCompatActivity() {
                 showPreviewOnLongPress(slotIndex, player, dialog, sameOptions)
             }
         )
-
         dialog.show()
     }
 
