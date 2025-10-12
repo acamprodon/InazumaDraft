@@ -52,6 +52,7 @@ class DraftActivity : AppCompatActivity() {
         rvOptions = findViewById(R.id.rvOptions)
         btnNext = findViewById(R.id.btnNext)
         roundTitle = findViewById(R.id.roundTitle)
+        overlayPreview = findViewById(R.id.overlayPreview)
 
         refreshVisibleFormations()
 
@@ -75,10 +76,10 @@ class DraftActivity : AppCompatActivity() {
         rvOptions.visibility = View.GONE
         fieldLayout.visibility = View.GONE
         findViewById<View>(R.id.formationButtonsLayout).bringToFront()
-        overlayPreview = findViewById(R.id.overlayPreview)
         formationLocked = false
     }
 
+    // ---------- FORMATION ----------
     private fun refreshVisibleFormations() {
         visibleFormations = if (formations.size >= 4) formations.shuffled().take(4) else formations
         btnFormation1.text = visibleFormations.getOrNull(0)?.name ?: "—"
@@ -149,6 +150,7 @@ class DraftActivity : AppCompatActivity() {
         else -> code
     }
 
+    // ---------- CAPTAIN ----------
     private fun showCaptainOptions() {
         rvOptions.visibility = View.VISIBLE
         rvOptions.bringToFront()
@@ -178,6 +180,7 @@ class DraftActivity : AppCompatActivity() {
         )
     }
 
+    // ---------- BUILD FIELD ----------
     private fun buildSlotsTemplateAndPlaceCaptain() {
         val formation = selectedFormation ?: return
         val codes = formation.positions.map { toCode(it) }
@@ -220,6 +223,7 @@ class DraftActivity : AppCompatActivity() {
         }
     }
 
+    // ---------- DRAW FIELD ----------
     private fun drawSlots() {
         if (fieldLayout.width == 0 || fieldLayout.height == 0) {
             fieldLayout.post { drawSlots() }
@@ -295,12 +299,18 @@ class DraftActivity : AppCompatActivity() {
         btnNext.visibility = if (filled == total) View.VISIBLE else View.GONE
     }
 
+    // ---------- PLAYER PICKER ----------
     private fun showOptionsForSlot(slotIndex: Int) {
         val slot = slots[slotIndex]
         val role = slot.role.uppercase()
 
         val options = PlayerRepository.players
-            .filter { it.position.equals(role, ignoreCase = true) && it != captain && it !in selectedPlayers }
+            .filter {
+                it.position.equals(role, ignoreCase = true) &&
+                        it != captain &&
+                        it !in selectedPlayers &&
+                        it !in slots.mapNotNull { s -> s.player }
+            }
             .shuffled()
             .take(4)
 
@@ -324,50 +334,89 @@ class DraftActivity : AppCompatActivity() {
                 fieldLayout.post { drawSlots() }
             },
             onLongClick = { player ->
-                dialog.dismiss() // cerramos el diálogo para ver el campo
-
-                val backupSlots = slots.map { it.copy() }
-
-                // Mostramos el jugador en el campo real
-                slots[slotIndex].player = player
-                fieldLayout.visibility = View.VISIBLE
-                drawSlots()
-
-                // Mostramos overlay para oscurecer el fondo
-                overlayPreview.visibility = View.VISIBLE
-                overlayPreview.animate().alpha(0.3f).setDuration(150).start()
-
-                // Esperamos a que suelte el dedo
-                overlayPreview.setOnTouchListener { _, event ->
-                    if (event.action == MotionEvent.ACTION_UP || event.action == MotionEvent.ACTION_CANCEL) {
-                        // Restaurar alineación original
-                        for (i in slots.indices) {
-                            slots[i].player = backupSlots[i].player
-                        }
-                        drawSlots()
-
-                        // Ocultamos overlay
-                        overlayPreview.animate().alpha(0f).setDuration(150).withEndAction {
-                            overlayPreview.visibility = View.GONE
-                        }.start()
-
-                        // Volvemos a abrir el diálogo de elección
-                        showOptionsForSlot(slotIndex)
-
-                        overlayPreview.setOnTouchListener(null)
-                    }
-                    true
-                }
-
-
-
-    }
-
+                showPreviewOnLongPress(slotIndex, player, dialog)
+            }
         )
 
         dialog.show()
     }
 
+    // ---------- PREVIEW ----------
+    private fun showPreviewOnLongPress(slotIndex: Int, player: Player, dialog: android.app.Dialog) {
+        val slot = slots[slotIndex]
+        val backupSlots = slots.map { it.copy() }
+
+        dialog.dismiss() // cerramos el diálogo para ver el campo real
+
+        slots[slotIndex].player = player
+        drawSlots()
+
+        overlayPreview.visibility = View.VISIBLE
+        overlayPreview.alpha = 0f
+        overlayPreview.animate().alpha(0.3f).setDuration(150).start()
+
+        overlayPreview.setOnTouchListener { _, event ->
+            if (event.action == MotionEvent.ACTION_UP || event.action == MotionEvent.ACTION_CANCEL) {
+                for (i in slots.indices) {
+                    slots[i].player = backupSlots[i].player
+                }
+                drawSlots()
+
+                overlayPreview.animate().alpha(0f).setDuration(150).withEndAction {
+                    overlayPreview.visibility = View.GONE
+                }.start()
+
+                overlayPreview.postDelayed({
+                    reopenPlayerPicker(slotIndex)
+                }, 200)
+
+                overlayPreview.setOnTouchListener(null)
+            }
+            true
+        }
+    }
+
+    private fun reopenPlayerPicker(slotIndex: Int) {
+        val slot = slots[slotIndex]
+
+        val updatedOptions = PlayerRepository.players
+            .filter {
+                it.position.equals(slot.role, ignoreCase = true) &&
+                        it != captain &&
+                        it !in selectedPlayers &&
+                        it !in slots.mapNotNull { s -> s.player }
+            }
+            .shuffled()
+            .take(4)
+
+        val dialogView = layoutInflater.inflate(R.layout.layout_player_picker, null)
+        val dialog = android.app.Dialog(this, R.style.CenterDialogTheme)
+        dialog.setContentView(dialogView)
+
+        val title = dialogView.findViewById<TextView>(R.id.txtTitle)
+        val rvPicker = dialogView.findViewById<RecyclerView>(R.id.rvPickerOptions)
+        title.text = "Elige ${codeToLabel(slot.role)}"
+
+        rvPicker.layoutManager = GridLayoutManager(this, 2)
+        rvPicker.setHasFixedSize(true)
+
+        rvPicker.adapter = OptionAdapter(
+            updatedOptions,
+            onClick = { chosen ->
+                slots[slotIndex].player = chosen
+                selectedPlayers.add(chosen)
+                dialog.dismiss()
+                fieldLayout.post { drawSlots() }
+            },
+            onLongClick = { player ->
+                showPreviewOnLongPress(slotIndex, player, dialog)
+            }
+        )
+
+        dialog.show()
+    }
+
+    // ---------- BUILD FINAL TEAM ----------
     private fun buildFinalTeamFromSlots(formation: Formation): List<Player> {
         val result = mutableListOf<Player>()
         val tmp = slots.toMutableList()
