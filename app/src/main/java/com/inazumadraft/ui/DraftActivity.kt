@@ -44,7 +44,7 @@ class DraftActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_draft)
 
-        // Bind
+        // 1️⃣ Inicializar vistas primero
         fieldLayout = findViewById(R.id.fieldLayout)
         btnFormation1 = findViewById(R.id.btnFormation1)
         btnFormation2 = findViewById(R.id.btnFormation2)
@@ -54,13 +54,10 @@ class DraftActivity : AppCompatActivity() {
         btnNext = findViewById(R.id.btnNext)
         roundTitle = findViewById(R.id.roundTitle)
 
-        // Grid 2x2 para 4 opciones visibles sin scroll
-        rvOptions.layoutManager = GridLayoutManager(this, 2)
-
-        // 4 formaciones aleatorias
+        // 2️⃣ Ahora que todo está inicializado, ya puedes usar fieldLayout
         refreshVisibleFormations()
 
-        // Listeners
+        // 3️⃣ Configurar listeners
         btnFormation1.setOnClickListener { selectFormationByIndex(0) }
         btnFormation2.setOnClickListener { selectFormationByIndex(1) }
         btnFormation3.setOnClickListener { selectFormationByIndex(2) }
@@ -78,6 +75,7 @@ class DraftActivity : AppCompatActivity() {
             }
         }
     }
+
 
     // ------------------------------------------------------------------------
     // Formaciones (4 aleatorias) + bloqueo al elegir
@@ -103,6 +101,8 @@ class DraftActivity : AppCompatActivity() {
         if (formationLocked) return
         val f = visibleFormations.getOrNull(i) ?: return
         selectedFormation = f
+
+        findViewById<View>(R.id.formationButtonsLayout).visibility = View.GONE
 
         clearDraftState()
         roundTitle.text = "Elige tu capitán (${f.name})"

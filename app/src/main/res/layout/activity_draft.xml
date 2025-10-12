@@ -1,63 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
         android:id="@+id/draftLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#202a44">
-
-    <!-- Título -->
-    <TextView
-            android:id="@+id/roundTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Elige una formación"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:textColor="@android:color/white"
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="16dp" />
-
-    <!-- Botones de formaciones (4 visibles) -->
-    <LinearLayout
-            android:id="@+id/formationButtonsLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_below="@id/roundTitle"
-            android:gravity="center"
-            android:layout_marginTop="8dp"
-            android:padding="8dp">
-
-        <Button
-                android:id="@+id/btnFormation1"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="F1" />
-
-        <Button
-                android:id="@+id/btnFormation2"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="F2" />
-
-        <Button
-                android:id="@+id/btnFormation3"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="F3" />
-
-        <Button
-                android:id="@+id/btnFormation4"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="F4" />
-    </LinearLayout>
-
-    <!-- Cuadrícula de jugadores disponibles (2x2) -->
     <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvOptions"
             android:layout_width="match_parent"
@@ -68,18 +15,18 @@
             android:visibility="gone"
             android:background="#151c30" />
 
-    <!-- Campo de fútbol para vista previa/uso futuro (si lo muestras en esta pantalla) -->
-    <RelativeLayout
-            android:id="@+id/fieldLayout"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_below="@id/rvOptions"
-            android:layout_above="@id/btnNext"
-            android:layout_marginTop="16dp"
-            android:visibility="gone"
-            android:background="@drawable/football_field" />
 
-    <!-- Botón para confirmar equipo -->
+    <!-- Título -->
+    <TextView
+            android:id="@+id/roundTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Elige una formación"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="16dp" />
     <Button
             android:id="@+id/btnNext"
             android:layout_width="match_parent"
@@ -91,5 +38,145 @@
             android:backgroundTint="#ffcc00"
             android:textColor="#000000"
             android:textStyle="bold" />
+
+
+    <GridLayout
+            android:id="@+id/formationButtonsLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/roundTitle"
+            android:columnCount="2"
+            android:alignmentMode="alignMargins"
+            android:rowOrderPreserved="false"
+            android:padding="16dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginHorizontal="16dp">
+
+        <LinearLayout
+                android:id="@+id/btnFormation1Container"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:layout_width="0dp"
+                android:layout_height="160dp"
+                android:layout_columnWeight="1"
+                android:layout_margin="8dp"
+                android:background="@drawable/bg_card_formation"
+                android:padding="8dp">
+
+            <ImageView
+                    android:id="@+id/iconFormation1"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:src="@drawable/ic_formation_442"
+                    android:contentDescription="Icono formación"
+                    android:tint="#000000" />
+
+            <Button
+                    android:id="@+id/btnFormation1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="4-4-2"
+                    android:textStyle="bold"
+                    android:textSize="18sp"
+                    android:layout_marginTop="8dp"
+                    android:backgroundTint="#ffcc00"
+                    android:textColor="#000000" />
+        </LinearLayout>
+
+        <LinearLayout
+                android:id="@+id/btnFormation2Container"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:layout_width="0dp"
+                android:layout_height="160dp"
+                android:layout_columnWeight="1"
+                android:layout_margin="8dp"
+                android:background="@drawable/bg_card_formation"
+                android:padding="8dp">
+
+            <ImageView
+                    android:id="@+id/iconFormation2"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:src="@drawable/ic_formation_433"
+                    android:contentDescription="Icono formación"
+                    android:tint="#000000" />
+
+            <Button
+                    android:id="@+id/btnFormation2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="4-3-3"
+                    android:textStyle="bold"
+                    android:textSize="18sp"
+                    android:layout_marginTop="8dp"
+                    android:backgroundTint="#ffcc00"
+                    android:textColor="#000000" />
+        </LinearLayout>
+
+        <LinearLayout
+                android:id="@+id/btnFormation3Container"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:layout_width="0dp"
+                android:layout_height="160dp"
+                android:layout_columnWeight="1"
+                android:layout_margin="8dp"
+                android:background="@drawable/bg_card_formation"
+                android:padding="8dp">
+
+            <ImageView
+                    android:id="@+id/iconFormation3"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:src="@drawable/ic_formation_523"
+                    android:contentDescription="Icono formación"
+                    android:tint="#000000" />
+
+            <Button
+                    android:id="@+id/btnFormation3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="5-2-3"
+                    android:textStyle="bold"
+                    android:textSize="18sp"
+                    android:layout_marginTop="8dp"
+                    android:backgroundTint="#ffcc00"
+                    android:textColor="#000000" />
+        </LinearLayout>
+
+        <LinearLayout
+                android:id="@+id/btnFormation4Container"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:layout_width="0dp"
+                android:layout_height="160dp"
+                android:layout_columnWeight="1"
+                android:layout_margin="8dp"
+                android:background="@drawable/bg_card_formation"
+                android:padding="8dp">
+
+            <ImageView
+                    android:id="@+id/iconFormation4"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:src="@drawable/ic_formation_3421"
+                    android:contentDescription="Icono formación"
+                    android:tint="#000000" />
+
+            <Button
+                    android:id="@+id/btnFormation4"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="3-4-3"
+                    android:textStyle="bold"
+                    android:textSize="18sp"
+                    android:layout_marginTop="8dp"
+                    android:backgroundTint="#ffcc00"
+                    android:textColor="#000000" />
+        </LinearLayout>
+
+    </GridLayout>
+
 
 </RelativeLayout>

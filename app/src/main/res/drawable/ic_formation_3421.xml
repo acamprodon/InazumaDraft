@@ -1,0 +1,21 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+        android:width="64dp"
+        android:height="64dp"
+        android:viewportWidth="64"
+        android:viewportHeight="64">
+    <path android:fillColor="#000000"
+            android:pathData="M32,58 L32,58 Z"/> <!-- Portero -->
+    <path android:fillColor="#000000"
+            android:pathData="M22,46 L22,46 Z
+                          M32,46 L32,46 Z
+                          M42,46 L42,46 Z"/> <!-- 3 defensas -->
+    <path android:fillColor="#000000"
+            android:pathData="M16,34 L16,34 Z
+                          M26,34 L26,34 Z
+                          M38,34 L38,34 Z
+                          M48,34 L48,34 Z"/> <!-- 4 medios -->
+    <path android:fillColor="#000000"
+            android:pathData="M26,22 L26,22 Z
+                          M38,22 L38,22 Z
+                          M32,16 L32,16 Z"/> <!-- 2 mediapuntas + 1 delantero -->
+</vector>
