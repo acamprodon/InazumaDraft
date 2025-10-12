@@ -331,17 +331,14 @@ class DraftActivity : AppCompatActivity() {
                 fieldLayout.post { drawSlots() }
             },
             onLongClick = { player ->
-                // Oculta la lista y muestra el campo real
-                dialog.dismiss()
-
-                // Muestra el campo y coloca al jugador temporalmente
-                slots[slotIndex].player = player
-                fieldLayout.visibility = View.VISIBLE
-                rvOptions.visibility = View.GONE
-
-                // Dibuja con ese jugador seleccionado
-                fieldLayout.post { drawSlots() }
+                val imgPreview = dialogView.findViewById<ImageView>(R.id.imgPreviewPlayer)
+                val preview = dialogView.findViewById<View>(R.id.previewField)
+                imgPreview.setImageResource(player.image)
+                preview.visibility = View.VISIBLE
+                preview.alpha = 0f
+                preview.animate().alpha(1f).setDuration(150).start()
             }
+
         )
 
         dialog.show()
