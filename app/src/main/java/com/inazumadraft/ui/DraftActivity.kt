@@ -16,6 +16,8 @@ import com.inazumadraft.data.Formation
 import com.inazumadraft.data.PlayerRepository
 import com.inazumadraft.data.formations
 import com.inazumadraft.model.Player
+import android.view.GestureDetector
+
 
 class DraftActivity : AppCompatActivity() {
 
@@ -350,38 +352,75 @@ class DraftActivity : AppCompatActivity() {
     ) {
         val backupSlots = slots.map { it.copy() }
 
-        // Cerrar diálogo para mostrar campo
+        // Cerramos el diálogo para liberar el foco
         dialog.dismiss()
 
-        // Mostrar jugador temporal
+        // Mostrar jugador en el campo real (preview)
         slots[slotIndex].player = player
         drawSlots()
 
-        // Borde dorado
+        // Resaltar jugador temporalmente
         fieldLayout.post {
             val slotView = fieldLayout.getChildAt(slotIndex)
             slotView?.findViewById<ImageView>(R.id.imgPlayer)
                 ?.setBackgroundResource(R.drawable.captain_border)
         }
 
+        // Mostrar overlay para indicar preview
         overlayPreview.visibility = View.VISIBLE
-        overlayPreview.alpha = 0f
-        overlayPreview.animate().alpha(0.25f).setDuration(100).start()
+        overlayPreview.alpha = 0.25f
 
-        // Pequeño retardo y reapertura sincronizada
-        overlayPreview.postDelayed({
-            for (i in slots.indices) {
-                slots[i].player = backupSlots[i].player
+        // ⚡ Usar clase completa del GestureDetector
+        val gestureDetector = android.view.GestureDetector(
+            this,
+            object : android.view.GestureDetector.SimpleOnGestureListener() {
+                override fun onSingleTapUp(e: MotionEvent?): Boolean {
+                    restoreAndReopen(slotIndex, backupSlots, currentOptions)
+                    return true
+                }
+
+                override fun onFling(
+                    e1: MotionEvent?,
+                    e2: MotionEvent?,
+                    velocityX: Float,
+                    velocityY: Float
+                ): Boolean {
+                    restoreAndReopen(slotIndex, backupSlots, currentOptions)
+                    return true
+                }
             }
-            drawSlots()
+        )
 
-            overlayPreview.animate().alpha(0f).setDuration(150).withEndAction {
-                overlayPreview.visibility = View.GONE
-                overlayPreview.setOnTouchListener(null)
-                reopenSamePlayerPicker(slotIndex, currentOptions)
-            }.start()
-        }, 300)
+        // Asignar detector al campo
+        fieldLayout.setOnTouchListener { _, event ->
+            gestureDetector.onTouchEvent(event)
+            if (event.action == MotionEvent.ACTION_UP) {
+                restoreAndReopen(slotIndex, backupSlots, currentOptions)
+            }
+            true
+        }
     }
+
+
+    private fun restoreAndReopen(
+        slotIndex: Int,
+        backupSlots: List<Slot>,
+        currentOptions: List<Player>
+    ) {
+        // Restaurar campo
+        for (i in slots.indices) {
+            slots[i].player = backupSlots[i].player
+        }
+        drawSlots()
+
+        // Ocultar overlay y limpiar listener
+        overlayPreview.visibility = View.GONE
+        fieldLayout.setOnTouchListener(null)
+
+        // Reabrir el mismo picker
+        reopenSamePlayerPicker(slotIndex, currentOptions)
+    }
+
 
     private fun reopenSamePlayerPicker(slotIndex: Int, sameOptions: List<Player>) {
         val slot = slots[slotIndex]
