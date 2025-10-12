@@ -265,7 +265,7 @@ class DraftActivity : AppCompatActivity() {
                 val slot = slots[slotGlobalIndex]
                 val slotView = layoutInflater.inflate(R.layout.item_player_field, fieldLayout, false)
                 val img = slotView.findViewById<ImageView>(R.id.imgPlayer)
-                val name = slotView.findViewById<TextView>(R.id.txtPlayerName)
+                val name = slotView.findViewById<TextView>(R.id.txtPlayerNickname)
                 val elem = slotView.findViewById<ImageView>(R.id.imgElement)
 
                 if (slot.player != null) {
