@@ -1,35 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/benchPanel"
-        android:layout_width="260dp"
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_gravity="end"
-        android:background="#ee151c30"
-        android:translationX="260dp"
-        android:elevation="8dp"
-        android:clickable="true">
+        android:visibility="gone"
+        android:clickable="false">
 
+    <!-- SCRIM: tapa el fondo y cierra al tocar -->
+    <View
+            android:id="@+id/benchScrim"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#80000000"
+            android:visibility="gone"
+            android:clickable="true" />
+
+    <!-- DRAWER derecho -->
     <LinearLayout
+            android:id="@+id/benchDrawer"
+            android:layout_width="260dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="end"
             android:orientation="vertical"
             android:padding="12dp"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:background="#ee151c30"
+            android:elevation="12dp"
+            android:translationX="260dp"
+            android:clickable="true">
 
         <TextView
                 android:id="@+id/txtBenchTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:text="Banquillo"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:textColor="@android:color/white"
-                android:layout_marginBottom="8dp" android:layout_height="wrap_content" android:layout_width="wrap_content"/>
+                android:layout_marginBottom="8dp" />
 
+        <!-- Player picks en grilla -->
         <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvBench"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
                 android:overScrollMode="never"
-                android:paddingBottom="8dp"/>
+                android:paddingBottom="8dp"
+                android:clipToPadding="false" />
 
         <Button
                 android:id="@+id/btnCloseBench"
@@ -37,6 +54,6 @@
                 android:layout_height="wrap_content"
                 android:text="Cerrar"
                 android:backgroundTint="#ffcc00"
-                android:textColor="#000"/>
+                android:textColor="#000" />
     </LinearLayout>
 </FrameLayout>
