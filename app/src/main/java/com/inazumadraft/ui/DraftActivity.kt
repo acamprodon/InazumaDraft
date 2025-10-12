@@ -353,48 +353,46 @@ class DraftActivity : AppCompatActivity() {
         dialog: android.app.Dialog,
         currentOptions: List<Player>
     ) {
-        val slot = slots[slotIndex]
         val backupSlots = slots.map { it.copy() }
 
-        // ⚡ Hacemos el diálogo invisible (no lo destruimos)
-        dialog.window?.decorView?.alpha = 0f
+        // Cerrar el diálogo actual para liberar el foco
+        dialog.dismiss()
 
-        // Mostramos al jugador en el campo real
+        // Mostrar el jugador en el campo real
         slots[slotIndex].player = player
         drawSlots()
 
-        // Resaltamos el jugador temporalmente
+        // Resaltar jugador temporalmente
         fieldLayout.post {
             val slotView = fieldLayout.getChildAt(slotIndex)
             slotView?.findViewById<ImageView>(R.id.imgPlayer)
                 ?.setBackgroundResource(R.drawable.captain_border)
         }
 
-        // Pequeña animación de enfoque
+        // Mostrar overlay visual suave
         overlayPreview.visibility = View.VISIBLE
         overlayPreview.alpha = 0f
         overlayPreview.animate().alpha(0.25f).setDuration(100).start()
 
-        // Detectar cuándo el usuario suelta el dedo (ACTION_UP)
-        overlayPreview.setOnTouchListener { _, event ->
-            if (event.action == MotionEvent.ACTION_UP || event.action == MotionEvent.ACTION_CANCEL) {
-                // Restaurar alineación original
-                for (i in slots.indices) {
-                    slots[i].player = backupSlots[i].player
-                }
-                drawSlots()
-
-                // Quitamos overlay y reabrimos diálogo
-                overlayPreview.animate().alpha(0f).setDuration(150).withEndAction {
-                    overlayPreview.visibility = View.GONE
-                    dialog.window?.decorView?.animate()?.alpha(1f)?.setDuration(150)?.start()
-                }.start()
-
-                overlayPreview.setOnTouchListener(null)
+        // ⚡ Espera 300 ms para que el usuario vea el preview
+        overlayPreview.postDelayed({
+            // Restaurar alineación original
+            for (i in slots.indices) {
+                slots[i].player = backupSlots[i].player
             }
-            true
-        }
+            drawSlots()
+
+            // Quitar overlay con animación suave
+            overlayPreview.animate().alpha(0f).setDuration(150).withEndAction {
+                overlayPreview.visibility = View.GONE
+                overlayPreview.setOnTouchListener(null)
+
+                // Reabrir el mismo player picker con las mismas opciones
+                reopenSamePlayerPicker(slotIndex, currentOptions)
+            }.start()
+        }, 300)
     }
+
 
 
     private fun reopenSamePlayerPicker(slotIndex: Int, sameOptions: List<Player>) {
