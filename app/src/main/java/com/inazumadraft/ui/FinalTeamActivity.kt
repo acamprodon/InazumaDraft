@@ -1,6 +1,8 @@
 package com.inazumadraft.ui
 
+import android.content.ClipData
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.view.DragEvent
 import android.view.View
@@ -25,7 +27,6 @@ class FinalTeamActivity : AppCompatActivity() {
     private lateinit var recyclerFinalTeam: RecyclerView
 
     private val playerSlots = mutableListOf<Player?>()
-    private var draggedIndex: Int? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,13 +44,11 @@ class FinalTeamActivity : AppCompatActivity() {
         playerSlots.clear()
         playerSlots.addAll(team)
 
-        // Dibujar campo con jugadores
-        fieldLayout.post { drawTemplateAndFill(formationName, captainName) }
-
         recyclerFinalTeam.layoutManager = LinearLayoutManager(this)
         recyclerFinalTeam.adapter = FinalTeamAdapter(team)
 
-        // Alternar vista
+        fieldLayout.post { drawTemplateAndFill(formationName, captainName) }
+
         btnToggleView.setOnClickListener {
             if (recyclerFinalTeam.visibility == View.GONE) {
                 recyclerFinalTeam.visibility = View.VISIBLE
@@ -62,114 +61,78 @@ class FinalTeamActivity : AppCompatActivity() {
             }
         }
 
-        // Nuevo equipo
         btnNewTeam.setOnClickListener {
-            val intent = Intent(this@FinalTeamActivity, DraftActivity::class.java)
+            val intent = Intent(this, DraftActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
             startActivity(intent)
             finish()
         }
     }
 
-    private fun toCode(pos: String): String = when (pos.trim().lowercase()) {
-        "portero", "pt" -> "PT"
-        "defensa", "df" -> "DF"
-        "centrocampista", "mc" -> "MC"
-        "delantero", "dl" -> "DL"
-        else -> pos.trim().uppercase()
-    }
-
-    private fun codeToNice(code: String): String = when (code.uppercase()) {
-        "PT" -> "Portero"
-        "DF" -> "Defensa"
-        "MC" -> "Centrocampista"
-        "DL" -> "Delantero"
-        else -> code
-    }
-
-    // --- DIBUJA CAMPO + DRAG & DROP ---
     private fun drawTemplateAndFill(formationName: String, captainName: String?) {
         fieldLayout.removeAllViews()
         val formation = formations.firstOrNull { it.name == formationName } ?: return
         val coords = formationCoordinates[formationName] ?: return
-
         val d = resources.displayMetrics.density
-        var cardW = 100f * d
-        var cardH = cardW * 1.25f
-        val hGap = 8f * d
-        val maxCols = 4
-        val rowWidthNeeded = maxCols * cardW + (maxCols - 1) * hGap
-        if (rowWidthNeeded > fieldLayout.width) {
-            cardW = (fieldLayout.width - (maxCols - 1) * hGap) / maxCols
-            cardH = cardW * 1.25f
-        }
+        val cardW = (100f * d).toInt()
+        val cardH = (125f * d).toInt()
 
-        coords.forEachIndexed { index, (x, yRaw) ->
-            val topBand = 0.08f
-            val bottomBand = 0.96f
-            val y = (topBand + yRaw * (bottomBand - topBand)).coerceIn(0f, 1f)
-
+        coords.forEachIndexed { index, (x, y) ->
             val view = layoutInflater.inflate(R.layout.item_player_field, fieldLayout, false)
             val img = view.findViewById<ImageView>(R.id.imgPlayer)
             val name = view.findViewById<TextView>(R.id.txtPlayerNickname)
             val elem = view.findViewById<ImageView>(R.id.imgElement)
 
-            val player = playerSlots.getOrNull(index)
-            if (player != null) {
-                img.setImageResource(player.image)
-                name.text = player.nickname
-                elem.setImageResource(player.element)
-                if (player.name == captainName) img.setBackgroundResource(R.drawable.captain_border)
+            val p = playerSlots.getOrNull(index)
+            if (p != null) {
+                img.setImageResource(p.image)
+                elem.setImageResource(p.element)
+                name.text = p.nickname
+                if (p.name == captainName) img.setBackgroundResource(R.drawable.captain_border)
             } else {
                 img.setImageResource(0)
+                name.text = "Vacío"
                 elem.setImageResource(0)
-                name.text = codeToNice(toCode(formation.positions[index]))
             }
 
-            val lp = RelativeLayout.LayoutParams(cardW.toInt(), cardH.toInt())
-            lp.leftMargin = (fieldLayout.width * x - cardW / 2f).toInt()
-            lp.topMargin = (fieldLayout.height * y - cardH / 2f).toInt()
+            val lp = RelativeLayout.LayoutParams(cardW, cardH)
+            lp.leftMargin = (fieldLayout.width * x - cardW / 2).toInt()
+            lp.topMargin = (fieldLayout.height * y - cardH / 2).toInt()
             view.layoutParams = lp
 
-            // --- DRAG & DROP CONFIG ---
-            if (player != null) {
+            // ----- LONG CLICK PARA ARRASTRAR -----
+            if (p != null) {
                 view.setOnLongClickListener {
-                    draggedIndex = index
+                    val clipData = ClipData.newPlainText("fromIndex", index.toString())
                     val shadow = View.DragShadowBuilder(it)
-                    it.startDragAndDrop(null, shadow, null, 0)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        it.startDragAndDrop(clipData, shadow, index, 0)
+                    } else {
+                        @Suppress("DEPRECATION")
+                        it.startDrag(clipData, shadow, index, 0)
+                    }
                     it.alpha = 0.5f
                     true
                 }
             }
 
+            // ----- DRAG LISTENER -----
             view.setOnDragListener { v, event ->
                 when (event.action) {
-                    DragEvent.ACTION_DRAG_STARTED -> true
-                    DragEvent.ACTION_DRAG_ENTERED -> {
-                        v.alpha = 0.7f
-                        true
-                    }
-                    DragEvent.ACTION_DRAG_EXITED -> {
-                        v.alpha = 1f
-                        true
-                    }
+                    DragEvent.ACTION_DRAG_ENTERED -> { v.alpha = 0.7f; true }
+                    DragEvent.ACTION_DRAG_EXITED -> { v.alpha = 1f; true }
                     DragEvent.ACTION_DROP -> {
-                        val from = draggedIndex
+                        val from = event.localState as? Int
                         if (from != null && from != index) {
-                            val temp = playerSlots[from]
+                            val tmp = playerSlots[from]
                             playerSlots[from] = playerSlots[index]
-                            playerSlots[index] = temp
-                            draggedIndex = null
+                            playerSlots[index] = tmp
                             drawTemplateAndFill(formationName, captainName)
                         }
                         true
                     }
-                    DragEvent.ACTION_DRAG_ENDED -> {
-                        v.alpha = 1f
-                        draggedIndex = null
-                        true
-                    }
-                    else -> false
+                    DragEvent.ACTION_DRAG_ENDED -> { v.alpha = 1f; true }
+                    else -> true
                 }
             }
 
