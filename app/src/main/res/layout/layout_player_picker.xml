@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:background="#151c30"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+    <TextView
+            android:id="@+id/txtTitle"
+            android:text="Elige un jugador"
+            android:textSize="18sp"
+            android:textColor="@android:color/white"
+            android:layout_marginBottom="12dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+    <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvPickerOptions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="8dp" />
+
+    <!-- Vista previa del campo (invisible por defecto) -->
+    <ImageView
+            android:id="@+id/previewField"
+            android:layout_width="match_parent"
+            android:layout_height="180dp"
+            android:layout_marginTop="12dp"
+            android:visibility="gone"
+            android:scaleType="centerCrop"
+            android:src="@drawable/football_field" />
+</LinearLayout>

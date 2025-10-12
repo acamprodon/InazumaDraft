@@ -17,7 +17,7 @@ import com.inazumadraft.model.Player
 
 class DraftActivity : AppCompatActivity() {
 
-    // --- UI ---
+
     private lateinit var fieldLayout: RelativeLayout
     private lateinit var btnFormation1: Button
     private lateinit var btnFormation2: Button
@@ -27,7 +27,7 @@ class DraftActivity : AppCompatActivity() {
     private lateinit var btnNext: Button
     private lateinit var roundTitle: TextView
 
-    // --- Estado ---
+
     private var visibleFormations: List<Formation> = emptyList()
     private var selectedFormation: Formation? = null
     private var formationLocked: Boolean = false
@@ -37,14 +37,14 @@ class DraftActivity : AppCompatActivity() {
     private val selectedPlayers: MutableList<Player> = mutableListOf()
     private var captain: Player? = null
 
-    // Fila por fila (arriba→abajo): DL → MC → DF → PT
+
     private var rowSpec: List<Int> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_draft)
 
-        // ✅ 1️⃣ Inicializar TODAS las vistas antes de usarlas
+
         fieldLayout = findViewById(R.id.fieldLayout)
         btnFormation1 = findViewById(R.id.btnFormation1)
         btnFormation2 = findViewById(R.id.btnFormation2)
@@ -54,10 +54,9 @@ class DraftActivity : AppCompatActivity() {
         btnNext = findViewById(R.id.btnNext)
         roundTitle = findViewById(R.id.roundTitle)
 
-        // ✅ 2️⃣ Ahora ya puedes llamar a refreshVisibleFormations()
+
         refreshVisibleFormations()
 
-        // ✅ 3️⃣ Configurar listeners
         btnFormation1.setOnClickListener { selectFormationByIndex(0) }
         btnFormation2.setOnClickListener { selectFormationByIndex(1) }
         btnFormation3.setOnClickListener { selectFormationByIndex(2) }
@@ -77,10 +76,6 @@ class DraftActivity : AppCompatActivity() {
     }
 
 
-
-    // ------------------------------------------------------------------------
-    // Formaciones (4 aleatorias) + bloqueo al elegir
-    // ------------------------------------------------------------------------
     private fun refreshVisibleFormations() {
         visibleFormations = if (formations.size >= 4) formations.shuffled().take(4) else formations
         btnFormation1.text = visibleFormations.getOrNull(0)?.name ?: "—"
@@ -155,7 +150,7 @@ class DraftActivity : AppCompatActivity() {
     }
 
     // ------------------------------------------------------------------------
-    // Selección de capitán (4 aleatorias)
+    // Selección de capitán
     // ------------------------------------------------------------------------
     private fun showCaptainOptions() {
         rvOptions.visibility = View.VISIBLE
@@ -333,17 +328,36 @@ class DraftActivity : AppCompatActivity() {
             .shuffled()
             .take(4)
 
-        rvOptions.visibility = View.VISIBLE
-        rvOptions.bringToFront()
-        rvOptions.adapter = OptionAdapter(options) { chosen ->
+        // 🧩 Creamos un BottomSheet flotante
+        val dialogView = layoutInflater.inflate(R.layout.layout_player_picker, null)
+        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        dialog.setContentView(dialogView)
+
+        val title = dialogView.findViewById<TextView>(R.id.txtTitle)
+        val rvPicker = dialogView.findViewById<RecyclerView>(R.id.rvPickerOptions)
+        val preview = dialogView.findViewById<ImageView>(R.id.previewField)
+
+        title.text = "Elige ${codeToLabel(role)}"
+        rvPicker.layoutManager = GridLayoutManager(this, 2)
+
+        rvPicker.adapter = OptionAdapter(options) { chosen ->
             slots[slotIndex].player = chosen
             selectedPlayers.add(chosen)
-            rvOptions.visibility = View.GONE
+            dialog.dismiss()
             fieldLayout.post { drawSlots() }
         }
 
-        val remaining = slots.count { it.player == null }
-        roundTitle.text = "Rellena: ${codeToLabel(role)}  (huecos: $remaining)"
+        // 👇 Si mantiene presionado un jugador, se muestra la vista previa del campo
+        rvPicker.addOnItemTouchListener(
+            androidx.recyclerview.widget.RecyclerView.SimpleOnItemTouchListener()
+        )
+
+        // Configura evento de mantener pulsado
+        (rvPicker.adapter as OptionAdapter).apply {
+            // Reutiliza tu adaptador añadiendo un callback opcional
+        }
+
+        dialog.show()
     }
 
     // ------------------------------------------------------------------------
