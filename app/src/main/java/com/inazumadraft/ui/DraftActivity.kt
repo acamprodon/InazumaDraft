@@ -335,8 +335,13 @@ class DraftActivity : AppCompatActivity() {
             },
             onLongClick = { player ->
                 showPreviewOnLongPress(slotIndex, player, dialog, options)
+            },
+            onReleaseAfterLongClick = {
+                // Cuando suelta el dedo, reabrimos el picker con los mismos jugadores
+                reopenSamePlayerPicker(slotIndex, options)
             }
         )
+
 
         dialog.show()
     }
@@ -370,23 +375,7 @@ class DraftActivity : AppCompatActivity() {
         overlayPreview.alpha = 0f
         overlayPreview.animate().alpha(0.25f).setDuration(100).start()
 
-        overlayPreview.setOnTouchListener { _, event ->
-            if (event.action == MotionEvent.ACTION_UP || event.action == MotionEvent.ACTION_CANCEL) {
-                // Restaurar campo original
-                for (i in slots.indices) {
-                    slots[i].player = backupSlots[i].player
-                }
-                drawSlots()
 
-                overlayPreview.animate().alpha(0f).setDuration(100).withEndAction {
-                    overlayPreview.visibility = View.GONE
-                    reopenSamePlayerPicker(slotIndex, currentOptions)
-                }.start()
-
-                overlayPreview.setOnTouchListener(null)
-            }
-            true
-        }
     }
 
     private fun reopenSamePlayerPicker(slotIndex: Int, sameOptions: List<Player>) {
