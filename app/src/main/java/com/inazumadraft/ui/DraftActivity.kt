@@ -15,8 +15,8 @@ import com.inazumadraft.data.PlayerRepository
 import com.inazumadraft.data.formations
 import com.inazumadraft.model.Player
 import android.widget.ImageView
-class DraftActivity : AppCompatActivity() {
 
+class DraftActivity : AppCompatActivity() {
 
     private lateinit var fieldLayout: RelativeLayout
     private lateinit var btnFormation1: Button
@@ -27,7 +27,6 @@ class DraftActivity : AppCompatActivity() {
     private lateinit var btnNext: Button
     private lateinit var roundTitle: TextView
 
-
     private var visibleFormations: List<Formation> = emptyList()
     private var selectedFormation: Formation? = null
     private var formationLocked: Boolean = false
@@ -37,13 +36,11 @@ class DraftActivity : AppCompatActivity() {
     private val selectedPlayers: MutableList<Player> = mutableListOf()
     private var captain: Player? = null
 
-
     private var rowSpec: List<Int> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_draft)
-
 
         fieldLayout = findViewById(R.id.fieldLayout)
         btnFormation1 = findViewById(R.id.btnFormation1)
@@ -53,7 +50,6 @@ class DraftActivity : AppCompatActivity() {
         rvOptions = findViewById(R.id.rvOptions)
         btnNext = findViewById(R.id.btnNext)
         roundTitle = findViewById(R.id.roundTitle)
-
 
         refreshVisibleFormations()
 
@@ -73,8 +69,13 @@ class DraftActivity : AppCompatActivity() {
                 startActivity(intent)
             }
         }
-    }
 
+        // 👇 Asegura que las vistas iniciales estén en el orden correcto
+        rvOptions.visibility = View.GONE
+        fieldLayout.visibility = View.GONE
+        findViewById<View>(R.id.formationButtonsLayout).bringToFront()
+        formationLocked = false
+    }
 
     private fun refreshVisibleFormations() {
         visibleFormations = if (formations.size >= 4) formations.shuffled().take(4) else formations
@@ -130,9 +131,6 @@ class DraftActivity : AppCompatActivity() {
         rowSpec = emptyList()
     }
 
-    // ------------------------------------------------------------------------
-    // Helpers posiciones
-    // ------------------------------------------------------------------------
     private fun toCode(pos: String): String = when (pos.trim().lowercase()) {
         "portero", "pt" -> "PT"
         "defensa", "df" -> "DF"
@@ -149,12 +147,9 @@ class DraftActivity : AppCompatActivity() {
         else -> code
     }
 
-    // ------------------------------------------------------------------------
-    // Selección de capitán
-    // ------------------------------------------------------------------------
     private fun showCaptainOptions() {
         rvOptions.visibility = View.VISIBLE
-        rvOptions.bringToFront() // ✅ Asegura que el RecyclerView esté encima del campo
+        rvOptions.bringToFront()
         btnNext.visibility = View.GONE
         fieldLayout.visibility = View.GONE
         val options = PlayerRepository.players.shuffled().take(4)
@@ -179,18 +174,12 @@ class DraftActivity : AppCompatActivity() {
                 }
             },
             onLongClick = { player ->
-                // 👇 aquí puedes hacer algo visual si lo deseas (por ejemplo, mostrar el campo)
                 fieldLayout.visibility = View.VISIBLE
-                rvOptions.alpha = 0.4f // mostrar parcialmente la lista mientras se ve el campo
+                rvOptions.alpha = 0.4f
             }
         )
-
     }
 
-
-    // ------------------------------------------------------------------------
-    // Plantilla de slots y pintado del campo
-    // ------------------------------------------------------------------------
     private fun buildSlotsTemplateAndPlaceCaptain() {
         val formation = selectedFormation ?: return
         val codes = formation.positions.map { toCode(it) }
@@ -212,7 +201,6 @@ class DraftActivity : AppCompatActivity() {
             return rows
         }
 
-        // De arriba a abajo: DL, MC, DF, PT
         val dlRows = split(nDL, 3)
         val mcRows = split(nMC, 4)
         val dfRows = split(nDF, 4)
@@ -221,14 +209,12 @@ class DraftActivity : AppCompatActivity() {
             addAll(dlRows); addAll(mcRows); addAll(dfRows); addAll(ptRows)
         }
 
-        // Crear slots en ese orden
         slots.clear()
         repeat(nDL) { slots.add(Slot("DL")) }
         repeat(nMC) { slots.add(Slot("MC")) }
         repeat(nDF) { slots.add(Slot("DF")) }
         repeat(nPT) { slots.add(Slot("PT")) }
 
-        // Colocar capitán si cuadra su rol
         captain?.let { cap ->
             val idx = slots.indexOfFirst { it.role.equals(cap.position, ignoreCase = true) && it.player == null }
             if (idx >= 0) {
@@ -239,7 +225,6 @@ class DraftActivity : AppCompatActivity() {
     }
 
     private fun drawSlots() {
-        // Si aún no hay medidas, retrasa el pintado
         if (fieldLayout.width == 0 || fieldLayout.height == 0) {
             fieldLayout.post { drawSlots() }
             return
@@ -247,7 +232,6 @@ class DraftActivity : AppCompatActivity() {
 
         fieldLayout.removeAllViews()
 
-        // Tamaño global de carta
         val d = resources.displayMetrics.density
         var cardW = 100f * d
         var cardH = cardW * 1.25f
@@ -268,7 +252,6 @@ class DraftActivity : AppCompatActivity() {
             topPad + t * (bottomPad - topPad)
         }
 
-        // Pintar slots fila a fila
         var slotGlobalIndex = 0
         rowSpec.forEachIndexed { rowIdx, cols ->
             val n = cols
@@ -279,9 +262,9 @@ class DraftActivity : AppCompatActivity() {
             repeat(n) { i ->
                 val slot = slots[slotGlobalIndex]
                 val slotView = layoutInflater.inflate(R.layout.item_player_field, fieldLayout, false)
-                val img  = slotView.findViewById<android.widget.ImageView>(R.id.imgPlayer)
+                val img = slotView.findViewById<ImageView>(R.id.imgPlayer)
                 val name = slotView.findViewById<TextView>(R.id.txtPlayerName)
-                val elem = slotView.findViewById<android.widget.ImageView>(R.id.imgElement)
+                val elem = slotView.findViewById<ImageView>(R.id.imgElement)
 
                 if (slot.player != null) {
                     val p = slot.player!!
@@ -293,16 +276,13 @@ class DraftActivity : AppCompatActivity() {
                     img.setImageResource(0)
                     elem.setImageResource(0)
                     name.text = codeToLabel(slot.role)
-                    // Si quieres ver marco de slot vacío:
-                    // slotView.setBackgroundResource(R.drawable.slot_placeholder)
                 }
 
                 val lp = RelativeLayout.LayoutParams(cardW.toInt(), cardH.toInt())
                 lp.leftMargin = (startX + i * (cardW + hGap)).toInt()
-                lp.topMargin  = (yCenter - cardH / 2f).toInt()
+                lp.topMargin = (yCenter - cardH / 2f).toInt()
                 slotView.layoutParams = lp
 
-                // Click SOLO si está vacío
                 val indexForClick = slotGlobalIndex
                 slotView.isClickable = slot.player == null
                 slotView.alpha = if (slot.player == null) 0.95f else 1f
@@ -317,15 +297,11 @@ class DraftActivity : AppCompatActivity() {
             }
         }
 
-        // Habilitar confirmar cuando todo esté lleno
         val total = selectedFormation?.positions?.size ?: 0
         val filled = slots.count { it.player != null }
         btnNext.visibility = if (filled == total) View.VISIBLE else View.GONE
     }
 
-    // ------------------------------------------------------------------------
-    // Picker de 4 opciones para un slot vacío
-    // ------------------------------------------------------------------------
     private fun showOptionsForSlot(slotIndex: Int) {
         val slot = slots[slotIndex]
         val role = slot.role.uppercase()
@@ -335,7 +311,6 @@ class DraftActivity : AppCompatActivity() {
             .shuffled()
             .take(4)
 
-        // 🧩 Creamos un diálogo centrado
         val dialogView = layoutInflater.inflate(R.layout.layout_player_picker, null)
         val dialog = android.app.Dialog(this, R.style.CenterDialogTheme)
         dialog.setContentView(dialogView)
@@ -356,7 +331,6 @@ class DraftActivity : AppCompatActivity() {
                 fieldLayout.post { drawSlots() }
             },
             onLongClick = {
-                // 👇 Si se mantiene pulsado, se muestra la vista previa del campo
                 preview.visibility = View.VISIBLE
                 preview.bringToFront()
             }
@@ -365,10 +339,6 @@ class DraftActivity : AppCompatActivity() {
         dialog.show()
     }
 
-
-    // ------------------------------------------------------------------------
-    // Construcción del equipo final según el orden de la formación
-    // ------------------------------------------------------------------------
     private fun buildFinalTeamFromSlots(formation: Formation): List<Player> {
         val result = mutableListOf<Player>()
         val tmp = slots.toMutableList()
