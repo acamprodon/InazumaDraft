@@ -52,8 +52,9 @@ class FinalTeamActivity : AppCompatActivity() {
         }
     }
 
-    // --- Estado y helpers del drawer del banquillo ---
+    // --- Estado del drawer del banquillo + hot-zone ---
     private var isBenchOpen = false
+    private var benchHotZone: View? = null
 
     private fun openBenchDrawer(root: View, drawer: View, scrim: View, onOpen: () -> Unit = {}) {
         root.visibility = View.VISIBLE
@@ -78,21 +79,26 @@ class FinalTeamActivity : AppCompatActivity() {
         isBenchOpen = false
     }
 
-    /** Auto-apertura: si durante un drag el puntero entra en el 12% final del ancho del campo, abre el banquillo. */
-    private fun enableAutoOpenBenchOnDrag(field: View, root: View, drawer: View, scrim: View, onOpen: () -> Unit) {
-        field.setOnDragListener { _, event ->
-            when (event.action) {
-                DragEvent.ACTION_DRAG_LOCATION -> {
-                    val thresholdX = field.width * 0.88f
-                    if (!isBenchOpen && event.x >= thresholdX) {
-                        openBenchDrawer(root, drawer, scrim, onOpen)
-                    }
-                    false // no consumimos el evento
-                }
-                DragEvent.ACTION_DRAG_ENDED -> false
-                else -> false
+    /** Crea una franja invisible en el borde derecho que abre el banquillo si entra un drag. */
+    private fun ensureBenchHotZone(root: View, drawer: View, scrim: View, onOpen: () -> Unit) {
+        val parent: ViewGroup = findViewById(android.R.id.content)
+        if (benchHotZone != null) return
+
+        val d = resources.displayMetrics.density
+        benchHotZone = View(this).apply {
+            layoutParams = FrameLayout.LayoutParams((28 * d).toInt(), FrameLayout.LayoutParams.MATCH_PARENT).apply {
+                gravity = Gravity.END
             }
+            setOnDragListener { _, event ->
+                if (event.action == DragEvent.ACTION_DRAG_ENTERED && !isBenchOpen) {
+                    openBenchDrawer(root, drawer, scrim, onOpen)
+                    return@setOnDragListener true
+                }
+                false
+            }
+            // setBackgroundColor(0x11FF0000.toInt()) // <- descomenta para depurar la zona
         }
+        parent.addView(benchHotZone)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -108,11 +114,11 @@ class FinalTeamActivity : AppCompatActivity() {
         formationName = intent.getStringExtra("formation") ?: "4-4-2"
         captainName = intent.getStringExtra("captainName")
 
-        // Restaurar equipo titular
+        // Restaurar titulares
         playerSlots.clear()
         playerSlots.addAll(team)
 
-        // Restaurar banquillo desde el draft (si vino)
+        // Restaurar banquillo enviado desde DraftActivity (persistente)
         intent.getParcelableArrayListExtra<Player>("benchPlayers")?.let { list ->
             for (i in 0 until 5) benchPlayers[i] = list.getOrNull(i)
         }
@@ -144,7 +150,7 @@ class FinalTeamActivity : AppCompatActivity() {
         setupBenchPanel()
     }
 
-    // ----------------- Banquillo: picks por hueco -----------------
+    // ----------------- Banquillo: picks por hueco (solo si vacío) -----------------
     private fun showBenchOptionsForSlotFinal(slotIndex: Int) {
         val usados = mutableSetOf<Player>().apply {
             addAll(playerSlots.filterNotNull())
@@ -156,7 +162,7 @@ class FinalTeamActivity : AppCompatActivity() {
             .take(4)
 
         val dialogView = layoutInflater.inflate(R.layout.layout_player_picker, null)
-        val dialog = android.app.Dialog(this, R.style.CenterDialogTheme)
+        val dialog = android.app.Dialog(this)
         dialog.setContentView(dialogView)
         val title = dialogView.findViewById<TextView>(R.id.txtTitle)
         val rvPicker = dialogView.findViewById<RecyclerView>(R.id.rvPickerOptions)
@@ -191,7 +197,6 @@ class FinalTeamActivity : AppCompatActivity() {
             root.visibility = View.GONE
             scrim.visibility = View.GONE
         }
-
         // Cerrar tocando scrim
         scrim.setOnClickListener { closeBenchDrawer(root, drawer, scrim, onClose) }
 
@@ -230,6 +235,7 @@ class FinalTeamActivity : AppCompatActivity() {
         fun updateTitle() { txtTitle.text = "Banquillo (${benchCount()}/5)" }
         updateTitle()
 
+        // Lista horizontal con 5 huecos
         rvSel.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
         rvSel.itemAnimator = null
         rvSel.adapter = BenchSelectedAdapter(
@@ -244,20 +250,20 @@ class FinalTeamActivity : AppCompatActivity() {
                 updateTitle()
                 requestDrawField()
             },
-            onClickSlot = { index -> showBenchOptionsForSlotFinal(index) }
+            onClickSlot = { index -> showBenchOptionsForSlotFinal(index) } // el adapter sólo llama si el hueco está vacío
         )
 
-        // La grilla inferior no se usa (los picks salen tocando el hueco)
+        // Grilla inferior no usada (los picks salen al tocar cada hueco)
         rvOpts.layoutManager = GridLayoutManager(this, 2)
         rvOpts.adapter = OptionAdapter(
             emptyList(),
             onClick = { _: Player -> }
         )
 
-        // Cerrar con botón
+        // Cerrar
         btnClose.setOnClickListener { closeBenchDrawer(root, drawer, scrim) }
 
-        // Botón lateral + scrim
+        // Botón lateral y scrim
         val activityRoot: ViewGroup = findViewById(android.R.id.content)
         setupBenchDrawerBasics(
             root = root,
@@ -271,9 +277,8 @@ class FinalTeamActivity : AppCompatActivity() {
             onClose = { }
         )
 
-        // Auto-abrir al arrastrar hacia el borde derecho del campo
-        enableAutoOpenBenchOnDrag(
-            field = fieldLayout,
+        // Hot-zone que abre al arrastrar hacia el borde derecho
+        ensureBenchHotZone(
             root = root,
             drawer = drawer,
             scrim = scrim

@@ -51,8 +51,56 @@ class DraftActivity : AppCompatActivity() {
 
     private var isPreviewing = false
 
-    private var isBenchOpen = false
+    // ------- BANQUILLO -------
     private val benchPlayers = MutableList<Player?>(5) { null }  // 5 huecos fijos (nullable)
+    // cache de picks por hueco para evitar reroll
+    private val benchPickOptions: MutableList<List<Player>?> = MutableList(5) { null }
+
+    // ------- Drawer del banquillo: estado + hot-zone -------
+    private var isBenchOpen = false
+    private var benchHotZone: View? = null
+
+    private fun openBench(root: View, drawer: View, scrim: View, onOpen: () -> Unit = {}) {
+        root.visibility = View.VISIBLE
+        root.bringToFront()
+        scrim.visibility = View.VISIBLE
+        drawer.animate().translationX(0f).setDuration(220)
+            .withStartAction { onOpen() }
+            .start()
+        isBenchOpen = true
+    }
+
+    private fun closeBench(root: View, drawer: View, scrim: View, onClose: () -> Unit = {}) {
+        drawer.animate().translationX(drawer.width.toFloat()).setDuration(200)
+            .withEndAction {
+                scrim.visibility = View.GONE
+                root.visibility = View.GONE
+                onClose()
+            }.start()
+        isBenchOpen = false
+    }
+
+    /** Franja invisible a la derecha que abre el banquillo si entra un drag. */
+    private fun ensureBenchHotZone(root: View, drawer: View, scrim: View, onOpen: () -> Unit) {
+        val parent: ViewGroup = findViewById(android.R.id.content)
+        if (benchHotZone != null) return
+
+        val d = resources.displayMetrics.density
+        benchHotZone = View(this).apply {
+            layoutParams = FrameLayout.LayoutParams((28 * d).toInt(), FrameLayout.LayoutParams.MATCH_PARENT).apply {
+                gravity = Gravity.END
+            }
+            setOnDragListener { _, event ->
+                if (event.action == DragEvent.ACTION_DRAG_ENTERED && !isBenchOpen) {
+                    openBench(root, drawer, scrim, onOpen)
+                    return@setOnDragListener true
+                }
+                false
+            }
+            // setBackgroundColor(0x11FF0000.toInt()) // descomenta para depurar
+        }
+        parent.addView(benchHotZone)
+    }
 
     // ------- PERF: cache y debounce -------
     private val slotViews: MutableList<View> = mutableListOf()
@@ -95,6 +143,7 @@ class DraftActivity : AppCompatActivity() {
                 intent.putParcelableArrayListExtra("finalTeam", ArrayList(team))
                 intent.putExtra("formation", formation.name)
                 intent.putExtra("captainName", captain?.name ?: "")
+                // enviar banquillo seleccionado (sólo no-nulos, en orden)
                 val benchList = ArrayList(benchPlayers.filterNotNull())
                 intent.putParcelableArrayListExtra("benchPlayers", benchList)
                 startActivity(intent)
@@ -113,15 +162,20 @@ class DraftActivity : AppCompatActivity() {
     private fun benchCount(): Int = benchPlayers.count { it != null }
 
     private fun showBenchOptionsForSlot(slotIndex: Int) {
-        val usados = mutableSetOf<Player>().apply {
-            captain?.let { add(it) }
-            addAll(slots.mapNotNull { it.player })
-            addAll(benchPlayers.filterNotNull())
+        // usa cache para evitar reroll; si no existe, crea las 4 opciones
+        val options = benchPickOptions[slotIndex] ?: run {
+            val usados = mutableSetOf<Player>().apply {
+                captain?.let { add(it) }
+                addAll(slots.mapNotNull { it.player })
+                addAll(benchPlayers.filterNotNull())
+            }
+            val list = PlayerRepository.players
+                .filter { it !in usados }
+                .shuffled()
+                .take(4)
+            benchPickOptions[slotIndex] = list
+            list
         }
-        val options = PlayerRepository.players
-            .filter { it !in usados }
-            .shuffled()
-            .take(4)
 
         val dialogView = layoutInflater.inflate(R.layout.layout_player_picker, null)
         val dialog = android.app.Dialog(this)
@@ -145,7 +199,7 @@ class DraftActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    // Tirador + animaciones comunes del drawer
+    // Tirador + animaciones (crea el botón lateral y deja scrim listo)
     private fun setupBenchDrawerBasics(
         root: View,
         drawer: View,
@@ -160,15 +214,7 @@ class DraftActivity : AppCompatActivity() {
             scrim.visibility = View.GONE
         }
         // Cerrar con scrim
-        scrim.setOnClickListener {
-            drawer.animate().translationX(drawer.width.toFloat()).setDuration(220)
-                .withEndAction {
-                    scrim.visibility = View.GONE
-                    root.visibility = View.GONE
-                    drawer.setLayerType(View.LAYER_TYPE_NONE, null)
-                    onClose()
-                }.start()
-        }
+        scrim.setOnClickListener { closeBench(root, drawer, scrim, onClose) }
 
         val d = handleParent.resources.displayMetrics.density
         val handle = Button(handleParent.context).apply {
@@ -179,16 +225,7 @@ class DraftActivity : AppCompatActivity() {
             setTextColor(0xff_00_00_00.toInt())
             elevation = 16f
             tag = "bench_handle"
-            setOnClickListener {
-                root.visibility = View.VISIBLE
-                root.bringToFront()
-                scrim.visibility = View.VISIBLE
-                drawer.setLayerType(View.LAYER_TYPE_HARDWARE, null)
-                drawer.animate().translationX(0f).setDuration(220)
-                    .withStartAction { onOpen() }
-                    .withEndAction { drawer.setLayerType(View.LAYER_TYPE_NONE, null) }
-                    .start()
-            }
+            setOnClickListener { openBench(root, drawer, scrim, onOpen) }
         }
         val lp = FrameLayout.LayoutParams((44 * d).toInt(), (120 * d).toInt()).apply {
             gravity = Gravity.END or Gravity.CENTER_VERTICAL
@@ -255,6 +292,7 @@ class DraftActivity : AppCompatActivity() {
         captain = null
         rowSpec = emptyList()
         for (i in benchPlayers.indices) benchPlayers[i] = null
+        for (i in benchPickOptions.indices) benchPickOptions[i] = null
     }
 
     private fun toCode(pos: String): String = when (pos.trim().lowercase()) {
@@ -337,7 +375,7 @@ class DraftActivity : AppCompatActivity() {
         requestDrawSlots()
     }
 
-    // ----------------- FIELD RENDER + DnD (optimizado) -----------------
+    // ----------------- FIELD RENDER + DnD -----------------
     private fun drawSlotsInternal() {
         if (fieldLayout.width == 0 || fieldLayout.height == 0) {
             fieldLayout.post { drawSlotsInternal() }
@@ -363,8 +401,6 @@ class DraftActivity : AppCompatActivity() {
             val t = if (rowsCount == 1) 0.5f else r / (rowsCount - 1f).toFloat()
             topPad + t * (bottomPad - topPad)
         }
-
-        // (Quitado suppressLayout por compatibilidad con tu versión de core-ktx)
 
         // Asegura vistas
         val totalSlots = slots.size
@@ -601,54 +637,16 @@ class DraftActivity : AppCompatActivity() {
     }
 
     // ----------------- BANQUILLO: drawer + listas -----------------
-    private fun openBenchDrawer(root: View, drawer: View, scrim: View, onOpen: () -> Unit = {}) {
-        root.visibility = View.VISIBLE
-        root.bringToFront()
-        scrim.visibility = View.VISIBLE
-        drawer.setLayerType(View.LAYER_TYPE_HARDWARE, null)
-        drawer.animate().translationX(0f).setDuration(220)
-            .withStartAction { onOpen() }
-            .withEndAction { drawer.setLayerType(View.LAYER_TYPE_NONE, null) }
-            .start()
-        isBenchOpen = true
-    }
-    private fun closeBenchDrawer(root: View, drawer: View, scrim: View, onClose: () -> Unit = {}) {
-        drawer.animate().translationX(drawer.width.toFloat()).setDuration(200)
-            .withEndAction {
-                scrim.visibility = View.GONE
-                root.visibility = View.GONE
-                drawer.setLayerType(View.LAYER_TYPE_NONE, null)
-                onClose()
-            }.start()
-        isBenchOpen = false
-    }
-    private fun enableAutoOpenBenchOnDrag(field: View, root: View, drawer: View, scrim: View, onOpen: () -> Unit) {
-        field.setOnDragListener { _, event ->
-            when (event.action) {
-                DragEvent.ACTION_DRAG_LOCATION -> {
-                    val thresholdX = field.width * 0.88f
-                    if (!isBenchOpen && event.x >= thresholdX) {
-                        openBenchDrawer(root, drawer, scrim, onOpen)
-                    }
-                    false // no consumimos: los hijos (slots) siguen recibiendo el drop
-                }
-                DragEvent.ACTION_DRAG_ENDED -> { false }
-                else -> false
-            }
-        }
-    }
     private fun setupBenchPanel() {
-        val root = findViewById<View?>(R.id.benchPanel) ?: return
+        val root   = findViewById<View?>(R.id.benchPanel) ?: return
         val drawer = findViewById<View?>(R.id.benchDrawer) ?: return
-        val scrim = findViewById<View?>(R.id.benchScrim) ?: return
-        val rvSel = findViewById<RecyclerView?>(R.id.rvBenchSelected) ?: return
+        val scrim  = findViewById<View?>(R.id.benchScrim) ?: return
+        val rvSel  = findViewById<RecyclerView?>(R.id.rvBenchSelected) ?: return
         val rvOpts = findViewById<RecyclerView?>(R.id.rvBenchOptions) ?: return
         val btnClose = findViewById<Button?>(R.id.btnCloseBench) ?: return
         val txtTitle = findViewById<TextView?>(R.id.txtBenchTitle) ?: return
 
-        fun updateTitle() {
-            txtTitle.text = "Banquillo (${benchCount()}/5)"
-        }
+        fun updateTitle() { txtTitle.text = "Banquillo (${benchCount()}/5)" }
         updateTitle()
 
         rvSel.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
@@ -665,19 +663,19 @@ class DraftActivity : AppCompatActivity() {
                 updateTitle()
                 requestDrawSlots()
             },
-            onClickSlot = { index -> showBenchOptionsForSlot(index) }
+            onClickSlot = { index -> showBenchOptionsForSlot(index) } // el adapter sólo llama si el hueco está vacío
         )
 
-        // No usamos la grilla inferior (los picks salen al tocar cada hueco)
+        // No usamos la grilla inferior (los picks salen al pulsar el hueco)
         rvOpts.layoutManager = GridLayoutManager(this, 2)
         rvOpts.adapter = OptionAdapter(
             emptyList(),
             onClick = { _: Player -> }
         )
 
-        btnClose.setOnClickListener {
-            closeBenchDrawer(root, drawer, scrim)
-        }
+        // Cerrar
+        btnClose.setOnClickListener { closeBench(root, drawer, scrim) }
+        scrim.setOnClickListener { closeBench(root, drawer, scrim) }
 
         val activityRoot: ViewGroup = findViewById(android.R.id.content)
         setupBenchDrawerBasics(
@@ -691,17 +689,17 @@ class DraftActivity : AppCompatActivity() {
             },
             onClose = { }
         )
-        enableAutoOpenBenchOnDrag(
-            field = fieldLayout,
-            root = root,
-            drawer = drawer,
-            scrim = scrim
+
+        // Hot-zone: abre al arrastrar hacia el borde derecho
+        ensureBenchHotZone(
+            root = root, drawer = drawer, scrim = scrim
         ) {
             updateTitle()
             rvSel.adapter?.notifyDataSetChanged()
         }
     }
-        private fun shakeView(v: View) {
+
+    private fun shakeView(v: View) {
         v.animate().translationX(12f).setDuration(50).withEndAction {
             v.animate().translationX(-10f).setDuration(50).withEndAction {
                 v.animate().translationX(0f).setDuration(40).start()

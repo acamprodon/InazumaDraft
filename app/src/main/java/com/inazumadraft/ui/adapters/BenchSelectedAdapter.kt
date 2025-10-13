@@ -15,7 +15,7 @@ import java.util.Collections
 
 /**
  * Banquillo con 5 huecos (Player?):
- * - Click SIEMPRE abre el picker para ese hueco (onClickSlot(index)).
+ * - Click SOLO abre el picker si el hueco está vacío.
  * - Long-press sólo si hay jugador: inicia drag (label "benchPlayer", localState = index).
  * - Drop:
  *    · desde CAMPO -> onDropFromField(toIndex, fromFieldIndex)
@@ -51,8 +51,8 @@ class BenchSelectedAdapter(
         private val elem = itemView.findViewById<ImageView>(R.id.imgElement)
 
         fun bind(p: Player?, index: Int) {
-            // Tap: abrir picker para este hueco
-            itemView.setOnClickListener { onClickSlot(index) }
+            // Click: SOLO si está vacío (evita reroll una vez elegido)
+            itemView.setOnClickListener { if (p == null) onClickSlot(index) }
 
             if (p == null) {
                 img.setImageResource(0)
@@ -85,11 +85,9 @@ class BenchSelectedAdapter(
                             val a = benchPlayers.getOrNull(fromIdx) ?: return@setOnDragListener true
                             val b = benchPlayers.getOrNull(index)
                             if (b == null) {
-                                // mover a hueco vacío
                                 benchPlayers[index] = a
                                 benchPlayers[fromIdx] = null
                             } else {
-                                // swap
                                 Collections.swap(benchPlayers, fromIdx, index)
                             }
                             notifyItemChanged(index)
