@@ -61,24 +61,30 @@
     <FrameLayout
             android:id="@+id/benchPanel"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            android:clickable="false"
+            android:focusable="false">
 
         <View
                 android:id="@+id/benchScrim"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="#66000000"
-                android:visibility="gone" />
+                android:visibility="gone"
+                android:clickable="true" />
 
         <LinearLayout
                 android:id="@+id/benchDrawer"
-                android:layout_width="89dp"
+                android:layout_width="109dp"
                 android:layout_height="match_parent"
                 android:layout_gravity="end"
-                android:background="@android:color/white"
                 android:orientation="vertical"
                 android:padding="12dp"
-                android:elevation="8dp">
+                android:background="@android:color/white"
+                android:translationX="320dp"
+                android:elevation="12dp"
+                android:clickable="true">
 
             <TextView
                     android:id="@+id/txtBenchTitle"
