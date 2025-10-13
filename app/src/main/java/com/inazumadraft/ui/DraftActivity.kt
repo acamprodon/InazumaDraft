@@ -29,6 +29,7 @@ import com.inazumadraft.ui.adapters.BenchSelectedAdapter
 
 class DraftActivity : AppCompatActivity() {
 
+    private lateinit var formationOverlay: View
     private lateinit var overlayPreview: View
     private lateinit var fieldLayout: RelativeLayout
     private lateinit var btnFormation1: Button
@@ -42,7 +43,7 @@ class DraftActivity : AppCompatActivity() {
     private var visibleFormations: List<Formation> = emptyList()
     private var selectedFormation: Formation? = null
     private var formationLocked: Boolean = false
-
+private var benchHandle: View? = null
     private data class Slot(var role: String, var player: Player? = null)
     private val slots: MutableList<Slot> = mutableListOf()
     private val selectedPlayers: MutableList<Player> = mutableListOf()
@@ -88,16 +89,16 @@ class DraftActivity : AppCompatActivity() {
             layoutParams = FrameLayout.LayoutParams((28 * d).toInt(), FrameLayout.LayoutParams.MATCH_PARENT).apply {
                 gravity = Gravity.END
             }
+            visibility = View.GONE                     // 👈 NUEVO
             setOnDragListener { _, event ->
                 if (event.action == DragEvent.ACTION_DRAG_ENTERED && !isBenchOpen) {
-                    openBench(root, drawer, scrim, onOpen)
-                    return@setOnDragListener true
-                }
-                false
+                    openBench(root, drawer, scrim, onOpen); true
+                } else false
             }
         }
         parent.addView(benchHotZone)
     }
+
 
     // ------- PERF -------
     private val slotViews: MutableList<View> = mutableListOf()
@@ -152,6 +153,8 @@ class DraftActivity : AppCompatActivity() {
         formationLocked = false
 
         setupBenchPanel()
+
+        setBenchAccessEnabled(false)
     }
 
     // ----------------- BANQUILLO -----------------
@@ -210,25 +213,26 @@ class DraftActivity : AppCompatActivity() {
         scrim.setOnClickListener { closeBench(root, drawer, scrim, onClose) }
 
         val d = handleParent.resources.displayMetrics.density
-        val handle = Button(handleParent.context).apply {
-            text = "BANQUILLO"
-            rotation = -90f
-            setAllCaps(true)
-            setBackgroundColor(0xff_ff_cc_00.toInt())
-            setTextColor(0xff_00_00_00.toInt())
-            elevation = 16f
-            tag = "bench_handle"
-            setOnClickListener { openBench(root, drawer, scrim, onOpen) }
+
+        benchHandle = handleParent.findViewWithTag("bench_handle")
+        if (benchHandle == null) {
+            benchHandle = Button(handleParent.context).apply {
+                text = "BANQUILLO"
+                rotation = -90f
+                setAllCaps(true)
+                setBackgroundColor(0xff_ff_cc_00.toInt())
+                setTextColor(0xff_00_00_00.toInt())
+                elevation = 16f
+                tag = "bench_handle"
+                setOnClickListener { openBench(root, drawer, scrim, onOpen) }
+                layoutParams = FrameLayout.LayoutParams((44 * d).toInt(), (120 * d).toInt()).apply {
+                    gravity = Gravity.END or Gravity.CENTER_VERTICAL
+                    marginEnd = (4 * d).toInt()
+                }
+            }
+            handleParent.addView(benchHandle)
         }
-        val lp = FrameLayout.LayoutParams((44 * d).toInt(), (120 * d).toInt()).apply {
-            gravity = Gravity.END or Gravity.CENTER_VERTICAL
-            marginEnd = (4 * d).toInt()
-        }
-        handle.layoutParams = lp
-        if (handleParent.findViewWithTag<View>("bench_handle") == null) {
-            handleParent.addView(handle)
-            handle.bringToFront()
-        }
+        benchHandle?.visibility = View.GONE
     }
 
     // ----------------- FORMATION FLOW -----------------
@@ -255,6 +259,7 @@ class DraftActivity : AppCompatActivity() {
         selectedFormation = f
 
         findViewById<View>(R.id.formationButtonsLayout).visibility = View.GONE
+        formationOverlay.visibility = View.GONE
 
         clearDraftState()
         roundTitle.text = "Elige tu capitán (${f.name})"
@@ -510,6 +515,8 @@ class DraftActivity : AppCompatActivity() {
         val total = selectedFormation?.positions?.size ?: 0
         val filled = slots.count { it.player != null }
         btnNext.visibility = if (filled == total) View.VISIBLE else View.GONE
+
+        setBenchAccessEnabled(filled == total)
     }
 
     // ----------------- PLAYER PICKER DE CAMPO -----------------
@@ -626,6 +633,10 @@ class DraftActivity : AppCompatActivity() {
             if (idx >= 0) { result.add(tmp[idx].player!!); tmp.removeAt(idx) }
         }
         return result
+    }
+    private fun setBenchAccessEnabled(enabled: Boolean) {
+        benchHandle?.visibility = if (enabled) View.VISIBLE else View.GONE
+        benchHotZone?.visibility = if (enabled) View.VISIBLE else View.GONE
     }
 
     private fun setupBenchPanel() {
