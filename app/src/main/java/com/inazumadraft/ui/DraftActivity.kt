@@ -160,14 +160,16 @@ class DraftActivity : AppCompatActivity() {
             players = options,
             onClick = { chosen ->
                 captain = chosen
+
                 placeCaptainInPrimaryPositionOnly()
                 dialog.dismiss()
+
+                // ✅ Ahora solo pintamos el campo y dejamos que el usuario pulse un hueco vacío
                 roundTitle.text = "Completa tu 11 inicial"
                 requestFieldRedraw()
-                maybeOpenFirstEmptySlotPicker()
             }
-            // onPreview = null // ← descomenta si tu OptionAdapter lo pide
         )
+
 
         dialog.show()
         dialog.window?.setLayout(
@@ -183,14 +185,7 @@ class DraftActivity : AppCompatActivity() {
             slots[idx].player = cap
         }
     }
-
-    private fun maybeOpenFirstEmptySlotPicker() {
-        val index = slots.indexOfFirst { it.player == null }
-        if (index >= 0) showOptionsForSlot(index)
-    }
-
     // ---------------- Picks y diálogos ----------------
-
     private fun showOptionsForSlot(slotIndex: Int) {
         val used = slots.mapNotNull { it.player }.toMutableSet().apply { addAll(benchPlayers.filterNotNull()) }
         val needRole = slots[slotIndex].role
@@ -219,8 +214,6 @@ class DraftActivity : AppCompatActivity() {
                 setBenchAccessEnabled(filled == total)
                 btnNext.visibility = if (filled == total) View.VISIBLE else View.GONE
 
-                val next = slots.indexOfFirst { it.player == null }
-                if (next >= 0) showOptionsForSlot(next)
             }
             // onPreview = null
         )
@@ -399,6 +392,8 @@ class DraftActivity : AppCompatActivity() {
 
         val slot = slots[index]
         val p = slot.player
+
+        view.setOnClickListener (null)
         if (p != null) {
             img.setImageResource(p.image)
             name.text = p.nickname

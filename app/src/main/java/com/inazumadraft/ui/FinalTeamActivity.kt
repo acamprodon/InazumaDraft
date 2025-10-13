@@ -400,6 +400,8 @@ class FinalTeamActivity : AppCompatActivity() {
         val name = view.findViewById<TextView>(R.id.txtPlayerNickname)
         val elem = view.findViewById<ImageView>(R.id.imgElement)
 
+        view.setOnClickListener (null)
+
         val formation = formations.firstOrNull { it.name == formationName } ?: return
         val p = playerSlots.getOrNull(i)
         if (p != null) {
