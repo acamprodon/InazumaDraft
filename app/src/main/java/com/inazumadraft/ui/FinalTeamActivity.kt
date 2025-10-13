@@ -34,13 +34,13 @@ class FinalTeamActivity : AppCompatActivity() {
     private lateinit var btnNewTeam: FloatingActionButton
     private lateinit var recyclerFinalTeam: RecyclerView
 
-    private val benchPlayers = MutableList<Player?>(5) { null } // 5 huecos
+    private val benchPlayers = MutableList<Player?>(5) { null } // 5 huecos fijos
     private val playerSlots = mutableListOf<Player?>()
 
     private var formationName: String = "4-4-2"
     private var captainName: String? = null
 
-    // PERF: cache + debounce simple
+    // Cache vistas + debounce
     private val slotViews: MutableList<View> = mutableListOf()
     private var drawPending = false
     private fun requestDrawField() {
@@ -49,6 +49,49 @@ class FinalTeamActivity : AppCompatActivity() {
         fieldLayout.post {
             drawPending = false
             drawTemplateAndFillInternal()
+        }
+    }
+
+    // --- Estado y helpers del drawer del banquillo ---
+    private var isBenchOpen = false
+
+    private fun openBenchDrawer(root: View, drawer: View, scrim: View, onOpen: () -> Unit = {}) {
+        root.visibility = View.VISIBLE
+        root.bringToFront()
+        scrim.visibility = View.VISIBLE
+        drawer.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+        drawer.animate().translationX(0f).setDuration(220)
+            .withStartAction { onOpen() }
+            .withEndAction { drawer.setLayerType(View.LAYER_TYPE_NONE, null) }
+            .start()
+        isBenchOpen = true
+    }
+
+    private fun closeBenchDrawer(root: View, drawer: View, scrim: View, onClose: () -> Unit = {}) {
+        drawer.animate().translationX(drawer.width.toFloat()).setDuration(200)
+            .withEndAction {
+                scrim.visibility = View.GONE
+                root.visibility = View.GONE
+                drawer.setLayerType(View.LAYER_TYPE_NONE, null)
+                onClose()
+            }.start()
+        isBenchOpen = false
+    }
+
+    /** Auto-apertura: si durante un drag el puntero entra en el 12% final del ancho del campo, abre el banquillo. */
+    private fun enableAutoOpenBenchOnDrag(field: View, root: View, drawer: View, scrim: View, onOpen: () -> Unit) {
+        field.setOnDragListener { _, event ->
+            when (event.action) {
+                DragEvent.ACTION_DRAG_LOCATION -> {
+                    val thresholdX = field.width * 0.88f
+                    if (!isBenchOpen && event.x >= thresholdX) {
+                        openBenchDrawer(root, drawer, scrim, onOpen)
+                    }
+                    false // no consumimos el evento
+                }
+                DragEvent.ACTION_DRAG_ENDED -> false
+                else -> false
+            }
         }
     }
 
@@ -65,11 +108,15 @@ class FinalTeamActivity : AppCompatActivity() {
         formationName = intent.getStringExtra("formation") ?: "4-4-2"
         captainName = intent.getStringExtra("captainName")
 
+        // Restaurar equipo titular
         playerSlots.clear()
         playerSlots.addAll(team)
+
+        // Restaurar banquillo desde el draft (si vino)
         intent.getParcelableArrayListExtra<Player>("benchPlayers")?.let { list ->
-            for (i in 0 until 5) {
-                benchPlayers[i] = list.getOrNull(i)}}
+            for (i in 0 until 5) benchPlayers[i] = list.getOrNull(i)
+        }
+
         fieldLayout.post { requestDrawField() }
 
         recyclerFinalTeam.layoutManager = LinearLayoutManager(this)
@@ -96,25 +143,6 @@ class FinalTeamActivity : AppCompatActivity() {
 
         setupBenchPanel()
     }
-
-    // ----------------- Helpers -----------------
-    private fun toCode(pos: String): String = when (pos.trim().lowercase()) {
-        "portero", "pt" -> "PT"
-        "defensa", "df" -> "DF"
-        "centrocampista", "mc" -> "MC"
-        "delantero", "dl" -> "DL"
-        else -> pos.trim().uppercase()
-    }
-
-    private fun codeToNice(code: String): String = when (code.uppercase()) {
-        "PT" -> "Portero"
-        "DF" -> "Defensa"
-        "MC" -> "Centrocampista"
-        "DL" -> "Delantero"
-        else -> code
-    }
-
-    private fun benchCount(): Int = benchPlayers.count { it != null }
 
     // ----------------- Banquillo: picks por hueco -----------------
     private fun showBenchOptionsForSlotFinal(slotIndex: Int) {
@@ -163,16 +191,11 @@ class FinalTeamActivity : AppCompatActivity() {
             root.visibility = View.GONE
             scrim.visibility = View.GONE
         }
-        scrim.setOnClickListener {
-            drawer.animate().translationX(drawer.width.toFloat()).setDuration(220)
-                .withEndAction {
-                    scrim.visibility = View.GONE
-                    root.visibility = View.GONE
-                    drawer.setLayerType(View.LAYER_TYPE_NONE, null)
-                    onClose()
-                }.start()
-        }
 
+        // Cerrar tocando scrim
+        scrim.setOnClickListener { closeBenchDrawer(root, drawer, scrim, onClose) }
+
+        // Botón lateral "BANQUILLO"
         val d = handleParent.resources.displayMetrics.density
         val handle = Button(handleParent.context).apply {
             text = "BANQUILLO"
@@ -182,16 +205,7 @@ class FinalTeamActivity : AppCompatActivity() {
             setTextColor(0xff_00_00_00.toInt())
             elevation = 16f
             tag = "bench_handle"
-            setOnClickListener {
-                root.visibility = View.VISIBLE
-                root.bringToFront()
-                scrim.visibility = View.VISIBLE
-                drawer.setLayerType(View.LAYER_TYPE_HARDWARE, null)
-                drawer.animate().translationX(0f).setDuration(220)
-                    .withStartAction { onOpen() }
-                    .withEndAction { drawer.setLayerType(View.LAYER_TYPE_NONE, null) }
-                    .start()
-            }
+            setOnClickListener { openBenchDrawer(root, drawer, scrim, onOpen) }
         }
         val lp = FrameLayout.LayoutParams((44 * d).toInt(), (120 * d).toInt()).apply {
             gravity = Gravity.END or Gravity.CENTER_VERTICAL
@@ -233,22 +247,17 @@ class FinalTeamActivity : AppCompatActivity() {
             onClickSlot = { index -> showBenchOptionsForSlotFinal(index) }
         )
 
-        // No usamos “Picks (4)” aquí: los picks salen al tocar cada hueco
+        // La grilla inferior no se usa (los picks salen tocando el hueco)
         rvOpts.layoutManager = GridLayoutManager(this, 2)
         rvOpts.adapter = OptionAdapter(
             emptyList(),
             onClick = { _: Player -> }
         )
 
-        btnClose.setOnClickListener {
-            drawer.animate().translationX(drawer.width.toFloat()).setDuration(200)
-                .withEndAction {
-                    scrim.visibility = View.GONE
-                    root.visibility = View.GONE
-                    drawer.setLayerType(View.LAYER_TYPE_NONE, null)
-                }.start()
-        }
+        // Cerrar con botón
+        btnClose.setOnClickListener { closeBenchDrawer(root, drawer, scrim) }
 
+        // Botón lateral + scrim
         val activityRoot: ViewGroup = findViewById(android.R.id.content)
         setupBenchDrawerBasics(
             root = root,
@@ -261,9 +270,31 @@ class FinalTeamActivity : AppCompatActivity() {
             },
             onClose = { }
         )
+
+        // Auto-abrir al arrastrar hacia el borde derecho del campo
+        enableAutoOpenBenchOnDrag(
+            field = fieldLayout,
+            root = root,
+            drawer = drawer,
+            scrim = scrim
+        ) {
+            updateTitle()
+            rvSel.adapter?.notifyDataSetChanged()
+        }
     }
 
     // ----------------- Campo + DnD -----------------
+    private fun toCode(pos: String): String = when (pos.trim().lowercase()) {
+        "portero", "pt" -> "PT"
+        "defensa", "df" -> "DF"
+        "centrocampista", "mc" -> "MC"
+        "delantero", "dl" -> "DL"
+        else -> pos.trim().uppercase()
+    }
+    private fun codeToNice(code: String): String = when (code.uppercase()) {
+        "PT" -> "Portero"; "DF" -> "Defensa"; "MC" -> "Centrocampista"; "DL" -> "Delantero"; else -> code
+    }
+
     private fun drawTemplateAndFillInternal() {
         if (fieldLayout.width == 0 || fieldLayout.height == 0) {
             fieldLayout.post { drawTemplateAndFillInternal() }
@@ -445,6 +476,8 @@ class FinalTeamActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun benchCount(): Int = benchPlayers.count { it != null }
 
     private fun shakeView(v: View) {
         v.animate().translationX(12f).setDuration(40).withEndAction {
