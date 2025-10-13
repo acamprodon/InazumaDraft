@@ -29,14 +29,19 @@ class BenchSelectedAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_player_option, parent, false) // usa el layout que tengas para el item del banquillo
+            .inflate(R.layout.item_player_field, parent, false)
         return VH(view)
     }
+
 
     override fun getItemCount(): Int = benchPlayers.size
 
     override fun onBindViewHolder(holder: VH, position: Int) {
         val p = benchPlayers[position]
+        val d = holder.itemView.resources.displayMetrics.density
+        holder.itemView.layoutParams = RecyclerView.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            (100 * d).toInt())
 
         if (p != null) {
             holder.img.setImageResource(p.image)

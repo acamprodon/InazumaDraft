@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:orientation="horizontal"
+        android:padding="8dp"
+        android:gravity="center_vertical"
+        android:background="?attr/selectableItemBackground">
+
+    <!-- Avatar pequeño -->
+    <ImageView
+            android:id="@+id/imgPlayer"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:scaleType="centerCrop"
+            android:contentDescription="@string/app_name"
+            android:background="@drawable/bg_slot_card"
+            android:padding="2dp" />
+
+    <!-- Nombre + icono -->
+    <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:paddingStart="10dp"
+            android:gravity="center_vertical">
+
+        <TextView
+                android:id="@+id/txtPlayerNickname"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Vacío"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#111111"/>
+
+        <!-- puedes ocultarlo si no hay elemento -->
+        <ImageView
+                android:id="@+id/imgElement"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_marginTop="4dp"
+                android:contentDescription="@string/app_name"
+                android:src="@android:color/transparent"/>
+    </LinearLayout>
+</LinearLayout>

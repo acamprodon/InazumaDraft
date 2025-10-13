@@ -116,6 +116,7 @@ private var benchHandle: View? = null
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_draft)
 
+        formationOverlay = findViewById(R.id.formationOverlay)
         fieldLayout = findViewById(R.id.fieldLayout)
         btnFormation1 = findViewById(R.id.btnFormation1)
         btnFormation2 = findViewById(R.id.btnFormation2)

@@ -77,7 +77,7 @@
 
         <LinearLayout
                 android:id="@+id/benchDrawer"
-                android:layout_width="320dp"
+                android:layout_width="220dp"
                 android:layout_height="match_parent"
                 android:layout_gravity="end"
                 android:orientation="vertical"

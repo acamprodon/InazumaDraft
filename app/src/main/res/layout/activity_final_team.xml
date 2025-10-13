@@ -35,7 +35,9 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="VER ESTADÍSTICAS"
-                    android:layout_marginStart="106dp" />
+                    android:layout_alignParentBottom="true"
+                    android:layout_marginStart="8dp"
+                    android:visibility="visible"/>
         </RelativeLayout>
 
         <!-- Lista final (oculta por defecto; se alterna con botón) -->
