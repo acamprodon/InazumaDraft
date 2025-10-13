@@ -53,6 +53,8 @@ class DraftActivity : AppCompatActivity() {
     private var drawPending = false
 
     // Banquillo
+    private var pendingBenchIndex: Int? = null
+    private var pendingFieldIndex: Int? = null
     private val benchPlayers = MutableList<Player?>(5) { null }
     private var isBenchOpen = false
     private var benchHotZone: View? = null
@@ -389,24 +391,72 @@ class DraftActivity : AppCompatActivity() {
         val img = view.findViewById<ImageView>(R.id.imgPlayer)
         val name = view.findViewById<TextView>(R.id.txtPlayerNickname)
         val elem = view.findViewById<ImageView>(R.id.imgElement)
-
         val slot = slots[index]
         val p = slot.player
 
-        view.setOnClickListener (null)
+        // Limpia listeners
+        view.setOnClickListener(null)
+
         if (p != null) {
             img.setImageResource(p.image)
             name.text = p.nickname
             elem.setImageResource(p.element)
+
+            // TAP EN CAMPO CON JUGADOR
+            view.setOnClickListener {
+                // a) Si hay un banquillo seleccionado → intentar ponerlo aquí (validando posición)
+                pendingBenchIndex?.let { bIndex ->
+                    val incoming = benchPlayers[bIndex] ?: return@setOnClickListener
+                    if (!incoming.canPlay(slot.role)) {
+                        Toast.makeText(this, "No puede jugar en ${codeToNice(slot.role)}", Toast.LENGTH_SHORT).show()
+                        pendingBenchIndex = null
+                        return@setOnClickListener
+                    }
+                    // swap bench→field
+                    benchPlayers[bIndex] = slot.player
+                    slots[index].player = incoming
+                    pendingBenchIndex = null
+                    requestFieldRedraw()
+                    findViewById<RecyclerView?>(R.id.rvBenchSelected)?.adapter?.notifyItemChanged(bIndex)
+                    updateBenchTitle()
+                    return@setOnClickListener
+                }
+
+                // b) Si NO hay bench seleccionado → el usuario quiere sacar este jugador al banquillo
+                pendingFieldIndex = index
+                Toast.makeText(this, "Elige un hueco del banquillo para mover a ${p.nickname}", Toast.LENGTH_SHORT).show()
+            }
         } else {
+            // Slot vacío → texto del rol y opción de abrir picker (si no hay bench seleccionado)
             name.text = codeToNice(slot.role)
             img.setImageResource(0)
             elem.setImageResource(0)
             img.background = null
-            // Click en slot vacío → abrir picker
-            view.setOnClickListener { showOptionsForSlot(index) }
+
+            view.setOnClickListener {
+                if (pendingBenchIndex != null) {
+                    // Colocar el seleccionado del banquillo aquí
+                    val bIndex = pendingBenchIndex!!
+                    val incoming = benchPlayers[bIndex] ?: return@setOnClickListener
+                    if (!incoming.canPlay(slot.role)) {
+                        Toast.makeText(this, "No puede jugar en ${codeToNice(slot.role)}", Toast.LENGTH_SHORT).show()
+                        pendingBenchIndex = null
+                        return@setOnClickListener
+                    }
+                    benchPlayers[bIndex] = null
+                    slots[index].player = incoming
+                    pendingBenchIndex = null
+                    requestFieldRedraw()
+                    findViewById<RecyclerView?>(R.id.rvBenchSelected)?.adapter?.notifyItemChanged(bIndex)
+                    updateBenchTitle()
+                } else {
+                    // comportamiento normal: abrir picker del rol
+                    showOptionsForSlot(index)
+                }
+            }
         }
     }
+
 
     private fun attachDragLogicToFieldView(view: View, index: Int) {
         val slot = slots[index]
@@ -517,20 +567,10 @@ class DraftActivity : AppCompatActivity() {
         rvSel.itemAnimator = null
         rvSel.adapter = BenchSelectedAdapter(
             benchPlayers = benchPlayers,
-            onChanged = { updateTitle() },
-            onDropFromField = { toIndex, fromFieldIndex ->
-                val incoming = slots.getOrNull(fromFieldIndex)?.player ?: return@BenchSelectedAdapter
-                val replaced = benchPlayers[toIndex]
-                benchPlayers[toIndex] = incoming
-                slots[fromFieldIndex].player = replaced
-                rvSel.adapter?.notifyItemChanged(toIndex)
-                requestFieldRedraw()
-                updateTitle()
-            },
-            onClickSlot = { index ->
-                if (benchPlayers[index] == null) showBenchOptionsForSlot(index)
-            }
+            onTapSlot = { index -> handleBenchTap(index) },
+            onChanged = { updateBenchTitle() }
         )
+
 
         // Opciones ocultas
         rvOpts.layoutManager = GridLayoutManager(this, 2)
@@ -541,6 +581,33 @@ class DraftActivity : AppCompatActivity() {
         )
 
         updateTitle()
+    }
+    private fun handleBenchTap(index: Int) {
+        val benchPlayer = benchPlayers[index]
+
+        // 1) Si hay un campo previamente seleccionado → swap campo→banquillo
+        pendingFieldIndex?.let { fIndex ->
+            val fieldPlayer = slots[fIndex].player
+            // Si el banquillo tiene jugador, swap; si está vacío, mover
+            benchPlayers[index] = fieldPlayer
+            slots[fIndex].player = benchPlayer
+            pendingFieldIndex = null
+            pendingBenchIndex = null
+            requestFieldRedraw()
+            findViewById<RecyclerView?>(R.id.rvBenchSelected)?.adapter?.notifyItemChanged(index)
+            updateBenchTitle()
+            return
+        }
+
+        // 2) Si pulsas un jugador de banquillo → espera toque en campo para ponerlo
+        if (benchPlayer != null) {
+            pendingBenchIndex = index
+            Toast.makeText(this, "Elige un hueco del campo para colocar a ${benchPlayer.nickname}", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // 3) Si pulsas un hueco vacío y no hay selección previa → abre picker de suplentes
+        showBenchOptionsForSlot(index)
     }
 
     private fun openBench(root: View, drawer: View, scrim: View) {

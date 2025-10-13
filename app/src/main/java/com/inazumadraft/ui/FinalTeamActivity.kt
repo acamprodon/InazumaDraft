@@ -44,6 +44,8 @@ class FinalTeamActivity : AppCompatActivity() {
 
     private val slotViews: MutableList<View> = mutableListOf()
     private var drawPending = false
+    private var pendingBenchIndex: Int? = null
+    private var pendingFieldIndex: Int? = null
 
     private var isBenchOpen = false
     private var benchHotZone: View? = null
@@ -201,19 +203,10 @@ class FinalTeamActivity : AppCompatActivity() {
         rvSel.itemAnimator = null
         rvSel.adapter = BenchSelectedAdapter(
             benchPlayers = benchPlayers,
-            onChanged = { updateTitle(); refreshStatsList() },
-            onDropFromField = { toIndex, fromFieldIndex ->
-                val p = playerSlots.getOrNull(fromFieldIndex) ?: return@BenchSelectedAdapter
-                val replaced = benchPlayers[toIndex]
-                benchPlayers[toIndex] = p
-                playerSlots[fromFieldIndex] = replaced
-                rvSel.adapter?.notifyItemChanged(toIndex)
-                updateTitle()
-                refreshStatsList()
-                requestDrawField()
-            },
-            onClickSlot = { index -> showBenchOptionsForSlotFinal(index) }
+            onTapSlot = { index -> handleBenchTapFinal(index) },
+            onChanged = { updateTitle(); refreshStatsList() }
         )
+
 
         rvOpts.layoutManager = GridLayoutManager(this, 2)
         rvOpts.adapter = OptionAdapter(
@@ -229,6 +222,29 @@ class FinalTeamActivity : AppCompatActivity() {
         )
         ensureBenchHotZone(root, drawer, scrim) {
             updateTitle(); rvSel.adapter?.notifyDataSetChanged()
+        }
+    }
+    private fun handleBenchTapFinal(index: Int) {
+        val benchPlayer = benchPlayers[index]
+
+        pendingFieldIndex?.let { fIndex ->
+            val fieldPlayer = playerSlots.getOrNull(fIndex)
+            benchPlayers[index] = fieldPlayer
+            playerSlots[fIndex] = benchPlayer
+            pendingFieldIndex = null
+            pendingBenchIndex = null
+            requestDrawField()
+            findViewById<RecyclerView?>(R.id.rvBenchSelected)?.adapter?.notifyItemChanged(index)
+            findViewById<TextView?>(R.id.txtBenchTitle)?.text = "Banquillo (${benchSize()}/5)"
+            refreshStatsList()
+            return
+        }
+
+        if (benchPlayer != null) {
+            pendingBenchIndex = index
+            Toast.makeText(this, "Elige un hueco del campo para colocar a ${benchPlayer.nickname}", Toast.LENGTH_SHORT).show()
+        } else {
+            showBenchOptionsForSlotFinal(index)
         }
     }
 
@@ -402,7 +418,7 @@ class FinalTeamActivity : AppCompatActivity() {
 
         view.setOnClickListener (null)
 
-        val formation = formations.firstOrNull { it.name == formationName } ?: return
+        val formation = formations.first { it.name == formationName }
         val p = playerSlots.getOrNull(i)
         if (p != null) {
             img.setImageResource(p.image)
@@ -415,6 +431,51 @@ class FinalTeamActivity : AppCompatActivity() {
             img.setImageResource(0)
             img.background = null
         }
+
+        val roleCode = toCode(formation.positions[i])
+
+        view.setOnClickListener(null)
+
+        if (p != null) {
+            view.setOnClickListener {
+                pendingBenchIndex?.let { bIndex ->
+                    val incoming = benchPlayers[bIndex] ?: return@setOnClickListener
+                    if (!incoming.canPlay(roleCode)) {
+                        Toast.makeText(this, "No puede jugar en ${codeToNice(roleCode)}", Toast.LENGTH_SHORT).show()
+                        pendingBenchIndex = null
+                        return@setOnClickListener
+                    }
+                    benchPlayers[bIndex] = p
+                    playerSlots[i] = incoming
+                    pendingBenchIndex = null
+                    requestDrawField()
+                    findViewById<RecyclerView?>(R.id.rvBenchSelected)?.adapter?.notifyItemChanged(bIndex)
+                    refreshStatsList()
+                } ?: run {
+                    pendingFieldIndex = i
+                    Toast.makeText(this, "Elige un hueco del banquillo", Toast.LENGTH_SHORT).show()
+                }
+            }
+        } else {
+            view.setOnClickListener {
+                pendingBenchIndex?.let { bIndex ->
+                    val incoming = benchPlayers[bIndex] ?: return@setOnClickListener
+                    if (!incoming.canPlay(roleCode)) {
+                        Toast.makeText(this, "No puede jugar en ${codeToNice(roleCode)}", Toast.LENGTH_SHORT).show()
+                        pendingBenchIndex = null
+                        return@setOnClickListener
+                    }
+                    benchPlayers[bIndex] = null
+                    playerSlots[i] = incoming
+                    pendingBenchIndex = null
+                    requestDrawField()
+                    findViewById<RecyclerView?>(R.id.rvBenchSelected)?.adapter?.notifyItemChanged(bIndex)
+                    refreshStatsList()
+                }
+                // si no hay banquillo pendiente en la pantalla final, no abrimos picker (se gestiona desde el banquillo)
+            }
+        }
+
     }
 
     private fun attachDragLogicToFieldView(view: View, index: Int) {
