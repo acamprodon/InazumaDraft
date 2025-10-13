@@ -11,100 +11,81 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.inazumadraft.R
 import com.inazumadraft.model.Player
-import java.util.Collections
 
-/**
- * Banquillo con 5 huecos (Player?):
- * - Click SOLO abre el picker si el hueco está vacío.
- * - Long-press sólo si hay jugador: inicia drag (label "benchPlayer", localState = index).
- * - Drop:
- *    · desde CAMPO -> onDropFromField(toIndex, fromFieldIndex)
- *    · desde BANQUILLO -> swap/move dentro del banquillo (respeta null como hueco).
- */
 class BenchSelectedAdapter(
-    private val benchPlayers: MutableList<Player?>, // tamaño siempre 5
+    private val benchPlayers: MutableList<Player?>,
     private val onChanged: () -> Unit,
+    /** fromFieldIndex = índice del slot del campo desde el que se arrastra */
     private val onDropFromField: (toIndex: Int, fromFieldIndex: Int) -> Unit,
+    /** Abrir picker sólo cuando el hueco está vacío */
     private val onClickSlot: (index: Int) -> Unit
 ) : RecyclerView.Adapter<BenchSelectedAdapter.VH>() {
 
-    override fun getItemCount(): Int = 5
+    inner class VH(v: View) : RecyclerView.ViewHolder(v) {
+        val img: ImageView = v.findViewById(R.id.imgPlayer)        // usa tu layout de item (p.ej. item_player_option)
+        val elem: ImageView = v.findViewById(R.id.imgElement)
+        val name: TextView = v.findViewById(R.id.txtPlayerNickname)
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
-        val v = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_player_field, parent, false)
-        val d = parent.resources.displayMetrics.density
-        v.layoutParams = v.layoutParams.apply {
-            width = (90 * d).toInt()
-            height = (112 * d).toInt()
-        }
-        return VH(v)
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_player_option, parent, false) // usa el layout que tengas para el item del banquillo
+        return VH(view)
     }
+
+    override fun getItemCount(): Int = benchPlayers.size
 
     override fun onBindViewHolder(holder: VH, position: Int) {
-        holder.bind(benchPlayers.getOrNull(position), position)
-    }
+        val p = benchPlayers[position]
 
-    inner class VH(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val img = itemView.findViewById<ImageView>(R.id.imgPlayer)
-        private val name = itemView.findViewById<TextView>(R.id.txtPlayerNickname)
-        private val elem = itemView.findViewById<ImageView>(R.id.imgElement)
+        if (p != null) {
+            holder.img.setImageResource(p.image)
+            holder.elem.setImageResource(p.element)
+            holder.name.text = p.nickname
 
-        fun bind(p: Player?, index: Int) {
-            // Click: SOLO si está vacío (evita reroll una vez elegido)
-            itemView.setOnClickListener { if (p == null) onClickSlot(index) }
+            // Iniciar drag DESDE el banquillo -> para soltar en el campo
+            holder.itemView.setOnLongClickListener {
+                val clip = ClipData.newPlainText("benchPlayer", "bench")
+                val shadow = View.DragShadowBuilder(it)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+                    it.startDragAndDrop(clip, shadow, position, 0)
+                else
+                    @Suppress("DEPRECATION") it.startDrag(clip, shadow, position, 0)
+                it.alpha = 0.5f
+                true
+            }
+        } else {
+            // Slot vacío
+            holder.img.setImageResource(0)
+            holder.elem.setImageResource(0)
+            holder.name.text = "Vacío"
+            holder.itemView.setOnLongClickListener(null)
+        }
 
-            if (p == null) {
-                img.setImageResource(0)
-                elem.setImageResource(0)
-                name.text = "Hueco"
-                itemView.setOnLongClickListener(null)
-            } else {
-                img.setImageResource(p.image)
-                elem.setImageResource(p.element)
-                name.text = p.nickname
-                itemView.setOnLongClickListener {
-                    val clip = ClipData.newPlainText("benchPlayer", "benchPlayer")
-                    val shadow = View.DragShadowBuilder(it)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) it.startDragAndDrop(clip, shadow, index, 0)
-                    else @Suppress("DEPRECATION") it.startDrag(clip, shadow, index, 0)
+        // Clic: sólo si está vacío → abre player pick
+        holder.itemView.setOnClickListener {
+            if (benchPlayers[holder.bindingAdapterPosition] == null) {
+                onClickSlot(holder.bindingAdapterPosition)
+            }
+        }
+
+        // Aceptar drop DESDE el campo -> intercambiar campo ↔ banquillo
+        holder.itemView.setOnDragListener { v, event ->
+            when (event.action) {
+                DragEvent.ACTION_DRAG_STARTED -> true
+                DragEvent.ACTION_DRAG_ENTERED -> { v.alpha = 0.8f; true }
+                DragEvent.ACTION_DRAG_EXITED  -> { v.alpha = 1f; true }
+                DragEvent.ACTION_DROP -> {
+                    val fromField = event.clipDescription?.label == "fromIndex"
+                    if (fromField) {
+                        val fromFieldIndex = (event.localState as? Int) ?: return@setOnDragListener true
+                        onDropFromField(holder.bindingAdapterPosition, fromFieldIndex)
+                        onChanged()
+                    }
                     true
                 }
-            }
-
-            itemView.setOnDragListener { v, event ->
-                when (event.action) {
-                    DragEvent.ACTION_DRAG_STARTED -> true
-                    DragEvent.ACTION_DRAG_ENTERED -> { v.alpha = 0.85f; true }
-                    DragEvent.ACTION_DRAG_EXITED  -> { v.alpha = 1f; true }
-                    DragEvent.ACTION_DROP -> {
-                        val fromBench = event.clipDescription?.label == "benchPlayer"
-                        if (fromBench) {
-                            val fromIdx = event.localState as Int
-                            if (fromIdx == index) return@setOnDragListener true
-                            val a = benchPlayers.getOrNull(fromIdx) ?: return@setOnDragListener true
-                            val b = benchPlayers.getOrNull(index)
-                            if (b == null) {
-                                benchPlayers[index] = a
-                                benchPlayers[fromIdx] = null
-                            } else {
-                                Collections.swap(benchPlayers, fromIdx, index)
-                            }
-                            notifyItemChanged(index)
-                            notifyItemChanged(fromIdx)
-                            onChanged()
-                        } else {
-                            val fromFieldIndex = (event.localState as? Int) ?: return@setOnDragListener true
-                            onDropFromField(index, fromFieldIndex)
-                            notifyItemChanged(index)
-                            onChanged()
-                        }
-                        v.alpha = 1f
-                        true
-                    }
-                    DragEvent.ACTION_DRAG_ENDED -> { itemView.alpha = 1f; true }
-                    else -> false
-                }
+                DragEvent.ACTION_DRAG_ENDED -> { v.alpha = 1f; true }
+                else -> false
             }
         }
     }

@@ -1,61 +1,108 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/rootFinal"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#202a44">
+        android:layout_height="match_parent">
 
-    <!-- Campo de fútbol -->
+    <!-- Fondo del campo (opcional) -->
+    <ImageView
+            android:id="@+id/imgFieldBg"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:src="@drawable/football_field"
+            android:contentDescription="@string/app_name" />
+
     <RelativeLayout
-            android:id="@+id/fieldLayout"
+            android:id="@+id/contentFinal"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_above="@+id/bottomBar"
-            android:background="@drawable/football_field" />
+            android:padding="12dp">
 
-    <!-- Lista de estadísticas -->
-    <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerFinalTeam"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_above="@+id/bottomBar"
-            android:padding="8dp"
-            android:background="#151c30"
-            android:visibility="gone" />
+        <!-- Toggle entre campo y lista -->
+        <Button
+                android:id="@+id/btnToggleView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="VER ESTADÍSTICAS"
+                android:layout_alignParentStart="true" />
 
-    <!-- Barra inferior fija con los botones -->
-    <LinearLayout
-            android:id="@+id/bottomBar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:padding="8dp"
-            android:background="#202a44">
+        <!-- Campo con slots finales -->
+        <RelativeLayout
+                android:id="@+id/fieldLayout"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_below="@id/btnToggleView"
+                android:layout_marginTop="8dp" />
 
-        <!-- Botón nuevo equipo -->
+        <!-- Lista final (oculta por defecto; se alterna con botón) -->
+        <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerFinalTeam"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_below="@id/btnToggleView"
+                android:layout_marginTop="8dp"
+                android:visibility="gone" />
+
+        <!-- FAB: Nuevo equipo -->
         <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:id="@+id/btnNewTeam"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="12dp"
-                android:contentDescription="Crear otro equipo"
-                app:backgroundTint="#00cc66"
-                app:tint="@android:color/white"
-                app:srcCompat="@android:drawable/ic_popup_sync" />
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentBottom="true"
+                android:layout_margin="16dp"
+                app:srcCompat="@android:drawable/ic_menu_rotate" />
+    </RelativeLayout>
 
-        <!-- Botón Ver estadísticas / Ver campo -->
-        <Button
-                android:id="@+id/btnToggleView"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="VER ESTADÍSTICAS"
-                android:textStyle="bold"
-                android:textColor="#000000"
-                android:backgroundTint="#ffcc00" />
-    </LinearLayout>
+    <!-- ===== Drawer del BANQUILLO (derecha) ===== -->
+    <FrameLayout
+            android:id="@+id/benchPanel"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
 
-    <include layout="@layout/layout_bench_panel"/>
-</RelativeLayout>
+        <View
+                android:id="@+id/benchScrim"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#66000000"
+                android:visibility="gone" />
+
+        <LinearLayout
+                android:id="@+id/benchDrawer"
+                android:layout_width="320dp"
+                android:layout_height="match_parent"
+                android:layout_gravity="end"
+                android:background="@android:color/white"
+                android:orientation="vertical"
+                android:padding="12dp"
+                android:elevation="8dp">
+
+            <TextView
+                    android:id="@+id/txtBenchTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Banquillo (0/5)"
+                    android:textStyle="bold"
+                    android:textSize="18sp"
+                    android:paddingBottom="8dp" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvBenchSelected"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:overScrollMode="never"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvBenchOptions"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:visibility="gone" />
+        </LinearLayout>
+    </FrameLayout>
+
+</FrameLayout>
