@@ -105,6 +105,17 @@ class FinalTeamActivity : AppCompatActivity() {
         btnNewTeam = findViewById(R.id.btnNewTeam)
 
         val team = intent.getParcelableArrayListExtra<Player>("finalTeam") ?: arrayListOf()
+        val benchList = arrayListOf<Player>().apply {
+            for(i in 0 until 5) intent.getParcelableArrayListExtra<Player>("benchPlayers")?.getOrNull(i)?.let { add(it) }
+        }
+        val combined = ArrayList<Player>().apply {
+            addAll(team)
+            addAll(benchPlayers.filterNotNull())  // por si ya hemos rellenado en runtime
+            addAll(benchList)
+        }
+        recyclerFinalTeam.layoutManager = LinearLayoutManager(this)
+        recyclerFinalTeam.adapter = FinalTeamAdapter(combined)
+
         formationName = intent.getStringExtra("formation") ?: "4-4-2"
         captainName = intent.getStringExtra("captainName")
 
@@ -298,7 +309,7 @@ class FinalTeamActivity : AppCompatActivity() {
         val d = resources.displayMetrics.density
         var cardW = 100f * d
         var cardH = cardW * 1.25f
-        val hGap = 8f * d
+        val hGap = 12f * d
         val maxCols = 4
         val rowWidthNeeded = maxCols * cardW + (maxCols - 1) * hGap
         if (rowWidthNeeded > fieldLayout.width) {
@@ -321,8 +332,8 @@ class FinalTeamActivity : AppCompatActivity() {
         }
 
         if (coords != null && coords.size == formation.positions.size) {
-            val topBand = 0.08f
-            val bottomBand = 0.96f
+            val topBand = 0.06f
+            val bottomBand = 0.92f
             fun mapY(y: Float): Float = (topBand + y * (bottomBand - topBand)).coerceIn(0f, 1f)
 
             formation.positions.forEachIndexed { i, _ ->

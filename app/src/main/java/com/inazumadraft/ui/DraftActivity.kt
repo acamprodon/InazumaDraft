@@ -179,6 +179,7 @@ private var benchHandle: View? = null
         val dialogView = layoutInflater.inflate(R.layout.layout_player_picker, null)
         val dialog = android.app.Dialog(this)
         dialog.setContentView(dialogView)
+        dialog.setCanceledOnTouchOutside(false)
         val title = dialogView.findViewById<TextView>(R.id.txtTitle)
         val rvPicker = dialogView.findViewById<RecyclerView>(R.id.rvPickerOptions)
         title.text = "Elige Suplente"
@@ -384,8 +385,8 @@ private var benchHandle: View? = null
         val d = resources.displayMetrics.density
         var cardW = 100f * d
         var cardH = cardW * 1.25f
-        val hGap = 8f * d
-        val topPad = fieldLayout.height * 0.10f
+        val hGap = 12f * d
+        val topPad = fieldLayout.height * 0.06f
         val bottomPad = fieldLayout.height * 0.90f
 
         val maxCols = rowSpec.maxOrNull() ?: 1
@@ -539,7 +540,7 @@ private var benchHandle: View? = null
         val dialogView = layoutInflater.inflate(R.layout.layout_player_picker, null)
         val dialog = android.app.Dialog(this)
         dialog.setContentView(dialogView)
-
+        dialog.setCanceledOnTouchOutside(false)
         val title = dialogView.findViewById<TextView>(R.id.txtTitle)
         val rvPicker = dialogView.findViewById<RecyclerView>(R.id.rvPickerOptions)
 
@@ -606,6 +607,7 @@ private var benchHandle: View? = null
         val dialogView = layoutInflater.inflate(R.layout.layout_player_picker, null)
         val dialog = android.app.Dialog(this)
         dialog.setContentView(dialogView)
+        dialog.setCanceledOnTouchOutside(false)
         val title = dialogView.findViewById<TextView>(R.id.txtTitle)
         val rvPicker = dialogView.findViewById<RecyclerView>(R.id.rvPickerOptions)
         title.text = "Elige ${codeToLabel(slot.role)}"

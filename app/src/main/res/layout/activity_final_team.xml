@@ -28,7 +28,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_below="@id/btnToggleView"
-                android:layout_marginTop="8dp" >
+                android:layout_marginBottom="8dp" >
 
             <Button
                     android:id="@+id/btnToggleView"
@@ -37,7 +37,8 @@
                     android:text="VER ESTADÍSTICAS"
                     android:layout_alignParentBottom="true"
                     android:layout_marginStart="8dp"
-                    android:visibility="visible"/>
+                    android:visibility="visible"
+                    android:layout_marginBottom="-12dp" />
         </RelativeLayout>
 
         <!-- Lista final (oculta por defecto; se alterna con botón) -->

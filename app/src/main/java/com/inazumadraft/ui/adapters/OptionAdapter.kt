@@ -23,7 +23,13 @@ class OptionAdapter(
     }
 
     override fun onBindViewHolder(holder: OptionViewHolder, position: Int) {
-        holder.bind(players[position])
+     val p= players[position]
+     val d= holder.itemView.resources.displayMetrics.density
+        holder.itemView.layoutParams = RecyclerView.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            (220*d).toInt()
+        )
+        holder.bind(p)
     }
 
     override fun getItemCount(): Int = players.size
