@@ -1,4 +1,4 @@
-package com.inazumadraft.ui
+package com.inazumadraft.ui.adapters
 
 import android.view.LayoutInflater
 import android.view.View

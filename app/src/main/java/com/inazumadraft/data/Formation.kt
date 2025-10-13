@@ -39,7 +39,7 @@ val formationCoordinates = mapOf(
         0.50f to 0.92f,
         0.15f to 0.78f, 0.35f to 0.78f, 0.65f to 0.78f, 0.85f to 0.78f,
         0.15f to 0.52f, 0.35f to 0.52f, 0.65f to 0.52f, 0.85f to 0.52f,
-        0.40f to 0.20f, 0.60f to 0.20f
+        0.38f to 0.24f, 0.62f to 0.24f
     ),
 
     // 4-3-3
@@ -60,11 +60,11 @@ val formationCoordinates = mapOf(
 
     // 3-2-3-2
     "3-2-3-2" to listOf(
-        0.50f to 0.92f,
-        0.30f to 0.80f, 0.50f to 0.80f, 0.70f to 0.80f,
-        0.40f to 0.64f, 0.60f to 0.64f,
-        0.25f to 0.48f, 0.50f to 0.46f, 0.75f to 0.48f,
-        0.40f to 0.20f, 0.60f to 0.20f
+        0.50f to 0.92f,                                // PT
+        0.22f to 0.82f, 0.50f to 0.80f, 0.78f to 0.82f, // DF (abren a los lados)
+        0.38f to 0.66f, 0.62f to 0.66f,                 // doble pivote
+        0.22f to 0.48f, 0.50f to 0.44f, 0.78f to 0.48f, // línea de 3 (centro algo más bajo)
+        0.38f to 0.24f, 0.62f to 0.24f                  // 2 DL
     ),
 
     // 3-4-3
@@ -80,7 +80,7 @@ val formationCoordinates = mapOf(
         0.50f to 0.92f,
         0.10f to 0.78f, 0.28f to 0.78f, 0.50f to 0.78f, 0.72f to 0.78f, 0.90f to 0.78f,
         0.30f to 0.55f, 0.50f to 0.55f, 0.70f to 0.55f,
-        0.45f to 0.20f, 0.55f to 0.20f
+        0.38f to 0.24f, 0.62f to 0.24f
     ),
 
     // 4-2-3-1
@@ -106,15 +106,15 @@ val formationCoordinates = mapOf(
         0.50f to 0.92f,
         0.15f to 0.78f, 0.35f to 0.78f, 0.65f to 0.78f, 0.85f to 0.78f,
         0.40f to 0.60f, 0.60f to 0.60f,
-        0.20f to 0.30f, 0.40f to 0.20f, 0.60f to 0.20f, 0.80f to 0.30f
+        0.20f to 0.30f,    0.38f to 0.24f, 0.62f to 0.24f  , 0.80f to 0.30f
     ),
 
     // 2-3-5
     "2-3-5" to listOf(
-        0.50f to 0.92f,
-        0.30f to 0.80f, 0.70f to 0.80f,
-        0.25f to 0.60f, 0.50f to 0.60f, 0.75f to 0.60f,
-        0.18f to 0.24f, 0.36f to 0.20f, 0.50f to 0.18f, 0.64f to 0.20f, 0.82f to 0.24f
+        0.50f to 0.92f,                                // PT
+        0.20f to 0.82f, 0.80f to 0.82f,                 // 2 DF muy abiertos
+        0.18f to 0.62f, 0.50f to 0.58f, 0.82f to 0.62f, // 3 MC anchos y escalonados
+        0.12f to 0.30f, 0.30f to 0.24f, 0.50f to 0.20f, 0.70f to 0.24f, 0.88f to 0.30f // 5 DL
     ),
 
     // 3-5-2
@@ -122,7 +122,7 @@ val formationCoordinates = mapOf(
         0.50f to 0.92f,
         0.30f to 0.78f, 0.50f to 0.78f, 0.70f to 0.78f,
         0.15f to 0.60f, 0.35f to 0.56f, 0.50f to 0.54f, 0.65f to 0.56f, 0.85f to 0.60f,
-        0.45f to 0.20f, 0.55f to 0.20f
+        0.38f to 0.24f, 0.62f to 0.24f
     ),
 
     // 4-5-1

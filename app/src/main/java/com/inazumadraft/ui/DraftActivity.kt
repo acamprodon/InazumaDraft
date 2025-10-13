@@ -26,6 +26,8 @@ import com.inazumadraft.data.formations
 import com.inazumadraft.model.Player
 import com.inazumadraft.model.canPlay
 import com.inazumadraft.ui.adapters.BenchSelectedAdapter
+import com.inazumadraft.ui.adapters.OptionAdapter
+
 
 class DraftActivity : AppCompatActivity() {
 
