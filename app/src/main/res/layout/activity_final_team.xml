@@ -21,12 +21,6 @@
             android:padding="12dp">
 
         <!-- Toggle entre campo y lista -->
-        <Button
-                android:id="@+id/btnToggleView"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="VER ESTADÍSTICAS"
-                android:layout_alignParentStart="true" />
 
         <!-- Campo con slots finales -->
         <RelativeLayout
@@ -34,7 +28,15 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_below="@id/btnToggleView"
-                android:layout_marginTop="8dp" />
+                android:layout_marginTop="8dp" >
+
+            <Button
+                    android:id="@+id/btnToggleView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="VER ESTADÍSTICAS"
+                    android:layout_marginStart="106dp" />
+        </RelativeLayout>
 
         <!-- Lista final (oculta por defecto; se alterna con botón) -->
         <androidx.recyclerview.widget.RecyclerView
@@ -71,7 +73,7 @@
 
         <LinearLayout
                 android:id="@+id/benchDrawer"
-                android:layout_width="320dp"
+                android:layout_width="89dp"
                 android:layout_height="match_parent"
                 android:layout_gravity="end"
                 android:background="@android:color/white"

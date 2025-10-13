@@ -128,7 +128,7 @@
         <!-- Drawer -->
         <LinearLayout
                 android:id="@+id/benchDrawer"
-                android:layout_width="320dp"
+                android:layout_width="94dp"
                 android:layout_height="match_parent"
                 android:layout_gravity="end"
                 android:background="@android:color/white"
@@ -145,7 +145,7 @@
                     android:textSize="18sp"
                     android:paddingBottom="8dp" />
 
-            <!-- Lista VERTICAL: ocupa todo, 5 huecos a la vista -->
+            <!-- Lista VERTICAL: ocupa todo para ver 5 huecos -->
             <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvBenchSelected"
                     android:layout_width="match_parent"
