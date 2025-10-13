@@ -52,8 +52,7 @@ class DraftActivity : AppCompatActivity() {
     private var isPreviewing = false
 
     // ------- BANQUILLO -------
-    private val benchPlayers = MutableList<Player?>(5) { null }  // 5 huecos fijos (nullable)
-    // cache de picks por hueco para evitar reroll
+    private val benchPlayers = MutableList<Player?>(5) { null }
     private val benchPickOptions: MutableList<List<Player>?> = MutableList(5) { null }
 
     // ------- Drawer del banquillo: estado + hot-zone -------
@@ -80,7 +79,6 @@ class DraftActivity : AppCompatActivity() {
         isBenchOpen = false
     }
 
-    /** Franja invisible a la derecha que abre el banquillo si entra un drag. */
     private fun ensureBenchHotZone(root: View, drawer: View, scrim: View, onOpen: () -> Unit) {
         val parent: ViewGroup = findViewById(android.R.id.content)
         if (benchHotZone != null) return
@@ -97,12 +95,11 @@ class DraftActivity : AppCompatActivity() {
                 }
                 false
             }
-            // setBackgroundColor(0x11FF0000.toInt()) // descomenta para depurar
         }
         parent.addView(benchHotZone)
     }
 
-    // ------- PERF: cache y debounce -------
+    // ------- PERF -------
     private val slotViews: MutableList<View> = mutableListOf()
     private var drawPending = false
     private fun requestDrawSlots() {
@@ -143,7 +140,6 @@ class DraftActivity : AppCompatActivity() {
                 intent.putParcelableArrayListExtra("finalTeam", ArrayList(team))
                 intent.putExtra("formation", formation.name)
                 intent.putExtra("captainName", captain?.name ?: "")
-                // enviar banquillo seleccionado (sólo no-nulos, en orden)
                 val benchList = ArrayList(benchPlayers.filterNotNull())
                 intent.putParcelableArrayListExtra("benchPlayers", benchList)
                 startActivity(intent)
@@ -158,11 +154,10 @@ class DraftActivity : AppCompatActivity() {
         setupBenchPanel()
     }
 
-    // ----------------- HELPERS BANQUILLO -----------------
+    // ----------------- BANQUILLO -----------------
     private fun benchCount(): Int = benchPlayers.count { it != null }
 
     private fun showBenchOptionsForSlot(slotIndex: Int) {
-        // usa cache para evitar reroll; si no existe, crea las 4 opciones
         val options = benchPickOptions[slotIndex] ?: run {
             val usados = mutableSetOf<Player>().apply {
                 captain?.let { add(it) }
@@ -199,7 +194,6 @@ class DraftActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    // Tirador + animaciones (crea el botón lateral y deja scrim listo)
     private fun setupBenchDrawerBasics(
         root: View,
         drawer: View,
@@ -213,7 +207,6 @@ class DraftActivity : AppCompatActivity() {
             root.visibility = View.GONE
             scrim.visibility = View.GONE
         }
-        // Cerrar con scrim
         scrim.setOnClickListener { closeBench(root, drawer, scrim, onClose) }
 
         val d = handleParent.resources.displayMetrics.density
@@ -375,7 +368,7 @@ class DraftActivity : AppCompatActivity() {
         requestDrawSlots()
     }
 
-    // ----------------- FIELD RENDER + DnD -----------------
+    // ----------------- RENDER DEL CAMPO + DnD -----------------
     private fun drawSlotsInternal() {
         if (fieldLayout.width == 0 || fieldLayout.height == 0) {
             fieldLayout.post { drawSlotsInternal() }
@@ -402,7 +395,6 @@ class DraftActivity : AppCompatActivity() {
             topPad + t * (bottomPad - topPad)
         }
 
-        // Asegura vistas
         val totalSlots = slots.size
         while (slotViews.size < totalSlots) {
             val v = layoutInflater.inflate(R.layout.item_player_field, fieldLayout, false)
@@ -636,20 +628,23 @@ class DraftActivity : AppCompatActivity() {
         return result
     }
 
-    // ----------------- BANQUILLO: drawer + listas -----------------
     private fun setupBenchPanel() {
         val root   = findViewById<View?>(R.id.benchPanel) ?: return
         val drawer = findViewById<View?>(R.id.benchDrawer) ?: return
         val scrim  = findViewById<View?>(R.id.benchScrim) ?: return
         val rvSel  = findViewById<RecyclerView?>(R.id.rvBenchSelected) ?: return
         val rvOpts = findViewById<RecyclerView?>(R.id.rvBenchOptions) ?: return
-        val btnClose = findViewById<Button?>(R.id.btnCloseBench) ?: return
+        val btnClose = findViewById<Button?>(R.id.btnCloseBench) // puede existir en el XML
         val txtTitle = findViewById<TextView?>(R.id.txtBenchTitle) ?: return
+
+        // 👇 Ocultar el botón Cerrar
+        btnClose?.visibility = View.GONE
 
         fun updateTitle() { txtTitle.text = "Banquillo (${benchCount()}/5)" }
         updateTitle()
 
-        rvSel.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        // 👇 Cambiamos a VERTICAL (arriba → abajo)
+        rvSel.layoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
         rvSel.itemAnimator = null
         rvSel.adapter = BenchSelectedAdapter(
             benchPlayers = benchPlayers,
@@ -663,18 +658,14 @@ class DraftActivity : AppCompatActivity() {
                 updateTitle()
                 requestDrawSlots()
             },
-            onClickSlot = { index -> showBenchOptionsForSlot(index) } // el adapter sólo llama si el hueco está vacío
+            onClickSlot = { index -> showBenchOptionsForSlot(index) }
         )
 
-        // No usamos la grilla inferior (los picks salen al pulsar el hueco)
+        // La grilla inferior no se usa
         rvOpts.layoutManager = GridLayoutManager(this, 2)
-        rvOpts.adapter = OptionAdapter(
-            emptyList(),
-            onClick = { _: Player -> }
-        )
+        rvOpts.adapter = OptionAdapter(emptyList(), onClick = { _: Player -> })
 
-        // Cerrar
-        btnClose.setOnClickListener { closeBench(root, drawer, scrim) }
+        // Cierre con scrim
         scrim.setOnClickListener { closeBench(root, drawer, scrim) }
 
         val activityRoot: ViewGroup = findViewById(android.R.id.content)

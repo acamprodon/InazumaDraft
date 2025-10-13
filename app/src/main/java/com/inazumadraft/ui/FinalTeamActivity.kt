@@ -34,13 +34,12 @@ class FinalTeamActivity : AppCompatActivity() {
     private lateinit var btnNewTeam: FloatingActionButton
     private lateinit var recyclerFinalTeam: RecyclerView
 
-    private val benchPlayers = MutableList<Player?>(5) { null } // 5 huecos fijos
+    private val benchPlayers = MutableList<Player?>(5) { null }
     private val playerSlots = mutableListOf<Player?>()
 
     private var formationName: String = "4-4-2"
     private var captainName: String? = null
 
-    // Cache vistas + debounce
     private val slotViews: MutableList<View> = mutableListOf()
     private var drawPending = false
     private fun requestDrawField() {
@@ -52,7 +51,6 @@ class FinalTeamActivity : AppCompatActivity() {
         }
     }
 
-    // --- Estado del drawer del banquillo + hot-zone ---
     private var isBenchOpen = false
     private var benchHotZone: View? = null
 
@@ -79,7 +77,6 @@ class FinalTeamActivity : AppCompatActivity() {
         isBenchOpen = false
     }
 
-    /** Crea una franja invisible en el borde derecho que abre el banquillo si entra un drag. */
     private fun ensureBenchHotZone(root: View, drawer: View, scrim: View, onOpen: () -> Unit) {
         val parent: ViewGroup = findViewById(android.R.id.content)
         if (benchHotZone != null) return
@@ -91,12 +88,9 @@ class FinalTeamActivity : AppCompatActivity() {
             }
             setOnDragListener { _, event ->
                 if (event.action == DragEvent.ACTION_DRAG_ENTERED && !isBenchOpen) {
-                    openBenchDrawer(root, drawer, scrim, onOpen)
-                    return@setOnDragListener true
-                }
-                false
+                    openBenchDrawer(root, drawer, scrim, onOpen); true
+                } else false
             }
-            // setBackgroundColor(0x11FF0000.toInt()) // <- descomenta para depurar la zona
         }
         parent.addView(benchHotZone)
     }
@@ -114,11 +108,9 @@ class FinalTeamActivity : AppCompatActivity() {
         formationName = intent.getStringExtra("formation") ?: "4-4-2"
         captainName = intent.getStringExtra("captainName")
 
-        // Restaurar titulares
         playerSlots.clear()
         playerSlots.addAll(team)
 
-        // Restaurar banquillo enviado desde DraftActivity (persistente)
         intent.getParcelableArrayListExtra<Player>("benchPlayers")?.let { list ->
             for (i in 0 until 5) benchPlayers[i] = list.getOrNull(i)
         }
@@ -150,7 +142,7 @@ class FinalTeamActivity : AppCompatActivity() {
         setupBenchPanel()
     }
 
-    // ----------------- Banquillo: picks por hueco (solo si vacío) -----------------
+    // ----------------- Banquillo (vertical, sin botón cerrar) -----------------
     private fun showBenchOptionsForSlotFinal(slotIndex: Int) {
         val usados = mutableSetOf<Player>().apply {
             addAll(playerSlots.filterNotNull())
@@ -183,7 +175,6 @@ class FinalTeamActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    // ----------------- Drawer del banquillo -----------------
     private fun setupBenchDrawerBasics(
         root: View,
         drawer: View,
@@ -197,10 +188,9 @@ class FinalTeamActivity : AppCompatActivity() {
             root.visibility = View.GONE
             scrim.visibility = View.GONE
         }
-        // Cerrar tocando scrim
+        // Cerrar tocando scrim (no hay botón cerrar)
         scrim.setOnClickListener { closeBenchDrawer(root, drawer, scrim, onClose) }
 
-        // Botón lateral "BANQUILLO"
         val d = handleParent.resources.displayMetrics.density
         val handle = Button(handleParent.context).apply {
             text = "BANQUILLO"
@@ -229,14 +219,17 @@ class FinalTeamActivity : AppCompatActivity() {
         val scrim  = findViewById<View?>(R.id.benchScrim) ?: return
         val rvSel  = findViewById<RecyclerView?>(R.id.rvBenchSelected) ?: return
         val rvOpts = findViewById<RecyclerView?>(R.id.rvBenchOptions) ?: return
-        val btnClose = findViewById<Button?>(R.id.btnCloseBench) ?: return
+        val btnClose = findViewById<Button?>(R.id.btnCloseBench) // puede existir en el XML
         val txtTitle = findViewById<TextView?>(R.id.txtBenchTitle) ?: return
+
+        // 👇 Ocultar el botón Cerrar
+        btnClose?.visibility = View.GONE
 
         fun updateTitle() { txtTitle.text = "Banquillo (${benchCount()}/5)" }
         updateTitle()
 
-        // Lista horizontal con 5 huecos
-        rvSel.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        // 👇 VERTICAL (arriba → abajo)
+        rvSel.layoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
         rvSel.itemAnimator = null
         rvSel.adapter = BenchSelectedAdapter(
             benchPlayers = benchPlayers,
@@ -250,20 +243,16 @@ class FinalTeamActivity : AppCompatActivity() {
                 updateTitle()
                 requestDrawField()
             },
-            onClickSlot = { index -> showBenchOptionsForSlotFinal(index) } // el adapter sólo llama si el hueco está vacío
+            onClickSlot = { index -> showBenchOptionsForSlotFinal(index) }
         )
 
-        // Grilla inferior no usada (los picks salen al tocar cada hueco)
+        // Grilla inferior no usada
         rvOpts.layoutManager = GridLayoutManager(this, 2)
-        rvOpts.adapter = OptionAdapter(
-            emptyList(),
-            onClick = { _: Player -> }
-        )
+        rvOpts.adapter = OptionAdapter(emptyList(), onClick = { _: Player -> })
 
-        // Cerrar
-        btnClose.setOnClickListener { closeBenchDrawer(root, drawer, scrim) }
+        // Scrim cierra
+        scrim.setOnClickListener { closeBenchDrawer(root, drawer, scrim) }
 
-        // Botón lateral y scrim
         val activityRoot: ViewGroup = findViewById(android.R.id.content)
         setupBenchDrawerBasics(
             root = root,
@@ -277,7 +266,7 @@ class FinalTeamActivity : AppCompatActivity() {
             onClose = { }
         )
 
-        // Hot-zone que abre al arrastrar hacia el borde derecho
+        // Hot-zone para abrir al arrastrar
         ensureBenchHotZone(
             root = root,
             drawer = drawer,
@@ -320,7 +309,6 @@ class FinalTeamActivity : AppCompatActivity() {
         val formation = formations.firstOrNull { it.name == formationName } ?: return
         val coords = formationCoordinates[formationName]
 
-        // Asegura vistas
         val totalSlots = formation.positions.size
         while (slotViews.size < totalSlots) {
             val v = layoutInflater.inflate(R.layout.item_player_field, fieldLayout, false)
@@ -351,7 +339,6 @@ class FinalTeamActivity : AppCompatActivity() {
                 attachDragLogicToFieldView(view, i)
             }
         } else {
-            // Fallback por filas si no hay coordenadas
             val codes = formation.positions.map { toCode(it) }
             val nPT = codes.count { it == "PT" }
             val nDF = codes.count { it == "DF" }
