@@ -67,7 +67,9 @@ class FinalTeamActivity : AppCompatActivity() {
 
         playerSlots.clear()
         playerSlots.addAll(team)
-
+        intent.getParcelableArrayListExtra<Player>("benchPlayers")?.let { list ->
+            for (i in 0 until 5) {
+                benchPlayers[i] = list.getOrNull(i)}}
         fieldLayout.post { requestDrawField() }
 
         recyclerFinalTeam.layoutManager = LinearLayoutManager(this)
@@ -290,7 +292,7 @@ class FinalTeamActivity : AppCompatActivity() {
             fieldLayout.addView(v)
         }
         while (slotViews.size > totalSlots) {
-            val last = slotViews.removeLast()
+            val last = slotViews.removeAt(slotViews.lastIndex)
             fieldLayout.removeView(last)
         }
 

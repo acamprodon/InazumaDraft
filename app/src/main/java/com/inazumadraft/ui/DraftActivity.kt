@@ -95,6 +95,8 @@ class DraftActivity : AppCompatActivity() {
                 intent.putParcelableArrayListExtra("finalTeam", ArrayList(team))
                 intent.putExtra("formation", formation.name)
                 intent.putExtra("captainName", captain?.name ?: "")
+                val benchList = ArrayList(benchPlayers.filterNotNull())
+                intent.putParcelableArrayListExtra("benchPlayers", benchList)
                 startActivity(intent)
             }
         }
