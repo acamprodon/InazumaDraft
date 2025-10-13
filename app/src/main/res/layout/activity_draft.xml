@@ -5,7 +5,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-    <!-- Fondo del campo (opcional) -->
+    <!-- Fondo del campo -->
     <ImageView
             android:id="@+id/imgFieldBg"
             android:layout_width="match_parent"
@@ -14,81 +14,30 @@
             android:src="@drawable/football_field"
             android:contentDescription="@string/app_name" />
 
-    <!-- Contenido principal -->
+    <!-- Contenido principal (campo, picks, confirmar, overlay-preview) -->
     <RelativeLayout
             android:id="@+id/contentDraft"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:padding="12dp">
 
-        <!-- Título de ronda / instrucciones -->
-        <TextView
-                android:id="@+id/roundTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Elige una formación"
-                android:textStyle="bold"
-                android:textSize="18sp"
-                android:textColor="@android:color/white"
-                android:layout_alignParentStart="true"
-                android:layout_marginBottom="8dp" />
-
-        <!-- Botones de formación -->
-        <LinearLayout
-                android:id="@+id/formationButtonsLayout"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/roundTitle"
-                android:orientation="horizontal"
-                android:layout_marginTop="8dp">
-
-            <Button
-                    android:id="@+id/btnFormation1"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="F1" />
-
-            <Button
-                    android:id="@+id/btnFormation2"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:text="F2" />
-
-            <Button
-                    android:id="@+id/btnFormation3"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:text="F3" />
-
-            <Button
-                    android:id="@+id/btnFormation4"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:text="F4" />
-        </LinearLayout>
-
-        <!-- Campo con slots -->
+        <!-- Campo con slots (visible tras elegir capitán) -->
         <RelativeLayout
                 android:id="@+id/fieldLayout"
                 android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_below="@id/formationButtonsLayout"
+                android:layout_height="match_parent"
                 android:layout_above="@+id/btnNext"
-                android:layout_marginTop="12dp" />
+                android:layout_marginBottom="8dp" />
 
         <!-- Grid de opciones (player pick) -->
         <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvOptions"
                 android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_below="@id/formationButtonsLayout"
+                android:layout_height="match_parent"
                 android:layout_above="@+id/btnNext"
-                android:layout_marginTop="12dp"
                 android:padding="8dp"
-                android:clipToPadding="false" />
+                android:clipToPadding="false"
+                android:visibility="gone" />
 
         <!-- Confirmar -->
         <Button
@@ -97,10 +46,10 @@
                 android:layout_height="48dp"
                 android:text="Confirmar equipo"
                 android:layout_alignParentBottom="true"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="8dp" />
+                android:layout_margin="12dp"
+                android:visibility="gone" />
 
-        <!-- Overlay para vista previa al mantener pulsado -->
+        <!-- Overlay de vista previa al mantener pulsado -->
         <View
                 android:id="@+id/overlayPreview"
                 android:layout_width="match_parent"
@@ -114,27 +63,29 @@
             android:id="@+id/benchPanel"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:visibility="gone"
             android:clickable="false"
             android:focusable="false">
 
-        <!-- Scrim -->
         <View
                 android:id="@+id/benchScrim"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="#66000000"
-                android:visibility="gone" />
+                android:visibility="gone"
+                android:clickable="true" />
 
-        <!-- Drawer -->
         <LinearLayout
                 android:id="@+id/benchDrawer"
-                android:layout_width="94dp"
+                android:layout_width="320dp"
                 android:layout_height="match_parent"
                 android:layout_gravity="end"
-                android:background="@android:color/white"
                 android:orientation="vertical"
                 android:padding="12dp"
-                android:elevation="8dp">
+                android:background="@android:color/white"
+                android:translationX="320dp"
+                android:elevation="12dp"
+                android:clickable="true">
 
             <TextView
                     android:id="@+id/txtBenchTitle"
@@ -145,7 +96,6 @@
                     android:textSize="18sp"
                     android:paddingBottom="8dp" />
 
-            <!-- Lista VERTICAL: ocupa todo para ver 5 huecos -->
             <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvBenchSelected"
                     android:layout_width="match_parent"
@@ -155,14 +105,99 @@
                     android:paddingTop="4dp"
                     android:paddingBottom="4dp" />
 
-            <!-- Picks secundarios (no usados) -->
             <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvBenchOptions"
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
                     android:visibility="gone" />
+        </LinearLayout>
+    </FrameLayout>
 
-            <!-- Botón cerrar eliminado -->
+    <!-- ===== Overlay centrado para elegir FORMACIÓN (2x2, botones grandes) ===== -->
+    <FrameLayout
+            android:id="@+id/formationOverlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clickable="true"
+            android:focusable="true">
+
+        <!-- oscurecer un poco el fondo -->
+        <View
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#88000000" />
+
+        <!-- Tarjeta centrada -->
+        <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:orientation="vertical"
+                android:padding="20dp"
+                android:background="@android:color/transparent">
+
+            <!-- Título que usa DraftActivity (mismo id) -->
+            <TextView
+                    android:id="@+id/roundTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Elige una formación"
+                    android:textStyle="bold"
+                    android:textSize="22sp"
+                    android:textColor="@android:color/white"
+                    android:layout_gravity="center_horizontal"
+                    android:paddingBottom="16dp" />
+
+            <!-- Contenedor de botones (mismo id que espera DraftActivity) -->
+            <GridLayout
+                    android:id="@+id/formationButtonsLayout"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:rowCount="2"
+                    android:columnCount="2"
+                    android:alignmentMode="alignMargins"
+                    android:useDefaultMargins="true">
+
+                <Button
+                        android:id="@+id/btnFormation1"
+                        android:layout_width="140dp"
+                        android:layout_height="80dp"
+                        android:text="F1"
+                        android:textStyle="bold"
+                        android:textSize="20sp"
+                        android:backgroundTint="#FFCC00"
+                        android:textColor="#000000" />
+
+                <Button
+                        android:id="@+id/btnFormation2"
+                        android:layout_width="140dp"
+                        android:layout_height="80dp"
+                        android:text="F2"
+                        android:textStyle="bold"
+                        android:textSize="20sp"
+                        android:backgroundTint="#FFCC00"
+                        android:textColor="#000000" />
+
+                <Button
+                        android:id="@+id/btnFormation3"
+                        android:layout_width="140dp"
+                        android:layout_height="80dp"
+                        android:text="F3"
+                        android:textStyle="bold"
+                        android:textSize="20sp"
+                        android:backgroundTint="#FFCC00"
+                        android:textColor="#000000" />
+
+                <Button
+                        android:id="@+id/btnFormation4"
+                        android:layout_width="140dp"
+                        android:layout_height="80dp"
+                        android:text="F4"
+                        android:textStyle="bold"
+                        android:textSize="20sp"
+                        android:backgroundTint="#FFCC00"
+                        android:textColor="#000000" />
+            </GridLayout>
         </LinearLayout>
     </FrameLayout>
 
