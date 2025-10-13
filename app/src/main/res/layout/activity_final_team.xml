@@ -5,7 +5,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-    <!-- Fondo del campo (opcional) -->
+    <!-- Fondo -->
     <ImageView
             android:id="@+id/imgFieldBg"
             android:layout_width="match_parent"
@@ -20,36 +20,31 @@
             android:layout_height="match_parent"
             android:padding="12dp">
 
-        <!-- Toggle entre campo y lista -->
+        <!-- Botón toggle SIEMPRE visible -->
+        <Button
+                android:id="@+id/btnToggleView"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="VER ESTADÍSTICAS"
+                android:layout_alignParentBottom="true"
+                android:layout_margin="12dp" />
 
-        <!-- Campo con slots finales -->
+        <!-- Campo: ahora por ENCIMA del botón -->
         <RelativeLayout
                 android:id="@+id/fieldLayout"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_below="@id/btnToggleView"
-                android:layout_marginBottom="8dp" >
+                android:layout_above="@id/btnToggleView"
+                android:layout_margin="8dp" />
 
-            <Button
-                    android:id="@+id/btnToggleView"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="VER ESTADÍSTICAS"
-                    android:layout_alignParentBottom="true"
-                    android:layout_marginStart="8dp"
-                    android:visibility="visible"
-                    android:layout_marginBottom="-12dp" />
-        </RelativeLayout>
-
-        <!-- Lista final (oculta por defecto; se alterna con botón) -->
+        <!-- Lista de estadísticas: por ENCIMA del botón -->
         <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerFinalTeam"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_below="@id/btnToggleView"
-                android:layout_marginTop="8dp"
+                android:layout_above="@id/btnToggleView"
+                android:layout_margin="8dp"
                 android:visibility="gone" />
-
         <!-- FAB: Nuevo equipo -->
         <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:id="@+id/btnNewTeam"
@@ -58,10 +53,11 @@
                 android:layout_alignParentEnd="true"
                 android:layout_alignParentBottom="true"
                 android:layout_margin="16dp"
+                android:contentDescription="@string/app_name"
                 app:srcCompat="@android:drawable/ic_menu_rotate" />
     </RelativeLayout>
 
-    <!-- ===== Drawer del BANQUILLO (derecha) ===== -->
+    <!-- Drawer del banquillo -->
     <FrameLayout
             android:id="@+id/benchPanel"
             android:layout_width="match_parent"

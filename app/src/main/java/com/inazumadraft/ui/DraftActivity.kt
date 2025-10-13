@@ -197,6 +197,10 @@ private var benchHandle: View? = null
         )
 
         dialog.show()
+        dialog.window?.setLayout(
+            (resources.displayMetrics.widthPixels * 0.92f).toInt(),
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
     }
 
     private fun setupBenchDrawerBasics(
@@ -385,7 +389,7 @@ private var benchHandle: View? = null
         val d = resources.displayMetrics.density
         var cardW = 100f * d
         var cardH = cardW * 1.25f
-        val hGap = 12f * d
+        val hGap = 16f * d
         val topPad = fieldLayout.height * 0.06f
         val bottomPad = fieldLayout.height * 0.90f
 
@@ -397,9 +401,9 @@ private var benchHandle: View? = null
         }
 
         val rowsCount = rowSpec.size
+        val spacing =(bottomPad- topPad)/ (rowsCount + 1)
         val yCenters = (0 until rowsCount).map { r ->
-            val t = if (rowsCount == 1) 0.5f else r / (rowsCount - 1f).toFloat()
-            topPad + t * (bottomPad - topPad)
+           topPad + (r + 1 ) * spacing
         }
 
         val totalSlots = slots.size
@@ -562,6 +566,10 @@ private var benchHandle: View? = null
         )
 
         dialog.show()
+        dialog.window?.setLayout(
+            (resources.displayMetrics.widthPixels * 0.92f).toInt(),
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
     }
 
     private fun showPreviewOnLongPress(
@@ -626,6 +634,10 @@ private var benchHandle: View? = null
             }
         )
         dialog.show()
+        dialog.window?.setLayout(
+            (resources.displayMetrics.widthPixels * 0.92f).toInt(),
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
     }
 
     private fun buildFinalTeamFromSlots(formation: Formation): List<Player> {
