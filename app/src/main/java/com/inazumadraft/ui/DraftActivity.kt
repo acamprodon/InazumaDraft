@@ -372,9 +372,16 @@ private var benchHandle: View? = null
         repeat(nPT) { slots.add(Slot("PT")) }
 
         captain?.let { cap ->
-            val idx = slots.indexOfFirst { slot -> slot.player == null && cap.canPlay(slot.role) }
-            if (idx >= 0) { slots[idx].player = cap; selectedPlayers.add(cap) }
+
+            var idx = slots.indexOfFirst { slot -> slot.player == null && slot.role.equals(cap.position, ignoreCase = true) }
+
+
+            if (idx >= 0) {
+                slots[idx].player = cap
+                selectedPlayers.add(cap)
+            }
         }
+
 
         findViewById<TextView?>(R.id.txtBenchTitle)?.text = "Banquillo (${benchCount()}/5)"
         findViewById<RecyclerView?>(R.id.rvBenchSelected)?.adapter?.notifyDataSetChanged()
