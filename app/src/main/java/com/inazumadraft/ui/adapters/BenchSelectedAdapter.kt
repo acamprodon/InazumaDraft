@@ -3,6 +3,8 @@ package com.inazumadraft.ui.adapters
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.content.ClipData
+import android.content.ClipDescription
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
@@ -47,5 +49,15 @@ class BenchSelectedAdapter(
             onTapSlot(holder.bindingAdapterPosition)
             onChanged()
         }
+        holder.itemView.setOnLongClickListener {
+            if (benchPlayers[holder.bindingAdapterPosition] == null) return@setOnLongClickListener false
+            val clip = ClipData(
+                "bench", arrayOf(ClipDescription.MIMETYPE_TEXT_PLAIN),
+                ClipData.Item(holder.bindingAdapterPosition.toString())
+            )
+            it.startDragAndDrop(clip, View.DragShadowBuilder(it), holder.bindingAdapterPosition, 0)
+            true
+        }
     }
+
 }
