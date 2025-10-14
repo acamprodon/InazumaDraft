@@ -77,7 +77,13 @@ class FinalTeamActivity : AppCompatActivity() {
             }
         }
 
-        btnNewTeam.setOnClickListener { finish() }
+        btnNewTeam.setOnClickListener {
+            // 🔁 Reiniciar el draft completamente desde cero
+            val intent = android.content.Intent(this, DraftActivity::class.java)
+            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP or android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(intent)
+            finish()
+        }
 
         setupBenchPanel()
     }
