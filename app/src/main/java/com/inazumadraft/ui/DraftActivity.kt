@@ -515,8 +515,18 @@ class DraftActivity : AppCompatActivity() {
         val benchPlayer = benchPlayers[index]
 
         pendingFieldIndex?.let { fIndex ->
-            val fieldPlayer = slots[fIndex].player ?: run { pendingFieldIndex = null; return }
+            val fieldPlayer = slots[fIndex].player ?: run {
+                pendingFieldIndex = null
+                return
+            }
             if (benchPlayer != null) {
+                // ✅ validar que el del banquillo puede jugar en el rol del hueco del campo
+                val roleCode = slots[fIndex].role
+                if (!benchPlayer.canPlay(roleCode)) {
+                    Toast.makeText(this, "No puede jugar en ${codeToNice(roleCode)}", Toast.LENGTH_SHORT).show()
+                    pendingFieldIndex = null
+                    return
+                }
                 benchPlayers[index] = fieldPlayer
                 slots[fIndex].player = benchPlayer
                 pendingFieldIndex = null; pendingBenchIndex = null
@@ -526,9 +536,11 @@ class DraftActivity : AppCompatActivity() {
                 return
             } else {
                 pendingFieldIndex = null; pendingBenchIndex = null
-                showBenchOptionsForSlot(index); return
+                showBenchOptionsForSlot(index)
+                return
             }
         }
+
 
         pendingBenchIndex?.let {
             if (benchPlayer == null) { pendingBenchIndex = null; showBenchOptionsForSlot(index) }

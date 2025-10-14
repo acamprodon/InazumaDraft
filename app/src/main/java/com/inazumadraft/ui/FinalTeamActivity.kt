@@ -230,15 +230,25 @@ class FinalTeamActivity : AppCompatActivity() {
             val fieldPlayer = playerSlots.getOrNull(fIndex)
             if (fieldPlayer == null) { pendingFieldIndex = null; return }
             if (benchPlayer == null) { pendingFieldIndex = null; showBenchOptionsForSlotFinal(index); return }
-            benchPlayers[index] = fieldPlayer; playerSlots[fIndex] = benchPlayer
+
+            // ✅ validar que el del banquillo puede jugar en el rol del slot del campo
+            val formation = formations.first { it.name == formationName }
+            val roleCode = toCode(formation.positions[fIndex])
+            if (!benchPlayer.canPlay(roleCode)) {
+                Toast.makeText(this, "No puede jugar en ${codeToNice(roleCode)}", Toast.LENGTH_SHORT).show()
+                pendingFieldIndex = null
+                return
+            }
+
+            benchPlayers[index] = fieldPlayer
+            playerSlots[fIndex] = benchPlayer
             pendingFieldIndex = null; pendingBenchIndex = null
-            requestDrawField(); findViewById<RecyclerView?>(R.id.rvBenchSelected)?.adapter?.notifyItemChanged(index); refreshStatsList()
+            requestDrawField()
+            findViewById<RecyclerView?>(R.id.rvBenchSelected)?.adapter?.notifyItemChanged(index)
+            refreshStatsList()
             return
         }
-        pendingBenchIndex?.let {
-            if (benchPlayer == null) { pendingBenchIndex = null; showBenchOptionsForSlotFinal(index) } else pendingBenchIndex = index
-            return
-        }
+
         if (benchPlayer != null) { pendingBenchIndex = index; Toast.makeText(this, "Toca un jugador del campo o arrástralo", Toast.LENGTH_SHORT).show() }
         else showBenchOptionsForSlotFinal(index)
     }
