@@ -5,6 +5,9 @@ import android.os.Bundle
 import android.view.View
 import android.view.DragEvent
 import android.view.ViewGroup
+import android.view.GestureDetector
+import android.view.MotionEvent
+import android.view.Gravity
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.ImageView
@@ -153,7 +156,21 @@ class DraftActivity : AppCompatActivity() {
                 // ❌ sin auto-abrir siguientes picks
             }
         )
-
+        val overlay = dialogView.findViewById<ViewGroup>(R.id.pickerPreviewOverlay)
+        attachPickerPreviewLive(
+            rv = rvPicker,
+            dialog = dialog,
+            options = options
+        ) { candidate ->
+            // apply (preview)
+            val idx = slots.indexOfFirst { it.role.equals(candidate.position, ignoreCase = true) }
+            val prev = if (idx >= 0) slots[idx].player else null
+            if (idx >= 0) slots[idx].player = candidate
+            // devolver cómo revertir
+            return@attachPickerPreviewLive {
+                if (idx >= 0) slots[idx].player = prev
+            }
+        }
         dialog.show()
         dialog.window?.setLayout(
             (resources.displayMetrics.widthPixels * 0.92f).toInt(),
@@ -204,6 +221,21 @@ class DraftActivity : AppCompatActivity() {
                 // ❌ sin auto-abrir el siguiente
             }
         )
+        val overlay = dialogView.findViewById<ViewGroup>(R.id.pickerPreviewOverlay)
+        attachPickerPreviewLive(
+            rv = rvPicker,
+            dialog = dialog,
+            options = options
+        ) { candidate ->
+            // apply (preview)
+            val idx = slots.indexOfFirst { it.role.equals(candidate.position, ignoreCase = true) }
+            val prev = if (idx >= 0) slots[idx].player else null
+            if (idx >= 0) slots[idx].player = candidate
+            // devolver cómo revertir
+            return@attachPickerPreviewLive {
+                if (idx >= 0) slots[idx].player = prev
+            }
+        }
 
         dialog.show()
         dialog.window?.setLayout(
@@ -235,6 +267,21 @@ class DraftActivity : AppCompatActivity() {
                 dialog.dismiss()
             }
         )
+        val overlay = dialogView.findViewById<ViewGroup>(R.id.pickerPreviewOverlay)
+        attachPickerPreviewLive(
+            rv = rvPicker,
+            dialog = dialog,
+            options = options
+        ) { candidate ->
+            // apply (preview)
+            val idx = slots.indexOfFirst { it.role.equals(candidate.position, ignoreCase = true) }
+            val prev = if (idx >= 0) slots[idx].player else null
+            if (idx >= 0) slots[idx].player = candidate
+            // devolver cómo revertir
+            return@attachPickerPreviewLive {
+                if (idx >= 0) slots[idx].player = prev
+            }
+        }
 
         dialog.show()
         dialog.window?.setLayout(
@@ -378,10 +425,11 @@ class DraftActivity : AppCompatActivity() {
         view.setOnDragListener { v, e ->
             when (e.action) {
                 android.view.DragEvent.ACTION_DRAG_STARTED -> {
-                    e.clipDescription?.label == "field" // solo drags desde CAMPO
+                    // Acepta el drag de campo SIEMPRE; validamos en DROP con localState
+                    true
                 }
-                android.view.DragEvent.ACTION_DRAG_ENTERED -> { v.alpha = 0.8f; true }
-                android.view.DragEvent.ACTION_DRAG_EXITED  -> { v.alpha = 1f;   true }
+                android.view.DragEvent.ACTION_DRAG_ENTERED -> { v.alpha = 0.85f; true }
+                android.view.DragEvent.ACTION_DRAG_EXITED  -> { v.alpha = 1f;    true }
                 android.view.DragEvent.ACTION_DROP -> {
                     v.alpha = 1f
                     val fromIndex = e.localState as? Int ?: return@setOnDragListener false
@@ -393,13 +441,13 @@ class DraftActivity : AppCompatActivity() {
                     val roleFrom = slots.getOrNull(fromIndex)?.role ?: return@setOnDragListener false
                     val roleTo   = slots.getOrNull(toIndex)?.role   ?: return@setOnDragListener false
 
-                    // ambos deben existir y poder jugar en el rol del otro
+                    // Solo swap si HAY jugador en ambos y ambos pueden jugar el rol del otro
                     if (src == null || dst == null) {
-                        Toast.makeText(this, "Solo se puede intercambiar entre jugadores", Toast.LENGTH_SHORT).show()
+                        android.widget.Toast.makeText(this, "Solo se puede intercambiar entre jugadores", android.widget.Toast.LENGTH_SHORT).show()
                         return@setOnDragListener false
                     }
                     if (!src.canPlay(roleTo) || !dst.canPlay(roleFrom)) {
-                        Toast.makeText(this, "No pueden intercambiar sus posiciones", Toast.LENGTH_SHORT).show()
+                        android.widget.Toast.makeText(this, "No pueden intercambiar sus posiciones", android.widget.Toast.LENGTH_SHORT).show()
                         return@setOnDragListener false
                     }
 
@@ -413,6 +461,7 @@ class DraftActivity : AppCompatActivity() {
                 else -> false
             }
         }
+
 
         view.setOnDragListener { v, e ->
             when (e.action) {
@@ -444,6 +493,14 @@ class DraftActivity : AppCompatActivity() {
             img.setImageResource(p.image)
             name.text = p.nickname
             elem.setImageResource(p.element)
+            view.setOnLongClickListener {
+                val clip = android.content.ClipData(
+                    "field", arrayOf(android.content.ClipDescription.MIMETYPE_TEXT_PLAIN),
+                    android.content.ClipData.Item(index.toString())
+                )
+                it.startDragAndDrop(clip, View.DragShadowBuilder(it), index, 0)
+                true
+            }
 
             // TAP SWAP (campo ocupado)
             view.setOnClickListener {
@@ -673,7 +730,109 @@ class DraftActivity : AppCompatActivity() {
         "delantero", "dl" -> "DL"
         else -> pos.trim().uppercase()
     }
+    private fun startLivePreview(dialog: Dialog, onClose: () -> Unit) {
+        dialog.hide()
 
+        val root = findViewById<ViewGroup>(android.R.id.content)
+        val overlay = FrameLayout(this).apply {
+            setBackgroundColor(0x66000000) // semitransparente
+            isClickable = true
+            isFocusable = true
+
+            // Botón para volver
+            val btn = com.google.android.material.button.MaterialButton(context).apply {
+                text = "VOLVER AL PICK"
+                setOnClickListener {
+                    onClose()
+                    root.removeView(this@apply)
+                    dialog.show()
+                }
+            }
+            addView(
+                btn,
+                FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.WRAP_CONTENT,
+                    FrameLayout.LayoutParams.WRAP_CONTENT,
+                    Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+                ).apply { bottomMargin = (16 * resources.displayMetrics.density).toInt() }
+            )
+
+            // Tocar fuera también vuelve
+            setOnClickListener {
+                onClose()
+                root.removeView(this)
+                dialog.show()
+            }
+        }
+        root.addView(overlay, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT
+        ))
+    }
+
+    /** Conecta long-press sobre el RecyclerView del picker para lanzar el preview.
+     *  applyBlock: coloca TEMPORALMENTE al candidato y devuelve una función "revert" para deshacer.
+     */
+    private fun attachPickerPreviewLive(
+        rv: RecyclerView,
+        dialog: Dialog,
+        options: List<Player>,
+        applyBlock: (candidate: Player) -> (() -> Unit)
+    ) {
+        val detector = GestureDetector(this,
+            object : GestureDetector.SimpleOnGestureListener() {
+                override fun onLongPress(e: MotionEvent) {
+                    val child = rv.findChildViewUnder(e.x, e.y) ?: return
+                    val pos = rv.getChildAdapterPosition(child)
+                    if (pos != RecyclerView.NO_POSITION && pos < options.size) {
+                        val candidate = options[pos]
+                        // Aplica vista previa y recibe cómo revertirla
+                        val revert = applyBlock(candidate)
+                        // Redibuja y muestra overlay que devolverá al picker
+                        requestFieldRedraw()
+                        startLivePreview(dialog) {
+                            revert()
+                            requestFieldRedraw()
+                        }
+                    }
+                }
+            }
+        )
+        rv.addOnItemTouchListener(object : RecyclerView.OnItemTouchListener {
+            override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
+                detector.onTouchEvent(e); return false
+            }
+            override fun onTouchEvent(rv: RecyclerView, e: MotionEvent) {}
+            override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {}
+        })
+    }
+
+    private fun showOptionPreview(overlay: ViewGroup, player: com.inazumadraft.model.Player) {
+        overlay.removeAllViews()
+        overlay.visibility = View.VISIBLE
+
+        val card = layoutInflater.inflate(R.layout.item_player_field, overlay, false)
+        val img = card.findViewById<ImageView>(R.id.imgPlayer)
+        val name = card.findViewById<TextView>(R.id.txtPlayerNickname)
+        val elem = card.findViewById<ImageView>(R.id.imgElement)
+
+        img.setImageResource(player.image)
+        name.text = player.nickname
+        elem.setImageResource(player.element)
+
+        val lp = FrameLayout.LayoutParams(
+            (resources.displayMetrics.widthPixels * 0.58f).toInt(),
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            android.view.Gravity.CENTER
+        )
+        overlay.addView(card, lp)
+
+        // Cerrar al tocar fuera
+        overlay.setOnClickListener {
+            overlay.visibility = View.GONE
+            overlay.removeAllViews()
+        }
+    }
     private fun codeToNice(code: String): String = when (code.uppercase()) {
         "PT" -> "Portero"; "DF" -> "Defensa"; "MC" -> "Centrocampista"; "DL" -> "Delantero"; else -> code
     }

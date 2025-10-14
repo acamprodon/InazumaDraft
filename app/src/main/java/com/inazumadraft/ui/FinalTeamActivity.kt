@@ -444,6 +444,43 @@ class FinalTeamActivity : AppCompatActivity() {
             it.startDragAndDrop(clip, View.DragShadowBuilder(it), i, 0)
             true
         }
+        view.setOnDragListener { v, e ->
+            when (e.action) {
+                android.view.DragEvent.ACTION_DRAG_STARTED -> true
+                android.view.DragEvent.ACTION_DRAG_ENTERED -> { v.alpha = 0.85f; true }
+                android.view.DragEvent.ACTION_DRAG_EXITED  -> { v.alpha = 1f;    true }
+                android.view.DragEvent.ACTION_DROP -> {
+                    v.alpha = 1f
+                    val fromIndex = e.localState as? Int ?: return@setOnDragListener false
+                    val toIndex = i
+                    if (fromIndex == toIndex) return@setOnDragListener false
+
+                    val formation = com.inazumadraft.data.formations.first { it.name == formationName }
+                    val src = playerSlots.getOrNull(fromIndex)
+                    val dst = playerSlots.getOrNull(toIndex)
+                    val roleFrom = toCode(formation.positions[fromIndex])
+                    val roleTo   = toCode(formation.positions[toIndex])
+
+                    if (src == null || dst == null) {
+                        android.widget.Toast.makeText(this, "Solo se puede intercambiar entre jugadores", android.widget.Toast.LENGTH_SHORT).show()
+                        return@setOnDragListener false
+                    }
+                    if (!src.canPlay(roleTo) || !dst.canPlay(roleFrom)) {
+                        android.widget.Toast.makeText(this, "No pueden intercambiar sus posiciones", android.widget.Toast.LENGTH_SHORT).show()
+                        return@setOnDragListener false
+                    }
+
+                    // SWAP
+                    playerSlots[fromIndex] = dst
+                    playerSlots[toIndex]   = src
+                    requestDrawField()
+                    refreshStatsList()
+                    true
+                }
+                android.view.DragEvent.ACTION_DRAG_ENDED -> { v.alpha = 1f; true }
+                else -> false
+            }
+        }
 
         view.setOnDragListener { v, e ->
             when (e.action) {
@@ -465,6 +502,16 @@ class FinalTeamActivity : AppCompatActivity() {
                     true
                 }
                 else -> false
+            }
+        }
+        if (p != null) {
+            view.setOnLongClickListener {
+                val clip = android.content.ClipData(
+                    "field", arrayOf(android.content.ClipDescription.MIMETYPE_TEXT_PLAIN),
+                    android.content.ClipData.Item(i.toString())
+                )
+                it.startDragAndDrop(clip, View.DragShadowBuilder(it), i, 0)
+                true
             }
         }
 

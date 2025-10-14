@@ -26,6 +26,17 @@
             android:padding="8dp"
             android:clipToPadding="false"
             android:overScrollMode="never" />
+    <!-- Overlay de vista previa (se gestiona por código) -->
+    <FrameLayout
+            android:id="@+id/pickerPreviewOverlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="#80000000"
+            android:visibility="gone" />
+
+
 
     <!-- Pie informativo -->
     <TextView

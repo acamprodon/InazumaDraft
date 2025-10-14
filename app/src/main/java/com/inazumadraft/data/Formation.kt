@@ -53,8 +53,8 @@ val formationCoordinates = mapOf(
     // 5-2-3
     "5-2-3" to listOf(
         0.50f to 0.92f,
-        0.10f to 0.80f, 0.30f to 0.80f, 0.50f to 0.80f, 0.70f to 0.80f, 0.90f to 0.80f,
-        0.40f to 0.58f, 0.60f to 0.58f,
+        0.10f to 0.75f, 0.30f to 0.80f, 0.50f to 0.80f, 0.70f to 0.80f, 0.90f to 0.75f,
+        0.35f to 0.52f, 0.65f to 0.52f,
         0.25f to 0.20f, 0.50f to 0.18f, 0.75f to 0.20f
     ),
 
@@ -78,7 +78,7 @@ val formationCoordinates = mapOf(
     // 5-3-2
     "5-3-2" to listOf(
         0.50f to 0.92f,
-        0.10f to 0.78f, 0.28f to 0.78f, 0.50f to 0.78f, 0.72f to 0.78f, 0.90f to 0.78f,
+        0.10f to 0.75f, 0.30f to 0.80f, 0.50f to 0.80f, 0.70f to 0.80f, 0.90f to 0.75f,
         0.30f to 0.55f, 0.50f to 0.55f, 0.70f to 0.55f,
         0.38f to 0.24f, 0.62f to 0.24f
     ),
@@ -87,7 +87,7 @@ val formationCoordinates = mapOf(
     "4-2-3-1" to listOf(
         0.50f to 0.92f,
         0.15f to 0.78f, 0.35f to 0.78f, 0.65f to 0.78f, 0.85f to 0.78f,
-        0.40f to 0.64f, 0.60f to 0.64f,
+        0.38f to 0.64f, 0.62f to 0.64f,
         0.20f to 0.44f, 0.50f to 0.42f, 0.80f to 0.44f,
         0.50f to 0.20f
     ),
@@ -105,7 +105,7 @@ val formationCoordinates = mapOf(
     "4-2-4" to listOf(
         0.50f to 0.92f,
         0.15f to 0.78f, 0.35f to 0.78f, 0.65f to 0.78f, 0.85f to 0.78f,
-        0.40f to 0.60f, 0.60f to 0.60f,
+        0.38f to 0.60f, 0.62f to 0.60f,
         0.20f to 0.30f,    0.38f to 0.24f, 0.62f to 0.24f  , 0.80f to 0.30f
     ),
 
@@ -129,7 +129,7 @@ val formationCoordinates = mapOf(
     "4-5-1" to listOf(
         0.50f to 0.92f,
         0.15f to 0.78f, 0.35f to 0.78f, 0.65f to 0.78f, 0.85f to 0.78f,
-        0.15f to 0.58f, 0.35f to 0.54f, 0.50f to 0.52f, 0.65f to 0.54f, 0.85f to 0.58f,
+        0.15f to 0.58f, 0.35f to 0.45f, 0.50f to 0.58f, 0.65f to 0.45f, 0.85f to 0.58f,
         0.50f to 0.20f
     ),
 
