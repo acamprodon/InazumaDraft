@@ -3,6 +3,7 @@ package com.inazumadraft.ui
 import android.app.Dialog
 import android.content.ClipData
 import android.content.ClipDescription
+import android.content.Intent
 import android.os.Bundle
 import android.view.*
 import android.widget.*
@@ -83,6 +84,12 @@ class FinalTeamActivity : AppCompatActivity() {
             intent.addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP or android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
             startActivity(intent)
             finish()
+        }
+        findViewById<Button>(R.id.btnFinishTeam).setOnClickListener {
+            val intent = Intent(this, TeamSummaryActivity::class.java)
+            val team = ArrayList(playerSlots.filterNotNull())
+            intent.putParcelableArrayListExtra("finalTeam", team)
+            startActivity(intent)
         }
 
         setupBenchPanel()

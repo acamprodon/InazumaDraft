@@ -25,6 +25,8 @@
         <activity android:name=".ui.DraftActivity"
                 android:exported="true"/>
         <activity android:name=".ui.FinalTeamActivity" />
+        <activity android:name=".ui.TeamSummaryActivity" />
+
 
     </application>
 </manifest>
