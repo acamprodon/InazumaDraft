@@ -187,8 +187,20 @@ class FinalTeamActivity : AppCompatActivity() {
             onChanged = {
                 txtTitle.text = "Banquillo (${benchSize()}/5)"
                 refreshStatsList()
+            },
+            onDropFromField = { benchIndex, fieldIndex ->
+                val fieldPlayer = playerSlots.getOrNull(fieldIndex) ?: return@BenchSelectedAdapter false
+                val prevBench = benchPlayers[benchIndex]
+                benchPlayers[benchIndex] = fieldPlayer
+                playerSlots[fieldIndex] = prevBench
+                requestDrawField()
+                findViewById<RecyclerView?>(R.id.rvBenchSelected)
+                    ?.adapter?.notifyItemChanged(benchIndex)
+                refreshStatsList()
+                true
             }
         )
+
 
         // Opciones (vacías por defecto, se llenan al tocar hueco vacío)
         rvOpts.layoutManager = GridLayoutManager(this, 2)
@@ -422,6 +434,16 @@ class FinalTeamActivity : AppCompatActivity() {
         val formation = formations.firstOrNull { it.name == formationName } ?: return
         val roleCode = toCode(formation.positions[i])
         val p = playerSlots.getOrNull(i)
+
+        view.setOnLongClickListener {
+            val clip = android.content.ClipData(
+                "field",
+                arrayOf(android.content.ClipDescription.MIMETYPE_TEXT_PLAIN),
+                android.content.ClipData.Item(i.toString())
+            )
+            it.startDragAndDrop(clip, View.DragShadowBuilder(it), i, 0)
+            true
+        }
 
         view.setOnDragListener { v, e ->
             when (e.action) {

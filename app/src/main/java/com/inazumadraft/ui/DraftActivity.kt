@@ -32,6 +32,7 @@ class DraftActivity : AppCompatActivity() {
     private lateinit var btnNext: Button
     private lateinit var roundTitle: TextView
     private lateinit var formationOverlay: View
+    private lateinit var formationChoices: List<com.inazumadraft.data.Formation>
 
     // Botones de formación
     private lateinit var btnFormation1: Button
@@ -77,11 +78,11 @@ class DraftActivity : AppCompatActivity() {
         btnFormation4 = findViewById(R.id.btnFormation4)
 
         // Rellenamos nombres de formaciones
-        val visible = formations.take(4)
-        btnFormation1.text = visible.getOrNull(0)?.name ?: "F1"
-        btnFormation2.text = visible.getOrNull(1)?.name ?: "F2"
-        btnFormation3.text = visible.getOrNull(2)?.name ?: "F3"
-        btnFormation4.text = visible.getOrNull(3)?.name ?: "F4"
+        formationChoices = formations.shuffled().take(4)
+        btnFormation1.text = formationChoices.getOrNull(0)?.name ?: "F1"
+        btnFormation2.text = formationChoices.getOrNull(1)?.name ?: "F2"
+        btnFormation3.text = formationChoices.getOrNull(2)?.name ?: "F3"
+        btnFormation4.text = formationChoices.getOrNull(3)?.name ?: "F4"
 
         btnFormation1.setOnClickListener { selectFormationByIndex(0) }
         btnFormation2.setOnClickListener { selectFormationByIndex(1) }
@@ -111,7 +112,8 @@ class DraftActivity : AppCompatActivity() {
 
     private fun selectFormationByIndex(i: Int) {
         if (formationLocked) return
-        val f = formations.getOrNull(i) ?: return
+        val f = formationChoices.getOrNull(i) ?: return
+
         selectedFormationName = f.name
         formationLocked = true
 
@@ -364,10 +366,58 @@ class DraftActivity : AppCompatActivity() {
         val slot = slots[index]
         val p = slot.player
 
+        view.setOnLongClickListener {
+            val clip = android.content.ClipData(
+                "field",
+                arrayOf(android.content.ClipDescription.MIMETYPE_TEXT_PLAIN),
+                android.content.ClipData.Item(index.toString())
+            )
+            it.startDragAndDrop(clip, View.DragShadowBuilder(it), index, 0)
+            true
+        }
+        view.setOnDragListener { v, e ->
+            when (e.action) {
+                android.view.DragEvent.ACTION_DRAG_STARTED -> {
+                    e.clipDescription?.label == "field" // solo drags desde CAMPO
+                }
+                android.view.DragEvent.ACTION_DRAG_ENTERED -> { v.alpha = 0.8f; true }
+                android.view.DragEvent.ACTION_DRAG_EXITED  -> { v.alpha = 1f;   true }
+                android.view.DragEvent.ACTION_DROP -> {
+                    v.alpha = 1f
+                    val fromIndex = e.localState as? Int ?: return@setOnDragListener false
+                    val toIndex = index
+                    if (fromIndex == toIndex) return@setOnDragListener false
+
+                    val src = slots.getOrNull(fromIndex)?.player
+                    val dst = slots.getOrNull(toIndex)?.player
+                    val roleFrom = slots.getOrNull(fromIndex)?.role ?: return@setOnDragListener false
+                    val roleTo   = slots.getOrNull(toIndex)?.role   ?: return@setOnDragListener false
+
+                    // ambos deben existir y poder jugar en el rol del otro
+                    if (src == null || dst == null) {
+                        Toast.makeText(this, "Solo se puede intercambiar entre jugadores", Toast.LENGTH_SHORT).show()
+                        return@setOnDragListener false
+                    }
+                    if (!src.canPlay(roleTo) || !dst.canPlay(roleFrom)) {
+                        Toast.makeText(this, "No pueden intercambiar sus posiciones", Toast.LENGTH_SHORT).show()
+                        return@setOnDragListener false
+                    }
+
+                    // SWAP
+                    slots[fromIndex].player = dst
+                    slots[toIndex].player   = src
+                    requestFieldRedraw()
+                    true
+                }
+                android.view.DragEvent.ACTION_DRAG_ENDED -> { v.alpha = 1f; true }
+                else -> false
+            }
+        }
+
         view.setOnDragListener { v, e ->
             when (e.action) {
                 DragEvent.ACTION_DRAG_STARTED -> {
-                    // Acepta solo si el drag viene del banquillo
+
                     e.clipDescription?.label == "bench"
                 }
                 DragEvent.ACTION_DROP -> {
@@ -520,8 +570,23 @@ class DraftActivity : AppCompatActivity() {
         rvSel.adapter = BenchSelectedAdapter(
             benchPlayers = benchPlayers,
             onTapSlot = { index -> handleBenchTap(index) },
-            onChanged = { updateBenchTitle() }
+            onChanged = { updateBenchTitle() },
+            onDropFromField = { benchIndex, fieldIndex ->
+                val fieldPlayer = slots.getOrNull(fieldIndex)?.player ?: return@BenchSelectedAdapter false
+                val incomingOk = true // validación de posición se hace al mover del campo al banquillo no aplica
+                val prevBench = benchPlayers[benchIndex]
+
+                // swap jugador↔jugador (si el banquillo está vacío, sólo mueve)
+                benchPlayers[benchIndex] = fieldPlayer
+                slots[fieldIndex].player = prevBench
+
+                requestFieldRedraw()
+                findViewById<RecyclerView?>(R.id.rvBenchSelected)
+                    ?.adapter?.notifyItemChanged(benchIndex)
+                true
+            }
         )
+
 
         // ---------- Lista de opciones (inicialmente vacía) ----------
         rvOpts.layoutManager = GridLayoutManager(this, 2)

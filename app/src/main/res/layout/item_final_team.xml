@@ -34,6 +34,7 @@
             <TextView
                     android:id="@+id/txtPlayerName"
                     android:text="Nombre del jugador"
+                    android:textColor="#333"
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:layout_width="0dp"

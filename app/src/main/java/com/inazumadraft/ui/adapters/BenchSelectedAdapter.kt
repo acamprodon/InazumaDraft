@@ -13,8 +13,9 @@ import com.inazumadraft.R
 
 class BenchSelectedAdapter(
     private val benchPlayers: MutableList<Player?>,
-    private val onTapSlot: (index: Int) -> Unit,   // ← un único callback por tap
-    private val onChanged: () -> Unit = {}
+    private val onTapSlot: (index: Int) -> Unit,
+    private val onChanged: () -> Unit = {},
+    private val onDropFromField: (benchIndex: Int, fieldIndex: Int) -> Boolean
 ) : RecyclerView.Adapter<BenchSelectedAdapter.VH>() {
 
     inner class VH(v: View) : RecyclerView.ViewHolder(v) {
@@ -49,14 +50,20 @@ class BenchSelectedAdapter(
             onTapSlot(holder.bindingAdapterPosition)
             onChanged()
         }
-        holder.itemView.setOnLongClickListener {
-            if (benchPlayers[holder.bindingAdapterPosition] == null) return@setOnLongClickListener false
-            val clip = ClipData(
-                "bench", arrayOf(ClipDescription.MIMETYPE_TEXT_PLAIN),
-                ClipData.Item(holder.bindingAdapterPosition.toString())
-            )
-            it.startDragAndDrop(clip, View.DragShadowBuilder(it), holder.bindingAdapterPosition, 0)
-            true
+
+
+        holder.itemView.setOnDragListener { _, e ->
+            when (e.action) {
+                android.view.DragEvent.ACTION_DRAG_STARTED ->
+                    e.clipDescription?.label == "field"
+                android.view.DragEvent.ACTION_DROP -> {
+                    val fieldIndex = e.localState as? Int ?: return@setOnDragListener false
+                    val ok = onDropFromField(holder.bindingAdapterPosition, fieldIndex)
+                    if (ok) onChanged()
+                    ok
+                }
+                else -> false
+            }
         }
     }
 
