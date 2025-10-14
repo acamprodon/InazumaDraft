@@ -121,7 +121,7 @@ val formationCoordinates = mapOf(
     "3-5-2" to listOf(
         0.50f to 0.92f,
         0.30f to 0.78f, 0.50f to 0.78f, 0.70f to 0.78f,
-        0.15f to 0.60f, 0.35f to 0.56f, 0.50f to 0.54f, 0.65f to 0.56f, 0.85f to 0.60f,
+        0.15f to 0.58f, 0.35f to 0.45f, 0.50f to 0.58f, 0.65f to 0.45f, 0.85f to 0.58f,
         0.38f to 0.24f, 0.62f to 0.24f
     ),
 

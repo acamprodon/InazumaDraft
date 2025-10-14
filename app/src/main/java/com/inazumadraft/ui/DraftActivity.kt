@@ -1,26 +1,20 @@
 package com.inazumadraft.ui
 
 import android.app.Dialog
+import android.content.ClipData
+import android.content.ClipDescription
+import android.content.Intent
 import android.os.Bundle
-import android.view.View
-import android.view.DragEvent
-import android.view.ViewGroup
-import android.view.GestureDetector
-import android.view.MotionEvent
-import android.view.Gravity
-import android.widget.Button
-import android.widget.FrameLayout
-import android.widget.ImageView
-import android.widget.RelativeLayout
-import android.widget.TextView
-import android.widget.Toast
+import android.view.*
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.inazumadraft.R
-import com.inazumadraft.ui.adapters.BenchSelectedAdapter
+import com.google.android.material.button.MaterialButton
 import com.inazumadraft.ui.adapters.OptionAdapter
+import com.inazumadraft.ui.adapters.BenchSelectedAdapter
+import com.inazumadraft.R
 import com.inazumadraft.data.PlayerRepository
 import com.inazumadraft.data.formationCoordinates
 import com.inazumadraft.data.formations
@@ -30,41 +24,38 @@ import kotlin.math.max
 
 class DraftActivity : AppCompatActivity() {
 
-    // UI principales
+    // UI
     private lateinit var fieldLayout: RelativeLayout
     private lateinit var btnNext: Button
     private lateinit var roundTitle: TextView
     private lateinit var formationOverlay: View
-    private lateinit var formationChoices: List<com.inazumadraft.data.Formation>
-
-    // Botones de formación
     private lateinit var btnFormation1: Button
     private lateinit var btnFormation2: Button
     private lateinit var btnFormation3: Button
     private lateinit var btnFormation4: Button
 
-    // Estado formación
-    private var selectedFormationName: String? = null
-    private var formationLocked = false
-
-    // Slots de campo
+    // Estado
     data class Slot(val role: String, var player: Player?)
-    private val slots = mutableListOf<Slot>()
+    internal val slots = mutableListOf<Slot>()                 // <- usado por drag unificado
     private val slotViews: MutableList<View> = mutableListOf()
     private var drawPending = false
 
-    // Banquillo
-    private val benchPlayers = MutableList<Player?>(5) { null }
-    private var isBenchOpen = false
-    private var benchHotZone: View? = null
-    private var benchHandle: View? = null
-
-    // Selecciones para TAP-swap
-    private var pendingBenchIndex: Int? = null
-    private var pendingFieldIndex: Int? = null
+    private var formationLocked = false
+    private var selectedFormationName: String? = null
+    private lateinit var formationChoices: List<com.inazumadraft.data.Formation>
 
     // Capitán
     private var captain: Player? = null
+
+    // Banquillo
+    internal val benchPlayers = MutableList<Player?>(5) { null }
+    private var isBenchOpen = false
+    private var benchHandle: View? = null
+    private var benchHotZone: View? = null
+
+    // Selecciones TAP
+    internal var pendingBenchIndex: Int? = null
+    internal var pendingFieldIndex: Int? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -74,13 +65,12 @@ class DraftActivity : AppCompatActivity() {
         btnNext = findViewById(R.id.btnNext)
         roundTitle = findViewById(R.id.roundTitle)
         formationOverlay = findViewById(R.id.formationOverlay)
-
         btnFormation1 = findViewById(R.id.btnFormation1)
         btnFormation2 = findViewById(R.id.btnFormation2)
         btnFormation3 = findViewById(R.id.btnFormation3)
         btnFormation4 = findViewById(R.id.btnFormation4)
 
-        // Rellenamos nombres de formaciones
+        // Botones de formaciones aleatorias
         formationChoices = formations.shuffled().take(4)
         btnFormation1.text = formationChoices.getOrNull(0)?.name ?: "F1"
         btnFormation2.text = formationChoices.getOrNull(1)?.name ?: "F2"
@@ -98,25 +88,24 @@ class DraftActivity : AppCompatActivity() {
                 Toast.makeText(this, "Completa el 11 inicial", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            val intent = android.content.Intent(this, FinalTeamActivity::class.java).apply {
+            val i = Intent(this, FinalTeamActivity::class.java).apply {
                 putParcelableArrayListExtra("finalTeam", ArrayList(slots.mapNotNull { it.player }))
                 putParcelableArrayListExtra("benchPlayers", ArrayList(benchPlayers.filterNotNull()))
                 putExtra("formation", selectedFormationName ?: "4-4-2")
                 putExtra("captainName", captain?.name)
             }
-            startActivity(intent)
+            startActivity(i)
         }
 
         setupBenchPanel()
-        setBenchAccessEnabled(false) // hasta completar 11
+        setBenchAccessEnabled(false)
     }
 
-    // ---------------- Formación y capitán ----------------
+    // ---------------------- Formación y capitán ----------------------
 
     private fun selectFormationByIndex(i: Int) {
         if (formationLocked) return
         val f = formationChoices.getOrNull(i) ?: return
-
         selectedFormationName = f.name
         formationLocked = true
 
@@ -134,12 +123,9 @@ class DraftActivity : AppCompatActivity() {
 
     private fun showCaptainOptions() {
         val options = PlayerRepository.players.shuffled().take(4)
-
         val dialogView = layoutInflater.inflate(R.layout.layout_player_picker, null)
         val dialog = Dialog(this).apply {
-            setContentView(dialogView)
-            setCanceledOnTouchOutside(false)
-            setCancelable(false)
+            setContentView(dialogView); setCanceledOnTouchOutside(false); setCancelable(false)
         }
 
         dialogView.findViewById<TextView>(R.id.txtTitle).text = "Elige Capitán"
@@ -153,56 +139,40 @@ class DraftActivity : AppCompatActivity() {
                 dialog.dismiss()
                 roundTitle.text = "Completa tu 11 inicial"
                 requestFieldRedraw()
-                // ❌ sin auto-abrir siguientes picks
             }
         )
-        val overlay = dialogView.findViewById<ViewGroup>(R.id.pickerPreviewOverlay)
-        attachPickerPreviewLive(
-            rv = rvPicker,
-            dialog = dialog,
-            options = options
-        ) { candidate ->
-            // apply (preview)
-            val idx = slots.indexOfFirst { it.role.equals(candidate.position, ignoreCase = true) }
+
+
+        // Preview “live”: coloca candidato en su posición principal, oculta diálogo y permite volver
+        attachPickerPreviewLive(rvPicker, dialog, options) { candidate ->
+            val idx = slots.indexOfFirst { it.role.equals(candidate.position, true) }
             val prev = if (idx >= 0) slots[idx].player else null
             if (idx >= 0) slots[idx].player = candidate
-            // devolver cómo revertir
-            return@attachPickerPreviewLive {
-                if (idx >= 0) slots[idx].player = prev
-            }
+            { if (idx >= 0) slots[idx].player = prev }
         }
+
         dialog.show()
-        dialog.window?.setLayout(
-            (resources.displayMetrics.widthPixels * 0.92f).toInt(),
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        )
+        dialog.window?.setLayout((resources.displayMetrics.widthPixels * 0.92f).toInt(), ViewGroup.LayoutParams.WRAP_CONTENT)
     }
 
     private fun placeCaptainInPrimaryPositionOnly() {
         val cap = captain ?: return
-        val idx = slots.indexOfFirst { it.player == null && it.role.equals(cap.position, ignoreCase = true) }
+        val idx = slots.indexOfFirst { it.player == null && it.role.equals(cap.position, true) }
         if (idx >= 0) slots[idx].player = cap
     }
 
-    // ---------------- Player-picks por rol (solo posición principal) ----------------
+    // ---------------------- Pickers por rol ----------------------
 
     private fun showOptionsForSlot(slotIndex: Int) {
         val used = slots.mapNotNull { it.player }.toMutableSet().apply { addAll(benchPlayers.filterNotNull()) }
         val needRole = slots[slotIndex].role
-
-        val pool = PlayerRepository.players
-            .filter { it !in used && it.position.equals(needRole, ignoreCase = true) }
+        val options = PlayerRepository.players
+            .filter { it !in used && it.position.equals(needRole, true) }
             .shuffled()
-
-        val options = pool.take(4)
+            .take(4)
 
         val dialogView = layoutInflater.inflate(R.layout.layout_player_picker, null)
-        val dialog = Dialog(this).apply {
-            setContentView(dialogView)
-            setCanceledOnTouchOutside(false)
-            setCancelable(false)
-        }
-
+        val dialog = Dialog(this).apply { setContentView(dialogView); setCanceledOnTouchOutside(false); setCancelable(false) }
         dialogView.findViewById<TextView>(R.id.txtTitle).text = "Elige ${codeToNice(needRole)}"
         val rvPicker = dialogView.findViewById<RecyclerView>(R.id.rvPickerOptions)
         rvPicker.layoutManager = GridLayoutManager(this, 2)
@@ -212,36 +182,22 @@ class DraftActivity : AppCompatActivity() {
                 slots[slotIndex].player = chosen
                 dialog.dismiss()
                 requestFieldRedraw()
-
                 val total = slots.size
                 val filled = slots.count { it.player != null }
                 setBenchAccessEnabled(filled == total)
                 btnNext.visibility = if (filled == total) View.VISIBLE else View.GONE
-
-                // ❌ sin auto-abrir el siguiente
             }
         )
-        val overlay = dialogView.findViewById<ViewGroup>(R.id.pickerPreviewOverlay)
-        attachPickerPreviewLive(
-            rv = rvPicker,
-            dialog = dialog,
-            options = options
-        ) { candidate ->
-            // apply (preview)
-            val idx = slots.indexOfFirst { it.role.equals(candidate.position, ignoreCase = true) }
-            val prev = if (idx >= 0) slots[idx].player else null
-            if (idx >= 0) slots[idx].player = candidate
-            // devolver cómo revertir
-            return@attachPickerPreviewLive {
-                if (idx >= 0) slots[idx].player = prev
-            }
+
+
+        attachPickerPreviewLive(rvPicker, dialog, options) { candidate ->
+            val prev = slots[slotIndex].player
+            slots[slotIndex].player = candidate
+            { slots[slotIndex].player = prev }
         }
 
         dialog.show()
-        dialog.window?.setLayout(
-            (resources.displayMetrics.widthPixels * 0.92f).toInt(),
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        )
+        dialog.window?.setLayout((resources.displayMetrics.widthPixels * 0.92f).toInt(), ViewGroup.LayoutParams.WRAP_CONTENT)
     }
 
     private fun showBenchOptionsForSlot(slotIndex: Int) {
@@ -249,12 +205,7 @@ class DraftActivity : AppCompatActivity() {
         val options = PlayerRepository.players.filter { it !in used }.shuffled().take(4)
 
         val dialogView = layoutInflater.inflate(R.layout.layout_player_picker, null)
-        val dialog = Dialog(this).apply {
-            setContentView(dialogView)
-            setCanceledOnTouchOutside(false)
-            setCancelable(false)
-        }
-
+        val dialog = Dialog(this).apply { setContentView(dialogView); setCanceledOnTouchOutside(false); setCancelable(false) }
         dialogView.findViewById<TextView>(R.id.txtTitle).text = "Elige Suplente"
         val rvPicker = dialogView.findViewById<RecyclerView>(R.id.rvPickerOptions)
         rvPicker.layoutManager = GridLayoutManager(this, 2)
@@ -267,45 +218,32 @@ class DraftActivity : AppCompatActivity() {
                 dialog.dismiss()
             }
         )
-        val overlay = dialogView.findViewById<ViewGroup>(R.id.pickerPreviewOverlay)
-        attachPickerPreviewLive(
-            rv = rvPicker,
-            dialog = dialog,
-            options = options
-        ) { candidate ->
-            // apply (preview)
-            val idx = slots.indexOfFirst { it.role.equals(candidate.position, ignoreCase = true) }
-            val prev = if (idx >= 0) slots[idx].player else null
-            if (idx >= 0) slots[idx].player = candidate
-            // devolver cómo revertir
-            return@attachPickerPreviewLive {
-                if (idx >= 0) slots[idx].player = prev
+
+
+        attachPickerPreviewLive(rvPicker, dialog, options) { candidate ->
+            val prev = benchPlayers[slotIndex]
+            benchPlayers[slotIndex] = candidate
+            {
+                benchPlayers[slotIndex] = prev
+                findViewById<RecyclerView?>(R.id.rvBenchSelected)?.adapter?.notifyItemChanged(slotIndex)
+                updateBenchTitle()
             }
         }
 
         dialog.show()
-        dialog.window?.setLayout(
-            (resources.displayMetrics.widthPixels * 0.92f).toInt(),
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        )
+        dialog.window?.setLayout((resources.displayMetrics.widthPixels * 0.92f).toInt(), ViewGroup.LayoutParams.WRAP_CONTENT)
     }
 
-    // ---------------- Render del campo + TAP swap ----------------
+    // ---------------------- Render de campo + drag unificado ----------------------
 
     private fun requestFieldRedraw() {
         if (drawPending) return
         drawPending = true
-        fieldLayout.post {
-            drawPending = false
-            drawSlotsInternal()
-        }
+        fieldLayout.post { drawPending = false; drawSlotsInternal() }
     }
 
     private fun drawSlotsInternal() {
-        if (fieldLayout.width == 0 || fieldLayout.height == 0) {
-            fieldLayout.post { drawSlotsInternal() }
-            return
-        }
+        if (fieldLayout.width == 0 || fieldLayout.height == 0) { fieldLayout.post { drawSlotsInternal() }; return }
         val formationName = selectedFormationName ?: return
         val formation = formations.firstOrNull { it.name == formationName } ?: return
 
@@ -320,11 +258,11 @@ class DraftActivity : AppCompatActivity() {
             cardH = cardW * 1.25f
         }
 
+        // asegurar vistas
         val totalSlots = slots.size
         while (slotViews.size < totalSlots) {
             val v = layoutInflater.inflate(R.layout.item_player_field, fieldLayout, false)
-            slotViews.add(v)
-            fieldLayout.addView(v)
+            slotViews.add(v); fieldLayout.addView(v)
         }
         while (slotViews.size > totalSlots) {
             val last = slotViews.removeAt(slotViews.lastIndex)
@@ -333,37 +271,30 @@ class DraftActivity : AppCompatActivity() {
 
         val coords = formationCoordinates[formationName]
         if (coords != null && coords.size == totalSlots) {
-            val topBand = 0.06f
-            val bottomBand = 0.94f
+            val topBand = 0.06f; val bottomBand = 0.94f
             fun mapY(y: Float) = (topBand + y * (bottomBand - topBand)).coerceIn(0f, 1f)
-
             slots.forEachIndexed { i, _ ->
-                val (x, yRaw) = coords[i]
-                val y = mapY(yRaw)
-                val view = slotViews[i]
-                bindSlotView(view, i)
-
+                val (x, raw) = coords[i]; val y = mapY(raw)
+                val v = slotViews[i]; bindSlotView(v, i)
                 val lp = RelativeLayout.LayoutParams(cardW.toInt(), cardH.toInt())
                 lp.leftMargin = (fieldLayout.width * x - cardW / 2f).toInt()
                 lp.topMargin = (fieldLayout.height * y - cardH / 2f).toInt()
-                view.layoutParams = lp
+                v.layoutParams = lp
             }
         } else {
-            // Fallback por filas
+            // distribución por filas
             val codes = slots.map { it.role }
             val nPT = codes.count { it == "PT" }
             val nDF = codes.count { it == "DF" }
             val nMC = codes.count { it == "MC" }
             val nDL = codes.count { it == "DL" }
 
-            fun split(count: Int, maxPerRow: Int): List<Int> {
-                if (count <= 0) return emptyList()
-                val rows = mutableListOf<Int>()
-                var left = count
+            fun split(c: Int, maxPerRow: Int): List<Int> {
+                if (c <= 0) return emptyList()
+                val rows = mutableListOf<Int>(); var left = c
                 while (left > 0) { val take = left.coerceAtMost(maxPerRow); rows.add(take); left -= take }
                 return rows
             }
-
             val dlRows = split(nDL, 3)
             val mcRows = split(nMC, 4)
             val dfRows = split(nDF, 4)
@@ -376,24 +307,20 @@ class DraftActivity : AppCompatActivity() {
             val spacing = (bottomPad - topPad) / (rowsCount + 1)
             val yCenters = (0 until rowsCount).map { r -> topPad + (r + 1) * spacing }
 
-            var globalIndex = 0
-            rowSpec.forEachIndexed { rowIdx, cols ->
+            var gi = 0
+            rowSpec.forEachIndexed { r, cols ->
                 val n = cols
-                val rowWidth = n * cardW + (n - 1) * hGap
-                val startX = (fieldLayout.width - rowWidth) / 2f
-                val yCenter = yCenters[rowIdx]
-
-                repeat(n) { col ->
-                    val index = globalIndex
-                    val view = slotViews[index]
-                    bindSlotView(view, index)
-
+                val rowW = n * cardW + (n - 1) * hGap
+                val startX = (fieldLayout.width - rowW) / 2f
+                val y = yCenters[r]
+                repeat(n) { c ->
+                    val idx = gi
+                    val v = slotViews[idx]; bindSlotView(v, idx)
                     val lp = RelativeLayout.LayoutParams(cardW.toInt(), cardH.toInt())
-                    lp.leftMargin = (startX + col * (cardW + hGap)).toInt()
-                    lp.topMargin = (yCenter - cardH / 2f).toInt()
-                    view.layoutParams = lp
-
-                    globalIndex++
+                    lp.leftMargin = (startX + c * (cardW + hGap)).toInt()
+                    lp.topMargin = (y - cardH / 2f).toInt()
+                    v.layoutParams = lp
+                    gi++
                 }
             }
         }
@@ -408,160 +335,111 @@ class DraftActivity : AppCompatActivity() {
         val name = view.findViewById<TextView>(R.id.txtPlayerNickname)
         val elem = view.findViewById<ImageView>(R.id.imgElement)
 
-        view.setOnClickListener(null)
-
         val slot = slots[index]
         val p = slot.player
 
-        view.setOnLongClickListener {
-            val clip = android.content.ClipData(
-                "field",
-                arrayOf(android.content.ClipDescription.MIMETYPE_TEXT_PLAIN),
-                android.content.ClipData.Item(index.toString())
-            )
-            it.startDragAndDrop(clip, View.DragShadowBuilder(it), index, 0)
-            true
-        }
-        view.setOnDragListener { v, e ->
-            when (e.action) {
-                android.view.DragEvent.ACTION_DRAG_STARTED -> {
-                    // Acepta el drag de campo SIEMPRE; validamos en DROP con localState
-                    true
-                }
-                android.view.DragEvent.ACTION_DRAG_ENTERED -> { v.alpha = 0.85f; true }
-                android.view.DragEvent.ACTION_DRAG_EXITED  -> { v.alpha = 1f;    true }
-                android.view.DragEvent.ACTION_DROP -> {
-                    v.alpha = 1f
-                    val fromIndex = e.localState as? Int ?: return@setOnDragListener false
-                    val toIndex = index
-                    if (fromIndex == toIndex) return@setOnDragListener false
-
-                    val src = slots.getOrNull(fromIndex)?.player
-                    val dst = slots.getOrNull(toIndex)?.player
-                    val roleFrom = slots.getOrNull(fromIndex)?.role ?: return@setOnDragListener false
-                    val roleTo   = slots.getOrNull(toIndex)?.role   ?: return@setOnDragListener false
-
-                    // Solo swap si HAY jugador en ambos y ambos pueden jugar el rol del otro
-                    if (src == null || dst == null) {
-                        android.widget.Toast.makeText(this, "Solo se puede intercambiar entre jugadores", android.widget.Toast.LENGTH_SHORT).show()
-                        return@setOnDragListener false
-                    }
-                    if (!src.canPlay(roleTo) || !dst.canPlay(roleFrom)) {
-                        android.widget.Toast.makeText(this, "No pueden intercambiar sus posiciones", android.widget.Toast.LENGTH_SHORT).show()
-                        return@setOnDragListener false
-                    }
-
-                    // SWAP
-                    slots[fromIndex].player = dst
-                    slots[toIndex].player   = src
-                    requestFieldRedraw()
-                    true
-                }
-                android.view.DragEvent.ACTION_DRAG_ENDED -> { v.alpha = 1f; true }
-                else -> false
+        // Long-press para iniciar drag desde CAMPO (si hay jugador)
+        if (p != null) {
+            view.setOnLongClickListener {
+                val clip = ClipData("field",
+                    arrayOf(ClipDescription.MIMETYPE_TEXT_PLAIN),
+                    ClipData.Item(index.toString()))
+                it.startDragAndDrop(clip, View.DragShadowBuilder(it), index, 0)
+                true
             }
+        } else {
+            view.setOnLongClickListener(null)
         }
 
-
+        // Listener de DROP unificado (campo↔campo y banquillo→campo)
         view.setOnDragListener { v, e ->
             when (e.action) {
-                DragEvent.ACTION_DRAG_STARTED -> {
-
-                    e.clipDescription?.label == "bench"
-                }
+                DragEvent.ACTION_DRAG_STARTED -> true // aceptamos y validamos en DROP
+                DragEvent.ACTION_DRAG_ENTERED -> { v.alpha = 0.85f; true }
+                DragEvent.ACTION_DRAG_EXITED  -> { v.alpha = 1f;    true }
                 DragEvent.ACTION_DROP -> {
-                    val bIndex = e.localState as? Int ?: return@setOnDragListener false
-                    val incoming = benchPlayers.getOrNull(bIndex) ?: return@setOnDragListener false
-                    if (!incoming.canPlay(slot.role)) {
-                        Toast.makeText(this, "No puede jugar en ${codeToNice(slot.role)}", Toast.LENGTH_SHORT).show()
-                        return@setOnDragListener false
-                    }
-                    // swap o mover
-                    benchPlayers[bIndex] = slot.player
-                    slots[index].player = incoming
-                    pendingBenchIndex = null
-                    pendingFieldIndex = null
-                    requestFieldRedraw()
-                    findViewById<RecyclerView?>(R.id.rvBenchSelected)?.adapter?.notifyItemChanged(bIndex)
-                    updateBenchTitle()
-                    true
+                    v.alpha = 1f
+                    val label = e.clipDescription?.label?.toString()
+                    if (label == "field") {
+                        // swap CAMPO↔CAMPO (ambos deben existir y poder jugar el rol del otro)
+                        val fromIndex = e.localState as? Int ?: return@setOnDragListener false
+                        val toIndex = index
+                        if (fromIndex == toIndex) return@setOnDragListener false
+                        val src = slots.getOrNull(fromIndex)?.player
+                        val dst = slots.getOrNull(toIndex)?.player
+                        val roleFrom = slots.getOrNull(fromIndex)?.role ?: return@setOnDragListener false
+                        val roleTo   = slots.getOrNull(toIndex)?.role   ?: return@setOnDragListener false
+                        if (src == null || dst == null) {
+                            Toast.makeText(this, "Solo entre jugadores", Toast.LENGTH_SHORT).show(); return@setOnDragListener false
+                        }
+                        if (!src.canPlay(roleTo) || !dst.canPlay(roleFrom)) {
+                            Toast.makeText(this, "No pueden intercambiar sus posiciones", Toast.LENGTH_SHORT).show(); return@setOnDragListener false
+                        }
+                        slots[fromIndex].player = dst
+                        slots[toIndex].player   = src
+                        requestFieldRedraw()
+                        true
+                    } else if (label == "bench") {
+                        // entrada desde BANQUILLO -> valida rol y hace swap/mover
+                        val bIndex = e.localState as? Int ?: return@setOnDragListener false
+                        val incoming = benchPlayers.getOrNull(bIndex) ?: return@setOnDragListener false
+                        if (!incoming.canPlay(slot.role)) {
+                            Toast.makeText(this, "No puede jugar en ${codeToNice(slot.role)}", Toast.LENGTH_SHORT).show()
+                            return@setOnDragListener false
+                        }
+                        val prev = slots[index].player
+                        benchPlayers[bIndex] = prev
+                        slots[index].player = incoming
+                        pendingBenchIndex = null; pendingFieldIndex = null
+                        requestFieldRedraw()
+                        findViewById<RecyclerView?>(R.id.rvBenchSelected)?.adapter?.notifyItemChanged(bIndex)
+                        updateBenchTitle()
+                        true
+                    } else false
                 }
+                DragEvent.ACTION_DRAG_ENDED -> { v.alpha = 1f; true }
                 else -> false
             }
         }
+
+        // Binding visual + TAP behaviour (sin auto-avance)
         if (p != null) {
             img.setImageResource(p.image)
             name.text = p.nickname
             elem.setImageResource(p.element)
-            view.setOnLongClickListener {
-                val clip = android.content.ClipData(
-                    "field", arrayOf(android.content.ClipDescription.MIMETYPE_TEXT_PLAIN),
-                    android.content.ClipData.Item(index.toString())
-                )
-                it.startDragAndDrop(clip, View.DragShadowBuilder(it), index, 0)
-                true
-            }
-
-            // TAP SWAP (campo ocupado)
             view.setOnClickListener {
-                // si hay un banquillo seleccionado, intentar swap (ambos deben tener jugador)
+                // Tap-swap bench↔campo
                 pendingBenchIndex?.let { bIndex ->
-                    val incoming = benchPlayers[bIndex] ?: run {
-                        pendingBenchIndex = null
-                        return@setOnClickListener
-                    }
+                    val incoming = benchPlayers[bIndex] ?: return@setOnClickListener
                     if (!incoming.canPlay(slot.role)) {
                         Toast.makeText(this, "No puede jugar en ${codeToNice(slot.role)}", Toast.LENGTH_SHORT).show()
                         return@setOnClickListener
                     }
-                    // swap jugador↔jugador (no con vacíos)
                     benchPlayers[bIndex] = p
                     slots[index].player = incoming
                     pendingBenchIndex = null
                     requestFieldRedraw()
                     findViewById<RecyclerView?>(R.id.rvBenchSelected)?.adapter?.notifyItemChanged(bIndex)
                     updateBenchTitle()
-                } ?: run {
-                    // marcar este jugador de campo para swap
-                    pendingFieldIndex = index
-                    Toast.makeText(this, "Toca un jugador del banquillo para intercambiar", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
                 }
+                // Selección de campo para posible swap por tap (opcional)
+                pendingFieldIndex = index
+                Toast.makeText(this, "Arrastra sobre otro jugador para intercambiar", Toast.LENGTH_SHORT).show()
             }
         } else {
             name.text = codeToNice(slot.role)
-            img.setImageResource(0)
-            elem.setImageResource(0)
-            img.background = null
-
-            // Campo vacío: no permite swap con banquillo seleccionado (ambos deben ser jugadores)
+            img.setImageResource(0); elem.setImageResource(0); img.background = null
             view.setOnClickListener {
                 if (pendingBenchIndex != null) {
-                    Toast.makeText(this, "El intercambio debe ser entre dos jugadores", Toast.LENGTH_SHORT).show()
-                    return@setOnClickListener
-                }
-                // flujo normal: abrir picker del rol
-                showOptionsForSlot(index)
+                    Toast.makeText(this, "Intercambio solo entre jugadores", Toast.LENGTH_SHORT).show()
+                } else showOptionsForSlot(index)
             }
         }
     }
 
-    // ---------------- Banquillo (drawer) y helpers ----------------
-    private fun openBench(root: View, drawer: View, scrim: View) {
-        root.visibility = View.VISIBLE
-        root.bringToFront()
-        scrim.visibility = View.VISIBLE
-        drawer.animate().translationX(0f).setDuration(220).start()
-        isBenchOpen = true
-    }
+    // ---------------------- Banquillo (drawer) ----------------------
 
-    private fun closeBench(root: View, drawer: View, scrim: View) {
-        drawer.animate().translationX(drawer.width.toFloat()).setDuration(200)
-            .withEndAction {
-                scrim.visibility = View.GONE
-                root.visibility = View.GONE
-            }.start()
-        isBenchOpen = false
-    }
     private fun setupBenchPanel() {
         val root   = findViewById<View?>(R.id.benchPanel) ?: return
         val drawer = findViewById<View?>(R.id.benchDrawer) ?: return
@@ -570,234 +448,162 @@ class DraftActivity : AppCompatActivity() {
         val rvOpts = findViewById<RecyclerView?>(R.id.rvBenchOptions) ?: return
         val txtTitle = findViewById<TextView?>(R.id.txtBenchTitle) ?: return
 
-        // Configura ancho del drawer y déjalo cerrado
         drawer.post {
             val w = (resources.displayMetrics.widthPixels * 0.42f).toInt()
             val min = (200 * resources.displayMetrics.density).toInt()
-            drawer.layoutParams = drawer.layoutParams.apply { width = kotlin.math.max(min, w) }
+            drawer.layoutParams = drawer.layoutParams.apply { width = max(min, w) }
             drawer.translationX = drawer.width.toFloat()
-            root.visibility = View.GONE
-            scrim.visibility = View.GONE
+            root.visibility = View.GONE; scrim.visibility = View.GONE
         }
         scrim.setOnClickListener { closeBench(root, drawer, scrim) }
 
-        // ---------- Asa lateral (usamos addContentView para evitar NPE) ----------
+        // Asa lateral segura
         if (benchHandle == null) {
             val d = resources.displayMetrics.density
             benchHandle = Button(this).apply {
-                text = "BANQUILLO"
-                rotation = -90f
-                setAllCaps(true)
+                text = "BANQUILLO"; rotation = -90f; setAllCaps(true)
                 setBackgroundColor(0xff_ff_cc_00.toInt())
-                setTextColor(0xff_00_00_00.toInt())
-                elevation = 16f
-                tag = "bench_handle_draft"
+                setTextColor(0xff_00_00_00.toInt()); elevation = 16f
                 setOnClickListener { openBench(root, drawer, scrim) }
             }
-            val handleLp = FrameLayout.LayoutParams((44 * d).toInt(), (120 * d).toInt()).apply {
-                gravity = android.view.Gravity.END or android.view.Gravity.CENTER_VERTICAL
-                marginEnd = (4 * d).toInt()
+            val lp = FrameLayout.LayoutParams((44 * d).toInt(), (120 * d).toInt()).apply {
+                gravity = Gravity.END or Gravity.CENTER_VERTICAL; marginEnd = (4 * d).toInt()
             }
-            // <- en lugar de parent.addView(...), usamos addContentView(...)
-            addContentView(benchHandle, handleLp)
+            addContentView(benchHandle, lp)
         }
-        // El banquillo solo se habilita cuando está el 11 completo; por defecto oculto
         benchHandle?.visibility = View.GONE
 
-        // ---------- Hot-zone para abrir con gesto (también usando addContentView) ----------
         if (benchHotZone == null) {
             val d = resources.displayMetrics.density
-            benchHotZone = View(this).apply {
-                setOnDragListener { _, e ->
-                    if (e.action == android.view.DragEvent.ACTION_DRAG_ENTERED && !isBenchOpen) {
-                        openBench(root, drawer, scrim); true
-                    } else false
-                }
-                visibility = View.GONE // se habilita cuando se complete el 11
+            benchHotZone = View(this).apply { visibility = View.GONE }
+            val lp = FrameLayout.LayoutParams((28 * d).toInt(), FrameLayout.LayoutParams.MATCH_PARENT).apply {
+                gravity = Gravity.END
             }
-            val hzLp = FrameLayout.LayoutParams((28 * d).toInt(), FrameLayout.LayoutParams.MATCH_PARENT).apply {
-                gravity = android.view.Gravity.END
-            }
-            addContentView(benchHotZone, hzLp)
+            addContentView(benchHotZone, lp)
         }
 
-        // ---------- Lista de seleccionados del banquillo ----------
         rvSel.layoutManager = LinearLayoutManager(this)
         rvSel.itemAnimator = null
         rvSel.adapter = BenchSelectedAdapter(
             benchPlayers = benchPlayers,
             onTapSlot = { index -> handleBenchTap(index) },
             onChanged = { updateBenchTitle() },
-            onDropFromField = { benchIndex, fieldIndex ->
-                val fieldPlayer = slots.getOrNull(fieldIndex)?.player ?: return@BenchSelectedAdapter false
-                val incomingOk = true // validación de posición se hace al mover del campo al banquillo no aplica
-                val prevBench = benchPlayers[benchIndex]
+            onDropFromField = { benchIndex: Int, fieldIndex: Int ->
+                val fieldPlayer = slots.getOrNull(fieldIndex)?.player
+                if (fieldPlayer == null) {
+                    false
+                } else {
+                    val prevBench = benchPlayers[benchIndex]
+                    benchPlayers[benchIndex] = fieldPlayer
+                    slots[fieldIndex].player = prevBench
 
-                // swap jugador↔jugador (si el banquillo está vacío, sólo mueve)
-                benchPlayers[benchIndex] = fieldPlayer
-                slots[fieldIndex].player = prevBench
-
-                requestFieldRedraw()
-                findViewById<RecyclerView?>(R.id.rvBenchSelected)
-                    ?.adapter?.notifyItemChanged(benchIndex)
-                true
+                    requestFieldRedraw()
+                    findViewById<RecyclerView?>(R.id.rvBenchSelected)
+                        ?.adapter?.notifyItemChanged(benchIndex)
+                    true
+                }
             }
         )
 
 
-        // ---------- Lista de opciones (inicialmente vacía) ----------
         rvOpts.layoutManager = GridLayoutManager(this, 2)
-        rvOpts.adapter = OptionAdapter(players = emptyList(), onClick = { /* no-op */ })
-
-        // Título inicial
+        rvOpts.adapter = OptionAdapter(players = emptyList(), onClick = { })
         txtTitle.text = "Banquillo (${benchSize()}/5)"
     }
-
 
     private fun handleBenchTap(index: Int) {
         val benchPlayer = benchPlayers[index]
 
-        // 1) Si hay un CAMPO seleccionado y pulsas un banquillo con jugador → SWAP
         pendingFieldIndex?.let { fIndex ->
-            val fieldPlayer = slots[fIndex].player
-            if (fieldPlayer == null) {
-                Toast.makeText(this, "Selecciona primero un jugador del campo", Toast.LENGTH_SHORT).show()
-                pendingFieldIndex = null
-                return
-            }
+            val fieldPlayer = slots[fIndex].player ?: run { pendingFieldIndex = null; return }
             if (benchPlayer != null) {
-                // SWAP jugador↔jugador
                 benchPlayers[index] = fieldPlayer
                 slots[fIndex].player = benchPlayer
-                pendingFieldIndex = null
-                pendingBenchIndex = null
+                pendingFieldIndex = null; pendingBenchIndex = null
                 requestFieldRedraw()
                 findViewById<RecyclerView?>(R.id.rvBenchSelected)?.adapter?.notifyItemChanged(index)
                 updateBenchTitle()
                 return
             } else {
-                // ✅ Si el hueco está vacío: cancelar selección y abrir pick de suplentes
-                pendingFieldIndex = null
-                pendingBenchIndex = null
-                showBenchOptionsForSlot(index)
-                return
+                pendingFieldIndex = null; pendingBenchIndex = null
+                showBenchOptionsForSlot(index); return
             }
         }
 
-        // 2) Si hay un BANQUILLO seleccionado y tocas otro banquillo:
-        pendingBenchIndex?.let { bIndex ->
-            if (benchPlayer == null) {
-                // ✅ Vacío → cancelar selección y abrir pick
-                pendingBenchIndex = null
-                showBenchOptionsForSlot(index)
-                return
-            } else {
-                // Mismo patrón: permitir mover la selección a otro banquillo con jugador (opcional),
-                // aquí simplemente cambiamos la selección al nuevo índice.
-                pendingBenchIndex = index
-                return
-            }
+        pendingBenchIndex?.let {
+            if (benchPlayer == null) { pendingBenchIndex = null; showBenchOptionsForSlot(index) }
+            else pendingBenchIndex = index
+            return
         }
 
-        // 3) Sin selecciones previas:
         if (benchPlayer != null) {
-            // marcar selección para swap con CAMPO
             pendingBenchIndex = index
-            Toast.makeText(this, "Toca un jugador del campo para intercambiar", Toast.LENGTH_SHORT).show()
-        } else {
-            // ✅ Hueco vacío → abrir pick de suplentes
-            showBenchOptionsForSlot(index)
-        }
+            Toast.makeText(this, "Toca un jugador del campo o arrástralo", Toast.LENGTH_SHORT).show()
+        } else showBenchOptionsForSlot(index)
+    }
+
+    private fun openBench(root: View, drawer: View, scrim: View) {
+        root.visibility = View.VISIBLE; root.bringToFront()
+        scrim.visibility = View.VISIBLE
+        drawer.animate().translationX(0f).setDuration(220).start()
+        isBenchOpen = true
+    }
+    private fun closeBench(root: View, drawer: View, scrim: View) {
+        drawer.animate().translationX(drawer.width.toFloat()).setDuration(200)
+            .withEndAction { scrim.visibility = View.GONE; root.visibility = View.GONE }.start()
+        isBenchOpen = false
     }
 
     private fun setBenchAccessEnabled(enabled: Boolean) {
         benchHandle?.visibility = if (enabled) View.VISIBLE else View.GONE
         benchHotZone?.visibility = if (enabled) View.VISIBLE else View.GONE
     }
-
     private fun updateBenchTitle() {
         findViewById<TextView?>(R.id.txtBenchTitle)?.text = "Banquillo (${benchSize()}/5)"
     }
-
     private fun benchSize(): Int = benchPlayers.count { it != null }
 
-    // ---------------- Helpers ----------------
+    // ---------------------- Helpers preview ----------------------
 
-    private fun toCode(pos: String): String = when (pos.trim().lowercase()) {
-        "portero", "pt" -> "PT"
-        "defensa", "df" -> "DF"
-        "centrocampista", "mc" -> "MC"
-        "delantero", "dl" -> "DL"
-        else -> pos.trim().uppercase()
-    }
     private fun startLivePreview(dialog: Dialog, onClose: () -> Unit) {
         dialog.hide()
-
         val root = findViewById<ViewGroup>(android.R.id.content)
         val overlay = FrameLayout(this).apply {
-            setBackgroundColor(0x66000000) // semitransparente
-            isClickable = true
-            isFocusable = true
-
-            // Botón para volver
-            val btn = com.google.android.material.button.MaterialButton(context).apply {
-                text = "VOLVER AL PICK"
-                setOnClickListener {
-                    onClose()
-                    root.removeView(this@apply)
-                    dialog.show()
-                }
+            setBackgroundColor(0x66000000); isClickable = true; isFocusable = true
+            val btn = MaterialButton(context).apply {
+                text = "VOLVER AL PICK"; setOnClickListener {
+                onClose(); root.removeView(this@apply); dialog.show()
             }
-            addView(
-                btn,
-                FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.WRAP_CONTENT,
-                    FrameLayout.LayoutParams.WRAP_CONTENT,
-                    Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-                ).apply { bottomMargin = (16 * resources.displayMetrics.density).toInt() }
-            )
-
-            // Tocar fuera también vuelve
-            setOnClickListener {
-                onClose()
-                root.removeView(this)
-                dialog.show()
             }
+            addView(btn, FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+            ).apply { bottomMargin = (16 * resources.displayMetrics.density).toInt() })
+            setOnClickListener { onClose(); root.removeView(this); dialog.show() }
         }
         root.addView(overlay, FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.MATCH_PARENT,
-            FrameLayout.LayoutParams.MATCH_PARENT
-        ))
+            FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
+        requestFieldRedraw()
     }
 
-    /** Conecta long-press sobre el RecyclerView del picker para lanzar el preview.
-     *  applyBlock: coloca TEMPORALMENTE al candidato y devuelve una función "revert" para deshacer.
-     */
     private fun attachPickerPreviewLive(
         rv: RecyclerView,
         dialog: Dialog,
         options: List<Player>,
         applyBlock: (candidate: Player) -> (() -> Unit)
     ) {
-        val detector = GestureDetector(this,
-            object : GestureDetector.SimpleOnGestureListener() {
-                override fun onLongPress(e: MotionEvent) {
-                    val child = rv.findChildViewUnder(e.x, e.y) ?: return
-                    val pos = rv.getChildAdapterPosition(child)
-                    if (pos != RecyclerView.NO_POSITION && pos < options.size) {
-                        val candidate = options[pos]
-                        // Aplica vista previa y recibe cómo revertirla
-                        val revert = applyBlock(candidate)
-                        // Redibuja y muestra overlay que devolverá al picker
-                        requestFieldRedraw()
-                        startLivePreview(dialog) {
-                            revert()
-                            requestFieldRedraw()
-                        }
-                    }
+        val detector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onLongPress(e: MotionEvent) {
+                val child = rv.findChildViewUnder(e.x, e.y) ?: return
+                val pos = rv.getChildAdapterPosition(child)
+                if (pos != RecyclerView.NO_POSITION && pos < options.size) {
+                    val candidate = options[pos]
+                    val revert = applyBlock(candidate)
+                    startLivePreview(dialog) { revert() }
                 }
             }
-        )
+        })
         rv.addOnItemTouchListener(object : RecyclerView.OnItemTouchListener {
             override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
                 detector.onTouchEvent(e); return false
@@ -807,33 +613,14 @@ class DraftActivity : AppCompatActivity() {
         })
     }
 
-    private fun showOptionPreview(overlay: ViewGroup, player: com.inazumadraft.model.Player) {
-        overlay.removeAllViews()
-        overlay.visibility = View.VISIBLE
-
-        val card = layoutInflater.inflate(R.layout.item_player_field, overlay, false)
-        val img = card.findViewById<ImageView>(R.id.imgPlayer)
-        val name = card.findViewById<TextView>(R.id.txtPlayerNickname)
-        val elem = card.findViewById<ImageView>(R.id.imgElement)
-
-        img.setImageResource(player.image)
-        name.text = player.nickname
-        elem.setImageResource(player.element)
-
-        val lp = FrameLayout.LayoutParams(
-            (resources.displayMetrics.widthPixels * 0.58f).toInt(),
-            FrameLayout.LayoutParams.WRAP_CONTENT,
-            android.view.Gravity.CENTER
-        )
-        overlay.addView(card, lp)
-
-        // Cerrar al tocar fuera
-        overlay.setOnClickListener {
-            overlay.visibility = View.GONE
-            overlay.removeAllViews()
-        }
+    private fun toCode(pos: String): String = when (pos.trim().lowercase()) {
+        "portero", "pt" -> "PT"
+        "defensa", "df" -> "DF"
+        "centrocampista", "mc" -> "MC"
+        "delantero", "dl" -> "DL"
+        else -> pos.trim().uppercase()
     }
-    private fun codeToNice(code: String): String = when (code.uppercase()) {
+    internal fun codeToNice(code: String): String = when (code.uppercase()) {
         "PT" -> "Portero"; "DF" -> "Defensa"; "MC" -> "Centrocampista"; "DL" -> "Delantero"; else -> code
     }
 }
