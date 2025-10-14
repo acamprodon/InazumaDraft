@@ -455,4 +455,12 @@ class FinalTeamActivity : AppCompatActivity() {
     internal fun codeToNice(code: String): String = when (code.uppercase()) {
         "PT" -> "Portero"; "DF" -> "Defensa"; "MC" -> "Centrocampista"; "DL" -> "Delantero"; else -> code
     }
+    override fun onResume() {
+        super.onResume()
+
+        // 🔁 Redibuja el campo y actualiza la lista de estadísticas
+        requestDrawField()
+        refreshStatsList()
+    }
+
 }

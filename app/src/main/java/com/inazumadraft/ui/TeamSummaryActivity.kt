@@ -1,6 +1,8 @@
 package com.inazumadraft.ui
 
+import android.content.Intent
 import android.os.Bundle
+import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.inazumadraft.R
@@ -11,17 +13,38 @@ class TeamSummaryActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_team_summary)
 
-        val players = intent.getParcelableArrayListExtra<Player>("finalTeam") ?: arrayListOf()
+        // Solo el 11 titular, sin banquillo
+        val fieldPlayers = intent.getParcelableArrayListExtra<Player>("finalTeam") ?: arrayListOf()
 
-        val avgAttack = players.map { it.kick }.average().toInt()
-        val avgControl = players.map { it.control }.average().toInt()
-        val avgDefense = players.map { it.defense }.average().toInt()
+        if (fieldPlayers.isEmpty()) return
 
-        val teamScore = ((avgAttack * 0.4) + (avgControl * 0.3) + (avgDefense * 0.3)).toInt()
+        // Calculamos las medias solo con esos 11 jugadores
+        val avgKick = fieldPlayers.map { it.kick }.average()
+        val avgControl = fieldPlayers.map { it.control }.average()
+        val avgDefense = fieldPlayers.map { it.defense }.average()
+        val avgSpeed = fieldPlayers.map { it.speed }.average()
 
-        findViewById<TextView>(R.id.txtAttack).text = "Ataque: $avgAttack"
-        findViewById<TextView>(R.id.txtControl).text = "Control: $avgControl"
-        findViewById<TextView>(R.id.txtDefense).text = "Defensa: $avgDefense"
+        // Se añade la mitad de la velocidad a cada estadística principal
+        val totalAttack = avgKick + (avgSpeed / 2)
+        val totalControl = avgControl + (avgSpeed / 2)
+        val totalDefense = avgDefense + (avgSpeed / 2)
+
+        // Puntuación general = media de las tres totales
+        val teamScore = ((totalAttack + totalControl + totalDefense) / 3).toInt()
+
+        // Mostrar resultados redondeados
+        findViewById<TextView>(R.id.txtAttack).text = "Ataque: ${totalAttack.toInt()}"
+        findViewById<TextView>(R.id.txtControl).text = "Control: ${totalControl.toInt()}"
+        findViewById<TextView>(R.id.txtDefense).text = "Defensa: ${totalDefense.toInt()}"
         findViewById<TextView>(R.id.txtScore).text = "Puntuación del equipo: $teamScore"
+
+        findViewById<Button>(R.id.btnBack).setOnClickListener {
+            val intent = Intent(this, FinalTeamActivity::class.java)
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            startActivity(intent)
+            finish()
+        }
+
     }
+
 }
