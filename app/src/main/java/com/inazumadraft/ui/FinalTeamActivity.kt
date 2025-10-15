@@ -69,14 +69,30 @@ class FinalTeamActivity : AppCompatActivity() {
 
         btnToggleView.text = "VER ESTADÍSTICAS"
         btnToggleView.setOnClickListener {
-            if (recyclerFinalTeam.visibility == View.GONE) {
-                recyclerFinalTeam.visibility = View.VISIBLE; fieldLayout.visibility = View.GONE
-                refreshStatsList(); btnToggleView.text = "VER CAMPO"
+            val isStatsVisible = recyclerFinalTeam.visibility == View.GONE
+
+            if (isStatsVisible) {
+                // 🔹 Mostrar estadísticas
+                recyclerFinalTeam.visibility = View.VISIBLE
+                fieldLayout.visibility = View.GONE
+                refreshStatsList()
+                btnToggleView.text = "VER CAMPO"
+
+                // 👇 Ocultamos el botón y zona de banquillo
+                benchHandle?.visibility = View.GONE
+                benchHotZone?.visibility = View.GONE
             } else {
-                recyclerFinalTeam.visibility = View.GONE; fieldLayout.visibility = View.VISIBLE
+                // 🔹 Volver al campo
+                recyclerFinalTeam.visibility = View.GONE
+                fieldLayout.visibility = View.VISIBLE
                 btnToggleView.text = "VER ESTADÍSTICAS"
+
+                // 👇 Volvemos a mostrar acceso al banquillo
+                benchHandle?.visibility = View.VISIBLE
+                benchHotZone?.visibility = View.VISIBLE
             }
         }
+
 
         btnNewTeam.setOnClickListener {
             // 🔁 Reiniciar el draft completamente desde cero
