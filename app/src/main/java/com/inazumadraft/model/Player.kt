@@ -14,7 +14,7 @@ data class Player(
     val control: Int,
     val defense: Int,
     val image: Int,
-    // 👇 NUEVO: posiciones adicionales (opcional, por defecto vacío)
+   val season: List<String> = emptyList(),
     val secondaryPositions: List<String> = emptyList()
 ) : Parcelable
 

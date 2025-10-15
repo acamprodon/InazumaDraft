@@ -1,36 +1,65 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:orientation="vertical"
-    android:gravity="center"
-    android:background="#202a44"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:background="#202a44"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+    <!-- Contenido principal con scroll -->
+    <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="20dp"
+            android:clipToPadding="false">
+
+        <LinearLayout
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+            <TextView
+                    android:text="Inazuma Draft ⚡"
+                    android:textSize="30sp"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/white"
+                    android:layout_marginBottom="30dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+
+            <TextView
+                    android:text="Selecciona temporadas"
+                    android:textColor="@android:color/white"
+                    android:textSize="18sp"
+                    android:layout_marginBottom="10dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+
+            <!-- Grupo de checkboxes -->
+            <LinearLayout
+                    android:id="@+id/seasonContainer"
+                    android:orientation="vertical"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="30dp"/>
+
+            <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnStart"
+                    android:text="Iniciar Draft"
+                    android:backgroundTint="#ffcc00"
+                    android:textColor="#000000"
+                    app:cornerRadius="16dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+        </LinearLayout>
+    </ScrollView>
 
     <TextView
-        android:text="Inazuma Draft ⚡"
-        android:textSize="30sp"
-        android:textStyle="bold"
-        android:textColor="@android:color/white"
-        android:layout_marginBottom="30dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
-
-
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnStart"
-        android:text="InaDraft"
-        android:backgroundTint="#ffcc00"
-        android:textColor="#000000"
-        app:cornerRadius="16dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
-
-    <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="63dp"
             android:text="© 2025 Inazuma Eleven. Made by camproo22, for the community."
             android:textColor="@android:color/white"
-            android:layout_marginTop="200dp"/>
-
-</LinearLayout>
+            android:textSize="12sp"
+            android:gravity="center"
+            android:layout_gravity="bottom|center_horizontal"
+            android:layout_marginBottom="12dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+</FrameLayout>

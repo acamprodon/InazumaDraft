@@ -82,6 +82,13 @@ class DraftActivity : AppCompatActivity() {
         btnFormation3.setOnClickListener { selectFormationByIndex(2) }
         btnFormation4.setOnClickListener { selectFormationByIndex(3) }
 
+        val selectedSeasons = intent.getStringArrayListExtra("selectedSeasons") ?: arrayListOf()
+        val availablePlayers = if (selectedSeasons.isEmpty()) {
+            PlayerRepository.players
+        } else {
+            PlayerRepository.players.filter { p -> p.season.any { it in selectedSeasons } }
+        }
+
         btnNext.setOnClickListener {
             val filled = slots.count { it.player != null }
             if (filled != slots.size) {
