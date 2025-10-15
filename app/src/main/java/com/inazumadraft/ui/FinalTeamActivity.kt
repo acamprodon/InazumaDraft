@@ -95,11 +95,20 @@ class FinalTeamActivity : AppCompatActivity() {
 
 
         btnNewTeam.setOnClickListener {
-            // 🔁 Reiniciar el draft completamente desde cero
-            val intent = android.content.Intent(this, DraftActivity::class.java)
-            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP or android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-            startActivity(intent)
-            finish()
+            val dialog = android.app.AlertDialog.Builder(this)
+                .setTitle("¿Reiniciar equipo?")
+                .setMessage("Perderás tu equipo actual y volverás a hacer un nuevo draft.")
+                .setPositiveButton("Sí, rerollear") { _, _ ->
+                    // Cierra esta pantalla y vuelve al DraftActivity
+                    val intent = Intent(this, DraftActivity::class.java)
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+                    startActivity(intent)
+                    finish()
+                }
+                .setNegativeButton("Cancelar", null)
+                .create()
+
+            dialog.show()
         }
         findViewById<Button>(R.id.btnFinishTeam).setOnClickListener {
             val intent = Intent(this, TeamSummaryActivity::class.java)

@@ -100,30 +100,6 @@ class DraftActivity : AppCompatActivity() {
         setupBenchPanel()
         setBenchAccessEnabled(false)
 
-        val rerollBtn =
-            com.google.android.material.floatingactionbutton.FloatingActionButton(this).apply {
-                setImageResource(android.R.drawable.ic_menu_rotate)
-                contentDescription = "Nueva formación"
-                setOnClickListener {
-                    // 🔁 Reiniciar por completo la actividad sin salir al menú
-                    val intent = intent
-                    finish()
-                    overridePendingTransition(0, 0) // sin animación
-                    startActivity(intent)
-                    overridePendingTransition(0, 0)
-                }
-            }
-
-// Añadir al layout dinámicamente (esquina superior derecha)
-        addContentView(
-            rerollBtn, FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                Gravity.TOP or Gravity.END
-            ).apply {
-                topMargin = (16 * resources.displayMetrics.density).toInt()
-                rightMargin = (16 * resources.displayMetrics.density).toInt()
-            })
     }
 
         // ---------------------- Formación y capitán ----------------------

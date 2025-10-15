@@ -101,6 +101,17 @@ object PlayerRepository {
         Player("Gary Lancaster", "Gorilla", "DL", R.drawable.earth, 83, 80, 75, 70, R.drawable.gorilla),
         Player("Harry Snake", "Snake", "DL", R.drawable.bosque, 80, 81, 77, 64, R.drawable.snake),
         Player("Adrian Speed", "Cheetah", "DL", R.drawable.aire, 82, 90,75, 62, R.drawable.cheetah),
+        Player("Morgan Sanders", "Hood", "PT", R.drawable.bosque, 73, 80, 72, 82, R.drawable.hood),
+        Player("Newton Flust", "Crackshot", "DF", R.drawable.earth, 65, 87,74, 79, R.drawable.crackshot),
+        Player("Jim Hillfort", "Hillfort", "DF", R.drawable.aire, 66, 85, 75, 78, R.drawable.hillfort),
+        Player("Galen Thunderbird","Thunder", "DF", R.drawable.earth, 62, 80, 75, 81, R.drawable.thunder),
+        Player("Finn Stoned", "Bandit", "DF", R.drawable.fuego, 63, 80, 72, 84, R.drawable.bandit),
+        Player("Phil Wingate", "Code", "MC", R.drawable.earth, 70, 86,80, 79, R.drawable.code),
+        Player("Jez Shell", "Star", "MC", R.drawable.aire, 74, 89, 78, 76, R.drawable.star),
+        Player("Jupiter Jumper", "Cleats", "MC", R.drawable.aire, 76, 89, 78, 74, R.drawable.cleats),
+        Player("Sam Samurai", "Samurai", "DL", R.drawable.bosque, 83, 85, 77, 63, R.drawable.samurai),
+        Player("Hank Sullivan", "Hattori", "MC", R.drawable.bosque, 79, 86, 83, 74, R.drawable.hattori),
+        Player("Sail Bluesea", "Cloak", "DL", R.drawable.fuego, 87, 91, 80, 62, R.drawable.cloak, secondaryPositions = listOf("MC")),
 
 
         )
