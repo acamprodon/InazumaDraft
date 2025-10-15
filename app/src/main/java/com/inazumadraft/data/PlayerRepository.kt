@@ -112,7 +112,17 @@ object PlayerRepository {
         Player("Sam Samurai", "Samurai", "DL", R.drawable.bosque, 83, 85, 77, 63, R.drawable.samurai),
         Player("Hank Sullivan", "Hattori", "MC", R.drawable.bosque, 79, 86, 83, 74, R.drawable.hattori),
         Player("Sail Bluesea", "Cloak", "DL", R.drawable.fuego, 87, 91, 80, 62, R.drawable.cloak, secondaryPositions = listOf("MC")),
-
+        Player("Albert Green", "Greeny", "PT", R.drawable.fuego, 71, 76, 74, 86, R.drawable.greeny),
+        Player("Seward Hayseed", "Hayseed", "DF", R.drawable.earth, 65, 78, 75, 79, R.drawable.hayseed),
+        Player("Kent Work", "Work", "DF", R.drawable.bosque, 65, 80, 72, 80, R.drawable.work),
+        Player("Mark Hillvalley", "Hillvalley", "DF", R.drawable.earth, 66, 72, 76, 84, R.drawable.hillvalley),
+        Player("Herb Sherman", "Sherman", "DF", R.drawable.fuego, 64, 79, 75, 81, R.drawable.sherman),
+        Player("Joe Small", "Milky", "MC", R.drawable.earth, 69 ,82, 77, 82, R.drawable.milky),
+        Player("Ike Steiner", "Mother", "MC", R.drawable.bosque, 70, 77, 77, 70, R.drawable.mother),
+        Player("Orville Newman", "Spray", "MC", R.drawable.fuego, 70, 75, 79, 79, R.drawable.spray),
+        Player("Tom Walters", "Roast", "MC", R.drawable.earth, 77, 81, 83, 77, R.drawable.roast),
+        Player("Daniel Dawson", "Dawson", "MC", R.drawable.aire, 76, 83, 79, 71, R.drawable.dawson),
+        Player("Stuart Racoonfur", "Muffs", "DL", R.drawable.bosque, 83, 81, 77, 66, R.drawable.muffs),
 
         )
 

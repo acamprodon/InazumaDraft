@@ -22,7 +22,8 @@ val formations = listOf(
     Formation("2-3-5", listOf("PT","DF","DF","MC","MC","MC","DL","DL","DL","DL","DL")),
     Formation("3-5-2", listOf("PT","DF","DF","DF","MC","MC","MC","MC","MC","DL","DL")),
     Formation("4-5-1", listOf("PT","DF","DF","DF","DF","MC","MC","MC","MC","MC","DL")),
-    Formation("4-1-4-1", listOf("PT","DF","DF","DF","DF","MC","MC","MC","MC","MC","DL"))
+    Formation("4-1-4-1", listOf("PT","DF","DF","DF","DF","MC","MC","MC","MC","MC","DL")),
+    Formation ("5-4-1", listOf("PT","DF","DF","DF","DF","DF","MC","MC","MC","MC","DL"))
 )
 
 /**
@@ -138,7 +139,13 @@ val formationCoordinates = mapOf(
         0.50f to 0.92f,
         0.15f to 0.78f, 0.32f to 0.84f, 0.68f to 0.84f, 0.85f to 0.78f,
         0.50f to 0.65f,
-        0.15f to 0.50f, 0.35f to 0.46f, 0.65f to 0.46f, 0.85f to 0.50f,
+        0.15f to 0.40f, 0.35f to 0.46f, 0.65f to 0.46f, 0.85f to 0.40f,
+        0.50f to 0.20f
+    ),
+    "5-4-1" to listOf(
+        0.50f to 0.92f,
+        0.10f to 0.75f, 0.25f to 0.84f, 0.50f to 0.80f, 0.75f to 0.84f, 0.90f to 0.75f,
+        0.15f to 0.40f, 0.35f to 0.46f, 0.65f to 0.46f, 0.85f to 0.40f,
         0.50f to 0.20f
     )
 )
