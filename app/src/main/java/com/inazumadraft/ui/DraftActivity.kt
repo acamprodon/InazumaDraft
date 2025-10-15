@@ -43,7 +43,8 @@ class DraftActivity : AppCompatActivity() {
     private var formationLocked = false
     private var selectedFormationName: String? = null
     private lateinit var formationChoices: List<com.inazumadraft.data.Formation>
-
+private lateinit var availablePlayers: List<Player>
+private lateinit var selectedSeasons: List<String>
     // Capitán
     private var captain: Player? = null
 
@@ -82,8 +83,8 @@ class DraftActivity : AppCompatActivity() {
         btnFormation3.setOnClickListener { selectFormationByIndex(2) }
         btnFormation4.setOnClickListener { selectFormationByIndex(3) }
 
-        val selectedSeasons = intent.getStringArrayListExtra("selectedSeasons") ?: arrayListOf()
-        val availablePlayers = if (selectedSeasons.isEmpty()) {
+        selectedSeasons = intent.getStringArrayListExtra("selectedSeasons") ?: arrayListOf()
+        availablePlayers = if (selectedSeasons.isEmpty()) {
             PlayerRepository.players
         } else {
             PlayerRepository.players.filter { p -> p.season.any { it in selectedSeasons } }
@@ -130,7 +131,8 @@ class DraftActivity : AppCompatActivity() {
     }
 
     private fun showCaptainOptions() {
-        val options = PlayerRepository.players.shuffled().take(4)
+
+        val options = availablePlayers.shuffled().take(4)
         val dialogView = layoutInflater.inflate(R.layout.layout_player_picker, null)
         val dialog = Dialog(this).apply {
             setContentView(dialogView); setCanceledOnTouchOutside(false); setCancelable(false)
@@ -174,7 +176,7 @@ class DraftActivity : AppCompatActivity() {
     private fun showOptionsForSlot(slotIndex: Int) {
         val used = slots.mapNotNull { it.player }.toMutableSet().apply { addAll(benchPlayers.filterNotNull()) }
         val needRole = slots[slotIndex].role
-        val options = PlayerRepository.players
+        val options = availablePlayers
             .filter { it !in used && it.position.equals(needRole, true) }
             .shuffled()
             .take(4)
@@ -210,7 +212,7 @@ class DraftActivity : AppCompatActivity() {
 
     private fun showBenchOptionsForSlot(slotIndex: Int) {
         val used = slots.mapNotNull { it.player }.toMutableSet().apply { addAll(benchPlayers.filterNotNull()) }
-        val options = PlayerRepository.players.filter { it !in used }.shuffled().take(4)
+        val options = availablePlayers.filter { it !in used }.shuffled().take(4)
 
         val dialogView = layoutInflater.inflate(R.layout.layout_player_picker, null)
         val dialog = Dialog(this).apply { setContentView(dialogView); setCanceledOnTouchOutside(false); setCancelable(false) }

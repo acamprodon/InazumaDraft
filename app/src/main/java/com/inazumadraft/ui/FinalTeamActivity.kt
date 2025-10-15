@@ -100,7 +100,7 @@ class FinalTeamActivity : AppCompatActivity() {
                 .setMessage("Perderás tu equipo actual y volverás a hacer un nuevo draft.")
                 .setPositiveButton("Sí, rerollear") { _, _ ->
                     // Cierra esta pantalla y vuelve al DraftActivity
-                    val intent = Intent(this, DraftActivity::class.java)
+                    val intent = Intent(this, MainActivity::class.java)
                     intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
                     startActivity(intent)
                     finish()
