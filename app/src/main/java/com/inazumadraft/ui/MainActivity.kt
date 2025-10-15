@@ -11,9 +11,9 @@ import com.inazumadraft.R
 class MainActivity : AppCompatActivity() {
 
     private val allSeasons = listOf(
-        "S1",
-        "S2",
-        "S3",
+        "T1",
+        "T2",
+        "T3",
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {

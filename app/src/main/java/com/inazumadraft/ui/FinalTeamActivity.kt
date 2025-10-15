@@ -98,7 +98,7 @@ class FinalTeamActivity : AppCompatActivity() {
             val dialog = android.app.AlertDialog.Builder(this)
                 .setTitle("¿Reiniciar equipo?")
                 .setMessage("Perderás tu equipo actual y volverás a hacer un nuevo draft.")
-                .setPositiveButton("Sí, rerollear") { _, _ ->
+                .setPositiveButton("Sí") { _, _ ->
                     // Cierra esta pantalla y vuelve al DraftActivity
                     val intent = Intent(this, MainActivity::class.java)
                     intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
