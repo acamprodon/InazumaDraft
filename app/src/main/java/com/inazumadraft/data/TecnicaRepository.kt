@@ -8,13 +8,13 @@ object TecnicaRepository {
 
 
     val tecnicas = listOf(
-        Tecnica("Triangulo letal", "DL", 57, R.drawable.bosque, listOf("Samford", "Hatch", "Swing"), combined = true),
+        Tecnica("Triángulo letal", "DL", 57, R.drawable.bosque, listOf("Samford", "Hatch", "Swing"), combined = true),
         Tecnica("Súper Relámpago", "DL",45, R.drawable.aire, listOf("Mark", "Axel"),combined = true ),
         Tecnica("Supertrampolín Relámpago", "DL", 64, R.drawable.aire, listOf("Mark", "Axel", "Jack"), combined = true),
         Tecnica("Ruptura Relámpago", "DL",60, R.drawable.aire, listOf("Mark", "Axel", "Jude"), combined = true ),
         Tecnica("Fénix", "DL",63, R.drawable.fuego, listOf("Mark", "Erik", "Bobby"), combined = true),
         Tecnica("Defensa Triple", "PT", 65, R.drawable.earth, listOf("Mark", "Jack", "Tod"), combined = true),
-        Tecnica("Triangulo letal 2", "DL",60, R.drawable.bosque, listOf("Mark", "Bobby", "Jude"), combined = true ),
+        Tecnica("Triángulo letal 2", "DL",60, R.drawable.bosque, listOf("Mark", "Bobby", "Jude"), combined = true ),
         Tecnica("La Tierra", "DL", 67, R.drawable.earth, listOf("Mark", "Axel", "Shawn"), combined = true),
         Tecnica("Pájaro de Fuego", "DL", 49, R.drawable.fuego, listOf("Axel", "Nathan"), combined = true),
         Tecnica("Trampolín Relámpago", "DL",46, R.drawable.aire, listOf("Axel", "Jack"), combined = true ),
