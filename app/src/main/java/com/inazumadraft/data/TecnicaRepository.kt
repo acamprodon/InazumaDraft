@@ -8,12 +8,27 @@ object TecnicaRepository {
 
 
     val tecnicas = listOf(
-        Tecnica("Mano celestial", "PT",22 , R.drawable.earth, listOf("Mark")),
-        Tecnica("Tornado de Fuego","DL", 33, R.drawable.fuego, listOf("Axel", "Turner", "Hephestus") ),
-        Tecnica("Espejismo de balon", "MC", 27, R.drawable.bosque, listOf("Jude", "Erik", "Artemis", "Chronos", "Koala", "Max", "Moore", "Meenan", "Marvin", "Master", "Drent", "Eagle", "Simmons" )),
         Tecnica("Triangulo letal", "DL", 57, R.drawable.bosque, listOf("Samford", "Hatch", "Swing"), combined = true),
-        Tecnica("Despeje de Fuego", "PT", 18, R.drawable.fuego, listOf("Mark", "Idol", "Franky")),
-        Tecnica("Super Relampago", "DL",45, R.drawable.aire, listOf("Mark", "Axel"),combined = true ),
+        Tecnica("Súper Relámpago", "DL",45, R.drawable.aire, listOf("Mark", "Axel"),combined = true ),
+        Tecnica("Supertrampolín Relámpago", "DL", 64, R.drawable.aire, listOf("Mark", "Axel", "Jack"), combined = true),
+        Tecnica("Ruptura Relámpago", "DL",60, R.drawable.aire, listOf("Mark", "Axel", "Jude"), combined = true ),
+        Tecnica("Fénix", "DL",63, R.drawable.fuego, listOf("Mark", "Erik", "Bobby"), combined = true),
+        Tecnica("Defensa Triple", "PT", 65, R.drawable.earth, listOf("Mark", "Jack", "Tod"), combined = true),
+        Tecnica("Triangulo letal 2", "DL",60, R.drawable.bosque, listOf("Mark", "Bobby", "Jude"), combined = true ),
+        Tecnica("La Tierra", "DL", 67, R.drawable.earth, listOf("Mark", "Axel", "Shawn"), combined = true),
+        Tecnica("Pájaro de Fuego", "DL", 49, R.drawable.fuego, listOf("Axel", "Nathan"), combined = true),
+        Tecnica("Trampolín Relámpago", "DL",46, R.drawable.aire, listOf("Axel", "Jack"), combined = true ),
+        Tecnica("Tornado Dragón", "DL", 50, R.drawable.fuego, listOf("Axel", "Kevin"), combined = true),
+        Tecnica("Empuje Gemelo F", "DL", 50, R.drawable.fuego, listOf("Axel", "Jude"), combined = true),
+        Tecnica("Fuego Cruzado", "DL", 50, R.drawable.fuego, listOf("Axel", "Shawn"), combined = true),
+        Tecnica("Remate Gafas", "DL",25,R.drawable.earth, listOf("Kevin", "Willy"), combined = true ),
+        Tecnica("Ventisca Guiverno", "DL",50, R.drawable.aire, listOf("Kevin", "Shawn",), combined = true),
+        Tecnica("Pingüino Emperador N2", "DL",62, R.drawable.bosque, listOf("Jude", "Samford", "Hatch"), combined = true),
+        Tecnica("Pingüino Emperador N3", "DL",65, R.drawable.bosque, listOf("Jude", "Samford", "Caleb"), combined = true),
+        Tecnica("Torre Perfecta", "DF",63, R.drawable.aire, listOf("Tori", "Scotty", "Hurley"), combined = true ),
+        Tecnica("Baile de Mariposas", "DL", 44, R.drawable.bosque, listOf("Tori", "Sue"), combined = true),
+
+
 
 
     )

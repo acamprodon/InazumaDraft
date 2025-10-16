@@ -16,7 +16,7 @@ object PlayerRepository {
         Player("Jack Wallside","Jack" ,"DF", R.drawable.earth, 62, 55, 72,89,  R.drawable.jack, listOf("T1", "T2", "T3")),
         Player( "Joseph King", "King","PT",R.drawable.fuego , 68, 75, 79,86,  R.drawable.king,listOf("T1","T3")),
         Player( "Joseph King", "King","PT",R.drawable.fuego , 68, 75, 79,90,  R.drawable.king2,listOf( "T2")),
-        Player ("Bobby Shearer", "Bobby","DF", R.drawable.bosque,70, 73, 78,85,  R.drawable.bobby, listOf("T1", "T2", "T3")),
+        Player ("Bobby Shearer", "Bobby","DF", R.drawable.bosque,70, 73, 78,85,  R.drawable.bobby, listOf("T1", "T2", "T3"), secondaryPositions = listOf("MC")),
         Player ("Erik Eagle","Erik", "MC",R.drawable.bosque,  82,85,85, 70, R.drawable.erik, listOf("T1", "T2", "T3")),
         Player ("Kevin Dragonfly" ,"Kevin", "DL",R.drawable.bosque, 84, 79, 78,62, R.drawable.kevin, listOf("T1","T3")),
         Player ("Kevin Dragonfly" ,"Kevin", "DL",R.drawable.bosque, 94, 79, 78,62, R.drawable.kevin2, listOf("T2")),
@@ -144,7 +144,15 @@ object PlayerRepository {
         Player("Alan Cole", "Koala", "MC", R.drawable.bosque, 72, 77, 75, 71, R.drawable.koala, listOf("T1")),
         Player("Philip Anders", "Panda", "DL", R.drawable.fuego, 78, 78, 75, 62, R.drawable.panda, listOf("T1")),
         Player("John Reynolds", "Ronin", "DL", R.drawable.aire,78,80,72,62, R.drawable.ronin, listOf("T1")),
-        
+        Player("Paul Peabody", "Peabody", "MC", R.drawable.aire, 71, 77, 75, 80, R.drawable.peabody, listOf("T1"), secondaryPositions = listOf("PT")),
+        Player("Darren LaChance", "Darren", "PT", R.drawable.bosque, 65, 78, 76, 87,R.drawable.darren, listOf("T2", "T3"), secondaryPositions = listOf("MC") ),
+        Player("Hurley Kane", "Hurley", "DF", R.drawable.aire, 82, 82, 76, 81, R.drawable.hurley, listOf("T2", "T3")),
+        Player("Scott Banyan", "Scotty", "DF", R.drawable.bosque, 66, 86, 73, 81, R.drawable.scotty, listOf("T2", "T3")),
+        Player("Suzette Hartland", "Sue", "DL", R.drawable.bosque, 80, 79, 74, 63, R.drawable.sue, listOf("T2")),
+        Player("Victoria Vanguard", "Tori", "MC", R.drawable.aire, 75, 77, 78, 82, R.drawable.tori, listOf("T2")),
+        Player("Eugene Conwell", "Conwell", "DL", R.drawable.bosque, 78, 77, 74, 64, R.drawable.conwell, listOf("T2")),
+
+
         )
 
     fun getPlayersByPosition(position: String): List<Player> {
