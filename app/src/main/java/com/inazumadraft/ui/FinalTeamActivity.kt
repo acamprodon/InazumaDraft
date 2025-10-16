@@ -20,6 +20,8 @@ import com.inazumadraft.data.formationCoordinates
 import com.inazumadraft.data.formations
 import com.inazumadraft.model.Player
 import com.inazumadraft.model.canPlay
+import com.inazumadraft.model.Tecnica
+import com.inazumadraft.data.TecnicaRepository
 import kotlin.math.max
 
 class FinalTeamActivity : AppCompatActivity() {
@@ -115,9 +117,17 @@ class FinalTeamActivity : AppCompatActivity() {
             val team = ArrayList(playerSlots.filterNotNull())
             intent.putParcelableArrayListExtra("finalTeam", team)
             startActivity(intent)
+            val teamWithTecnica = team.associateWith { assignRandomTechniquesToPlayer(it)}
+            val unlockedCombined = getUnlockedCombinedTecnica(team)
         }
 
         setupBenchPanel()
+    }
+    fun getUnlockedCombinedTecnica(team: List<Player>): List<Tecnica> {
+        val nicknames = team.map { it.nickname }
+        return TecnicaRepository.tecnicas.filter { tech ->
+            tech.combined && tech.players.all { it in nicknames }
+        }
     }
 
     private fun refreshStatsList() {
@@ -469,7 +479,12 @@ class FinalTeamActivity : AppCompatActivity() {
             override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {}
         })
     }
+    fun assignRandomTechniquesToPlayer(player: Player): List<Tecnica> {
+        val allTechs = TecnicaRepository.tecnicas
+            .filter { !it.combined && it.players.contains(player.nickname) }
 
+        return allTechs.shuffled().take(2)
+    }
     internal fun toCode(pos: String): String = when (pos.trim().lowercase()) {
         "portero", "pt" -> "PT"
         "defensa", "df" -> "DF"
