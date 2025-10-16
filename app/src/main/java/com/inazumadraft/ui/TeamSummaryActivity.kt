@@ -50,16 +50,8 @@ class TeamSummaryActivity : AppCompatActivity() {
             🎯 Bonus por técnicas: +$bonus
         """.trimIndent()
 
-        // 🔹 Generar lista de técnicas (individuales + combinadas)
+
         val techniquesText = buildString {
-            append("⚡ Técnicas individuales:\n")
-            team.forEach { player ->
-                val techs = Tecnicautils.getIndividualTecnica(player)
-                if (techs.isNotEmpty()) {
-                    append("${player.nickname}:\n")
-                    techs.forEach { append("   • ${it.name} (${it.type}) - ${it.power}\n") }
-                }
-            }
 
             append("\n🤝 Técnicas combinadas:\n")
             if (combined.isEmpty()) append("   Ninguna desbloqueada\n")

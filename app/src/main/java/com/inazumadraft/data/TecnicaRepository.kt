@@ -27,7 +27,12 @@ object TecnicaRepository {
         Tecnica("Pingüino Emperador N3", "DL",65, R.drawable.bosque, listOf("Jude", "Samford", "Caleb"), combined = true),
         Tecnica("Torre Perfecta", "DF",63, R.drawable.aire, listOf("Tori", "Scotty", "Hurley"), combined = true ),
         Tecnica("Baile de Mariposas", "DL", 44, R.drawable.bosque, listOf("Tori", "Sue"), combined = true),
-
+        Tecnica("Remate Halcón", "DL", 42, R.drawable.aire, listOf("Chiken", "Eagle"), combined = true),
+        Tecnica("Bateo Total", "DL", 40, R.drawable.fuego, listOf("Gamer", "Artist"), combined = true),
+        Tecnica ("Remate Combinado", "DL", 44, R.drawable.fuego, listOf("Erik", "Jude"), combined = true),
+        Tecnica("Muralla Infinita", "PT", 60, R.drawable.earth, listOf("Greeny", "Hillvalley", "Sherman"), combined = true),
+        Tecnica("Triángulo Z", "DL", 65, R.drawable.fuego, listOf("Marvin", "Tyler", "Thomas"), combined = true),
+        Tecnica("Flecha Huracán", "DF", 61, R.drawable.aire, listOf("Night", "Meenan", "Mirthful"), combined = true),
 
 
 
