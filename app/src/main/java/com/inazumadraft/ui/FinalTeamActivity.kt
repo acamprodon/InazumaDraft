@@ -33,7 +33,7 @@ class FinalTeamActivity : AppCompatActivity() {
 
     internal val playerSlots = mutableListOf<Player?>()
     internal val benchPlayers = MutableList<Player?>(5) { null }
-    internal var formationName: String = "4-4-2"
+    internal var formationName: String = ""
     private var captainName: String? = null
 
     private val slotViews: MutableList<View> = mutableListOf()
@@ -64,7 +64,11 @@ class FinalTeamActivity : AppCompatActivity() {
             for (i in 0 until 5) benchPlayers[i] = list.getOrNull(i)
         }
 
-        fieldLayout.post { requestDrawField() }
+        fieldLayout.post {
+            if (formationName.isBlank()) formationName = "4-4-2"
+            requestDrawField()
+        }
+
 
         recyclerFinalTeam.layoutManager = LinearLayoutManager(this)
         refreshStatsList()
@@ -116,9 +120,12 @@ class FinalTeamActivity : AppCompatActivity() {
             val intent = Intent(this, TeamSummaryActivity::class.java)
             val team = ArrayList(playerSlots.filterNotNull())
             intent.putParcelableArrayListExtra("finalTeam", team)
+            intent.putParcelableArrayListExtra("benchPlayers", ArrayList(benchPlayers.filterNotNull()))
+            intent.putExtra("formation", formationName)
+            intent.putExtra("captainName", captainName)
+
+
             startActivity(intent)
-            val teamWithTecnica = team.associateWith { assignRandomTechniquesToPlayer(it)}
-            val unlockedCombined = getUnlockedCombinedTecnica(team)
         }
 
         setupBenchPanel()

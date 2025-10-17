@@ -31,7 +31,7 @@ class TeamSummaryActivity : AppCompatActivity() {
         val avgDefense = team.map { it.defense }.average()
         val avgSpeed = team.map { it.speed }.average()
 
-        val baseScore = (avgAttack + avgControl + avgDefense + (avgSpeed / 2)) / 3
+        val baseScore = ((avgAttack+ (avgSpeed / 2)) + (avgControl + (avgSpeed / 2)) + (avgDefense + (avgSpeed / 2))) / 3
 
         // 🔹 Calcular técnicas y bonus
         val bonus = Tecnicautils.calculateTechniqueBonus(team)
@@ -74,20 +74,9 @@ class TeamSummaryActivity : AppCompatActivity() {
         }
         // 🔹 Botón "Volver a la plantilla"
         findViewById<Button>(R.id.btnBackToTeam).setOnClickListener {
-            // Recuperamos el equipo actual y lo reenviamos a la plantilla
-            val team = intent.getParcelableArrayListExtra<Player>("finalTeam") ?: arrayListOf()
-            val formation = intent.getStringExtra("formation") ?: "4-4-2"
-            val bench = intent.getParcelableArrayListExtra<Player>("benchPlayers") ?: arrayListOf()
-
-            val backIntent = Intent(this, FinalTeamActivity::class.java).apply {
-                putParcelableArrayListExtra("finalTeam", ArrayList(team))
-                putParcelableArrayListExtra("benchPlayers", ArrayList(bench))
-                putExtra("formation", formation)
-            }
-
-            startActivity(backIntent)
             finish()
         }
+
 
         // 🔹 Botón "Volver al inicio"
         findViewById<Button>(R.id.btnBack).setOnClickListener {
