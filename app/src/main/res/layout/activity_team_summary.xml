@@ -14,7 +14,8 @@
                 android:orientation="vertical"
                 android:gravity="center_horizontal"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp" >
 
             <TextView
                     android:id="@+id/txtFinalScore"
@@ -44,14 +45,22 @@
 
                 <Button
                         android:id="@+id/btnViewTechniques"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        android:layout_width="114dp"
+                        android:layout_height="82dp"
                         android:text="Ver Técnicas" />
 
                 <Button
+                        android:id="@+id/btnBackToTeam"
+                        android:layout_width="127dp"
+                        android:layout_height="match_parent"
+                        android:text="Volver a la plantilla"
+                        android:layout_marginStart="12dp"
+                        android:layout_marginEnd="12dp" />
+
+                <Button
                         android:id="@+id/btnBack"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        android:layout_width="115dp"
+                        android:layout_height="77dp"
                         android:layout_marginStart="12dp"
                         android:text="Volver al inicio" />
             </LinearLayout>

@@ -42,10 +42,10 @@ class TeamSummaryActivity : AppCompatActivity() {
         txtFinalScore.text = "Puntuación final del equipo: ${"%.1f".format(finalScore)}"
         txtStats.text = """
             🏋️‍♂️ Estadísticas base:
-            Ataque: ${"%.1f".format(avgAttack)}
-            Control: ${"%.1f".format(avgControl)}
-            Defensa: ${"%.1f".format(avgDefense)}
-            Velocidad: ${"%.1f".format(avgSpeed)}
+            Ataque: ${"%.1f".format(avgAttack + (avgSpeed/2))}
+            Control: ${"%.1f".format(avgControl + (avgSpeed/2))}
+            Defensa: ${"%.1f".format(avgDefense+ (avgSpeed/2))}
+        
 
             🎯 Bonus por técnicas: +$bonus
         """.trimIndent()
@@ -67,11 +67,26 @@ class TeamSummaryActivity : AppCompatActivity() {
             summaryScroll.visibility = View.GONE
             techniquesScroll.visibility = View.VISIBLE
         }
-
         // 🔹 Botón "Volver" dentro del panel de técnicas
         findViewById<Button>(R.id.btnCloseTechniques).setOnClickListener {
             techniquesScroll.visibility = View.GONE
             summaryScroll.visibility = View.VISIBLE
+        }
+        // 🔹 Botón "Volver a la plantilla"
+        findViewById<Button>(R.id.btnBackToTeam).setOnClickListener {
+            // Recuperamos el equipo actual y lo reenviamos a la plantilla
+            val team = intent.getParcelableArrayListExtra<Player>("finalTeam") ?: arrayListOf()
+            val formation = intent.getStringExtra("formation") ?: "4-4-2"
+            val bench = intent.getParcelableArrayListExtra<Player>("benchPlayers") ?: arrayListOf()
+
+            val backIntent = Intent(this, FinalTeamActivity::class.java).apply {
+                putParcelableArrayListExtra("finalTeam", ArrayList(team))
+                putParcelableArrayListExtra("benchPlayers", ArrayList(bench))
+                putExtra("formation", formation)
+            }
+
+            startActivity(backIntent)
+            finish()
         }
 
         // 🔹 Botón "Volver al inicio"
