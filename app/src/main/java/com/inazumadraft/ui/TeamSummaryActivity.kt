@@ -31,7 +31,7 @@ class TeamSummaryActivity : AppCompatActivity() {
         val avgDefense = team.map { it.defense }.average()
         val avgSpeed = team.map { it.speed }.average()
 
-        val baseScore = ((avgAttack+ (avgSpeed / 2)) + (avgControl + (avgSpeed / 2)) + (avgDefense + (avgSpeed / 2))) / 3
+        val baseScore = ((avgAttack + (avgSpeed / 2)) + (avgControl + (avgSpeed / 2)) + (avgDefense + (avgSpeed / 2))) / 3
 
         // 🔹 Calcular técnicas y bonus
         val bonus = Tecnicautils.calculateTechniqueBonus(team)

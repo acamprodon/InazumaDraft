@@ -33,6 +33,12 @@ object TecnicaRepository {
         Tecnica("Muralla Infinita", "PT", 60, R.drawable.earth, listOf("Greeny", "Hillvalley", "Sherman"), combined = true),
         Tecnica("Triángulo Z", "DL", 65, R.drawable.fuego, listOf("Marvin", "Tyler", "Thomas"), combined = true),
         Tecnica("Flecha Huracán", "DF", 61, R.drawable.aire, listOf("Night", "Meenan", "Mirthful"), combined = true),
+        Tecnica("Remate en V", "DL",48, R.drawable.aire, listOf("Max", "Steve"), combined = true ),
+        Tecnica("Bloqueo Doble", "PT", 49, R.drawable.bosque, listOf("Jim", "Feldt"), combined = true),
+        Tecnica("Estrella Fugaz", "DF", 47, R.drawable.fuego, listOf("Timmy", "Sam"), combined = true),
+        Tecnica("Remate Triple", "DL", 64, R.drawable.fuego, listOf("Nathan", "Sam", "Tod"), combined = true),
+        Tecnica("Fénix Oscuro", "DL", 66, R.drawable.bosque, listOf("Nathan", "Max", "Kevin"), combined = true),
+        Tecnica("Disparo Cósmico", "DL", 46,R.drawable.bosque, listOf("Janus", "Diam"), combined = true),
 
 
 
