@@ -39,6 +39,7 @@ object TecnicaRepository {
         Tecnica("Remate Triple", "DL", 64, R.drawable.fuego, listOf("Nathan", "Sam", "Tod"), combined = true),
         Tecnica("Fénix Oscuro", "DL", 66, R.drawable.bosque, listOf("Nathan", "Max", "Kevin"), combined = true),
         Tecnica("Disparo Cósmico", "DL", 46,R.drawable.bosque, listOf("Janus", "Diam"), combined = true),
+        Tecnica("Tirachinas", "DL", 64, R.drawable.earth, listOf("García", "Jiménez", "Bonachea"), combined = true),
 
 
 

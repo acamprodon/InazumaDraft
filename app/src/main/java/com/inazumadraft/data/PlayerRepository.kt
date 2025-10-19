@@ -174,7 +174,22 @@ object PlayerRepository {
         Player("Jordan Greenway", "Janus", "MC", R.drawable.bosque, 85, 86, 84, 70, R.drawable.janus, listOf("T2")),
         Player("Jordan Greenway", "Jordan", "MC", R.drawable.bosque, 82, 86, 88, 72,R.drawable.jordan, listOf("T3") ),
         Player("Dylan Bluemoon", "Diam", "DL", R.drawable.bosque,84, 84, 78, 60, R.drawable.diam, listOf("T2") ),
-
+        Player("Alfonso Íñigo", "Íñigo", "PT", R.drawable.fuego, 74, 77, 74, 88 ,R.drawable.inigo, listOf("T3")),
+        Player("José Costa", "Costa", "DF", R.drawable.aire, 67, 86, 72, 82, R.drawable.costa, listOf("T3")),
+        Player("José López", "López", "DF", R.drawable.bosque, 65, 81, 75, 83, R.drawable.lopez, listOf("T3")),
+        Player("Antonio Garrido", "Garrido", "DF", R.drawable.earth, 62, 80, 74, 82, R.drawable.garrido, listOf("T3")),
+        Player("Victor García", "García", "DF", R.drawable.earth, 80, 85, 77, 87, R.drawable.garcia, listOf("T3"), secondaryPositions = listOf("MC")),
+        Player("Joan Rodríguez", "Rodríguez", "MC", R.drawable.bosque, 72, 78, 85, 84, R.drawable.rodri, listOf("T3")),
+        Player("Igor Ferreira", "Ferreira" , "MC", R.drawable.fuego, 78, 84, 84, 73, R.drawable.ferreira,listOf("T3")),
+        Player("Miguel Pereira", "Pereira", "MC", R.drawable.aire, 76, 87, 83, 76, R.drawable.pereira,listOf("T3")),
+        Player("Borja Costa", "Borja", "MC", R.drawable.aire, 81, 86, 82, 70, R.drawable.borja, listOf("T3")),
+        Player("Mateo Bonachea", "Bonachea", "DL", R.drawable.earth, 87,82, 76, 64, R.drawable.bonachea, listOf("T3")),
+        Player("Miguel Jiménez", "Jiménez", "DL", R.drawable.bosque, 85, 83, 74, 62, R.drawable.jimenez, listOf("T3")),
+        Player("Juan Espindola", "Espindola", "PT", R.drawable.earth, 66, 80, 75, 81, R.drawable.espindola,listOf("T3")),
+        Player("Isaac César", "César", "DL", R.drawable.aire,83, 85, 77, 65, R.drawable.cesar, listOf("T3")),
+        Player("Laudelino Castor", "Castor", "DF", R.drawable.bosque, 62,80, 71, 79, R.drawable.castor,listOf("T3")),
+        Player("Carlos Arroyo", "Arroyo", "MC", R.drawable.earth, 78, 84, 83, 77, R.drawable.arroyo, listOf("T3")),
+        Player("Federico Rubiera", "Rubiera", "DL", R.drawable.fuego, 82, 82, 80, 64, R.drawable.rubiera, listOf("T3")),
 
         )
 
