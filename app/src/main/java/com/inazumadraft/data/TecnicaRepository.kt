@@ -18,7 +18,7 @@ object TecnicaRepository {
         Tecnica("La Tierra", "DL", 67, R.drawable.earth, listOf("Mark", "Axel", "Shawn"), combined = true),
         Tecnica("Pájaro de Fuego", "DL", 49, R.drawable.fuego, listOf("Axel", "Nathan"), combined = true),
         Tecnica("Trampolín Relámpago", "DL",46, R.drawable.aire, listOf("Axel", "Jack"), combined = true ),
-        Tecnica("Tornado Dragón", "DL", 50, R.drawable.fuego, listOf("Axel", "Kevin"), combined = true),
+        Tecnica("Tornado Dragón", "DL", 45, R.drawable.fuego, listOf("Axel", "Kevin"), combined = true),
         Tecnica("Empuje Gemelo F", "DL", 50, R.drawable.fuego, listOf("Axel", "Jude"), combined = true),
         Tecnica("Fuego Cruzado", "DL", 50, R.drawable.fuego, listOf("Axel", "Shawn"), combined = true),
         Tecnica("Remate Gafas", "DL",25,R.drawable.earth, listOf("Kevin", "Willy"), combined = true ),
@@ -50,6 +50,12 @@ object TecnicaRepository {
         Tecnica("Big Bang", "DL", 66, R.drawable.fuego, listOf("Shawn", "Xavier", "Jude"), combined = true),
         Tecnica("Tormenta del Tigre", "DL", 46, R.drawable.fuego, listOf("Axel", "Austin"), combined = true),
         Tecnica("Fuego Total", "DL", 64, R.drawable.fuego, listOf("Axel", "Austin", "Xavier"), combined = true),
+        Tecnica("Supernova", "DL", 65, R.drawable.bosque, listOf("Xene", "Bellatrix", "Wittz"), combined = true),
+        Tecnica("Pingüino Espacial", "DL", 65, R.drawable.aire, listOf("Xene", "Bellatrix", "Wittz"), combined = true),
+        Tecnica("Muralla Infinita 2", "PT", 65, R.drawable.earth, listOf("King", "Hillvalley", "Bargie"), combined = true),
+        Tecnica("Segadora", "DF", 44, R.drawable.bosque, listOf("Zohen", "Bargie"), combined = true),
+        Tecnica("Ciclón Doble", "DF", 44, R.drawable.aire, listOf("Bargie", "Hatch"), combined = true),
+        Tecnica("Triángulo Z 2", "DL", 68, R.drawable.fuego, listOf("Quagmire", "Zell", "Wittz"), combined = true),
 
 
 

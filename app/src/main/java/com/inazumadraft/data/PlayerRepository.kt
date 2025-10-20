@@ -193,8 +193,24 @@ object PlayerRepository {
         Player("Thor Stoutberg", "Thor", "MC", R.drawable.aire, 77, 75, 80, 84, R.drawable.thor, listOf("T3"), secondaryPositions = listOf("DF")),
         Player("Austin Hobbes", "Austin", "DL", R.drawable.bosque, 88, 87, 78, 67, R.drawable.austin, listOf("T3"), secondaryPositions = listOf("MC")),
         Player("Xavier Foster", "Xavier", "DL", R.drawable.fuego, 91, 86, 83, 72, R.drawable.xavier, listOf("T3"), secondaryPositions = listOf("MC")),
+        Player("Xavier Foster", "Xene", "DL", R.drawable.fuego, 90, 90, 74, 60, R.drawable.xene, listOf("T2")),
+        Player("Isabelle Trick", "Bellatrix", "MC", R.drawable.aire, 86, 92, 88, 70, R.drawable.bellatrix, listOf("T2")),
+        Player("Wilbur Watkins", "Wittz", "DL", R.drawable.bosque, 86, 82, 74, 67, R.drawable.wittz, listOf("T2", "T3")),
+        Player("Ashton Malone", "Ark", "MC", R.drawable.bosque, 80, 86, 83, 75, R.drawable.ark, listOf("T2")),
+        Player("Katie Brown", "Kiwill", "MC", R.drawable.bosque, 78, 88, 85, 76, R.drawable.kiwill, listOf("T2")),
+     Player("Connor Murray", "Kormer", "MC", R.drawable.fuego, 77, 85, 84, 77, R.drawable.kormer, listOf("T2")),
+     Player("Hunt Mercer", "Hauser", "DF", R.drawable.earth, 70, 80, 75, 81, R.drawable.hauser, listOf("T2")),
+     Player("Zack Cummings", "Zohen", "DF", R.drawable.earth, 74, 84, 75, 86, R.drawable.zohen,listOf("T2", "T3")),
+     Player("Kim Powell", "Kiburn", "DF", R.drawable.fuego, 73, 88, 73, 84, R.drawable.kiburn, listOf("T2")),
+     Player("Gail Baker", "Gele", "DF", R.drawable.aire, 68, 85, 76, 82, R.drawable.gail, listOf("T2")),
+     Player("Nelson Rockwell", "Nero", "PT", R.drawable.aire, 70, 90, 72, 90, R.drawable.nero, listOf("T2")),
+     Player("Dave Quagmire", "Dvalin", "PT", R.drawable.fuego, 84, 80, 76, 87, R.drawable.dvalin, listOf("T2"), secondaryPositions = listOf("DL")),
+     Player("Dave Quagmire", "Quagmire", "MC", R.drawable.fuego, 89, 87, 88, 80, R.drawable.dave, listOf("T3"), secondaryPositions = listOf("PT", "DL", "DF")),
+     Player("Argie Bargie", "Bargie", "DF", R.drawable.bosque, 67, 77, 70, 85, R.drawable.bargie, listOf("T2", "T3")),
+     Player("Zeke Valanche", "Zell", "DL", R.drawable.aire, 86, 86, 75, 83, R.drawable.zell, listOf("T2", "T3"), secondaryPositions = listOf("PT")),
+     Player("Ethan Whitering", "Heat", "MC", R.drawable.bosque, 76, 82, 80 ,82, R.drawable.heat, listOf("T2", "T3"), secondaryPositions = listOf("PT")),
 
-        )
+    )
 
     fun getPlayersByPosition(position: String): List<Player> {
         return players.filter { it.position.equals(position, ignoreCase = true) }
