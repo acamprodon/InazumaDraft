@@ -29,7 +29,8 @@ object TecnicaRepository {
         Tecnica("Baile de Mariposas", "DL", 44, R.drawable.bosque, listOf("Tori", "Sue"), combined = true),
         Tecnica("Remate Halcón", "DL", 42, R.drawable.aire, listOf("Chiken", "Eagle"), combined = true),
         Tecnica("Bateo Total", "DL", 40, R.drawable.fuego, listOf("Gamer", "Artist"), combined = true),
-        Tecnica ("Remate Combinado", "DL", 44, R.drawable.fuego, listOf("Erik", "Jude"), combined = true),
+        Tecnica ("Remate Combinado", "DL", 42, R.drawable.fuego, listOf("Erik", "Jude"), combined = true),
+        Tecnica ("Remate Combinado", "DL", 42, R.drawable.fuego, listOf("Samford", "Jude"), combined = true),
         Tecnica("Muralla Infinita", "PT", 60, R.drawable.earth, listOf("Greeny", "Hillvalley", "Sherman"), combined = true),
         Tecnica("Triángulo Z", "DL", 65, R.drawable.fuego, listOf("Marvin", "Tyler", "Thomas"), combined = true),
         Tecnica("Flecha Huracán", "DF", 61, R.drawable.aire, listOf("Night", "Meenan", "Mirthful"), combined = true),
@@ -40,6 +41,16 @@ object TecnicaRepository {
         Tecnica("Fénix Oscuro", "DL", 66, R.drawable.bosque, listOf("Nathan", "Max", "Kevin"), combined = true),
         Tecnica("Disparo Cósmico", "DL", 46,R.drawable.bosque, listOf("Janus", "Diam"), combined = true),
         Tecnica("Tirachinas", "DL", 64, R.drawable.earth, listOf("García", "Jiménez", "Bonachea"), combined = true),
+        Tecnica("Tiro a Reacción", "DL", 65, R.drawable.earth, listOf("Mark", "Axel", "Austin"), combined = true),
+        Tecnica("Torbellino Trampolín", "DL", 47, R.drawable.aire, listOf("Nathan", "Jack"), combined = true),
+        Tecnica("El Huracán", "DL", 48, R.drawable.aire, listOf("Nathan", "Shawn"), combined = true),
+        Tecnica("Campo de Fuerza", "MC", 49, R.drawable.bosque, listOf("Jude", "Caleb"), combined = true),
+        Tecnica("Bestia del Trueno", "DL", 47, R.drawable.aire, listOf("Shawn", "Thor"), combined = true),
+        Tecnica("La Aurora", "DL", 50, R.drawable.aire, listOf("Shawn", "Xavier"), combined = true),
+        Tecnica("Big Bang", "DL", 66, R.drawable.fuego, listOf("Shawn", "Xavier", "Jude"), combined = true),
+        Tecnica("Tormenta del Tigre", "DL", 46, R.drawable.fuego, listOf("Axel", "Austin"), combined = true),
+        Tecnica("Fuego Total", "DL", 64, R.drawable.fuego, listOf("Axel", "Austin", "Xavier"), combined = true),
+
 
 
 

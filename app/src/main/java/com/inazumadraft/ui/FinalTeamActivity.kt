@@ -16,6 +16,7 @@ import com.inazumadraft.ui.adapters.OptionAdapter
 import com.inazumadraft.ui.adapters.FinalTeamAdapter
 import com.inazumadraft.ui.adapters.BenchSelectedAdapter
 import com.inazumadraft.R
+import com.inazumadraft.data.PlayerRepository
 import com.inazumadraft.data.formationCoordinates
 import com.inazumadraft.data.formations
 import com.inazumadraft.model.Player
@@ -35,7 +36,8 @@ class FinalTeamActivity : AppCompatActivity() {
     internal val benchPlayers = MutableList<Player?>(5) { null }
     internal var formationName: String = ""
     private var captainName: String? = null
-
+    private var selectedSeasons: List<String> = emptyList()
+    private var availablePlayers: List<Player> = emptyList()
     private val slotViews: MutableList<View> = mutableListOf()
     private var drawPending = false
 
@@ -58,6 +60,12 @@ class FinalTeamActivity : AppCompatActivity() {
         val team = intent.getParcelableArrayListExtra<Player>("finalTeam") ?: arrayListOf()
         formationName = intent.getStringExtra("formation") ?: "4-4-2"
         captainName = intent.getStringExtra("captainName")
+        selectedSeasons = intent.getStringArrayListExtra("selectedSeasons") ?: emptyList<String>()
+        availablePlayers = if (selectedSeasons.isEmpty()) {
+            PlayerRepository.players
+        } else {
+            PlayerRepository.players.filter { p -> p.season.any { it in selectedSeasons } }
+        }
 
         playerSlots.clear(); playerSlots.addAll(team)
         intent.getParcelableArrayListExtra<Player>("benchPlayers")?.let { list ->
@@ -237,7 +245,7 @@ class FinalTeamActivity : AppCompatActivity() {
         val usados = mutableSetOf<Player>().apply {
             addAll(playerSlots.filterNotNull()); addAll(benchPlayers.filterNotNull())
         }
-        val options = com.inazumadraft.data.PlayerRepository.players.filter { it !in usados }.shuffled().take(4)
+        val options = availablePlayers.filter { it !in usados }.shuffled().take(4)
 
         val dialogView = layoutInflater.inflate(R.layout.layout_player_picker, null)
         val dialog = Dialog(this).apply { setContentView(dialogView); setCanceledOnTouchOutside(false); setCancelable(false) }

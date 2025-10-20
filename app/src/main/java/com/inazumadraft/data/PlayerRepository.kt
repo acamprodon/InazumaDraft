@@ -32,7 +32,7 @@ object PlayerRepository {
         Player("Steve Grimm", "Steve", "MC", R.drawable.aire, 68, 77, 88, 70, R.drawable.steve2,listOf("T2")),
         Player("Tim Saunders", "Timmy", "MC", R.drawable.bosque, 75, 80, 76, 70, R.drawable.timmy,listOf("T1")),
         Player("Tim Saunders", "Timmy", "MC", R.drawable.bosque, 75, 90, 76, 72, R.drawable.timmy2,listOf("T2")),
-        Player("Tod Ironside", "Tod","DF", R.drawable.fuego, 68, 78, 74, 75, R.drawable.tod,listOf("T1",  "T3") ),
+        Player("Tod Ironside", "Tod","DF", R.drawable.fuego, 68, 78, 74, 75, R.drawable.tod,listOf("T1",  "T3"), secondaryPositions = listOf("MC") ),
         Player("Tod Ironside", "Tod","DF", R.drawable.fuego, 68, 78, 74, 85, R.drawable.tod2,listOf("T2") ),
        Player("William Glass", "Willy","DL", R.drawable.bosque, 49 ,38, 43, 2, R.drawable.willy,listOf("T1", "T2")),
         Player("Thomas Feldt","Feldt", "PT", R.drawable.bosque, 69, 74, 78, 85, R.drawable.feldt,listOf("T1", "T2")),
@@ -190,6 +190,9 @@ object PlayerRepository {
         Player("Laudelino Castor", "Castor", "DF", R.drawable.bosque, 62,80, 71, 79, R.drawable.castor,listOf("T3")),
         Player("Carlos Arroyo", "Arroyo", "MC", R.drawable.earth, 78, 84, 83, 77, R.drawable.arroyo, listOf("T3")),
         Player("Federico Rubiera", "Rubiera", "DL", R.drawable.fuego, 82, 82, 80, 64, R.drawable.rubiera, listOf("T3")),
+        Player("Thor Stoutberg", "Thor", "MC", R.drawable.aire, 77, 75, 80, 84, R.drawable.thor, listOf("T3"), secondaryPositions = listOf("DF")),
+        Player("Austin Hobbes", "Austin", "DL", R.drawable.bosque, 88, 87, 78, 67, R.drawable.austin, listOf("T3"), secondaryPositions = listOf("MC")),
+        Player("Xavier Foster", "Xavier", "DL", R.drawable.fuego, 91, 86, 83, 72, R.drawable.xavier, listOf("T3"), secondaryPositions = listOf("MC")),
 
         )
 

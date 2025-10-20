@@ -101,6 +101,7 @@ private lateinit var selectedSeasons: List<String>
                 putParcelableArrayListExtra("benchPlayers", ArrayList(benchPlayers.filterNotNull()))
                 putExtra("formation", selectedFormationName ?: "4-4-2")
                 putExtra("captainName", captain?.name)
+                putStringArrayListExtra("selectedSeasons", ArrayList(selectedSeasons))
             }
             startActivity(i)
         }
