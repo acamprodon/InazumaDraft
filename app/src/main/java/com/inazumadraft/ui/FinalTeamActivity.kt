@@ -8,13 +8,11 @@ import android.os.Bundle
 import android.view.*
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.inazumadraft.ui.adapters.OptionAdapter
-import com.inazumadraft.ui.adapters.FinalTeamAdapter
-import com.inazumadraft.ui.adapters.BenchSelectedAdapter
 import com.inazumadraft.R
 import com.inazumadraft.data.PlayerRepository
 import com.inazumadraft.data.formationCoordinates
@@ -23,7 +21,11 @@ import com.inazumadraft.model.Player
 import com.inazumadraft.model.canPlay
 import com.inazumadraft.model.Tecnica
 import com.inazumadraft.data.TecnicaRepository
+import com.inazumadraft.ui.adapters.BenchSelectedAdapter
+import com.inazumadraft.ui.adapters.FinalTeamAdapter
+import com.inazumadraft.ui.adapters.OptionAdapter
 import kotlin.math.max
+import kotlinx.coroutines.launch
 
 class FinalTeamActivity : AppCompatActivity() {
 
@@ -61,10 +63,9 @@ class FinalTeamActivity : AppCompatActivity() {
         formationName = intent.getStringExtra("formation") ?: "4-4-2"
         captainName = intent.getStringExtra("captainName")
         selectedSeasons = intent.getStringArrayListExtra("selectedSeasons") ?: emptyList<String>()
-        availablePlayers = if (selectedSeasons.isEmpty()) {
-            PlayerRepository.players
-        } else {
-            PlayerRepository.players.filter { p -> p.season.any { it in selectedSeasons } }
+        lifecycleScope.launch {
+            PlayerRepository.initialize(applicationContext)
+            availablePlayers = PlayerRepository.getPlayers(selectedSeasons)
         }
 
         playerSlots.clear(); playerSlots.addAll(team)

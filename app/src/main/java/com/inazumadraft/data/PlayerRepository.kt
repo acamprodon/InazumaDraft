@@ -1,222 +1,170 @@
 package com.inazumadraft.data
 
-import com.inazumadraft.R
+import android.content.Context
+import android.util.Log
+import androidx.annotation.VisibleForTesting
+import androidx.room.Room
+import com.inazumadraft.data.local.InazumaDatabase
+import com.inazumadraft.data.local.PlayerDao
+import com.inazumadraft.data.local.PlayerEntity
 import com.inazumadraft.model.Player
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.json.JSONArray
 
 object PlayerRepository {
 
-    val players = listOf(
-        Player("Mark Evans","Mark", "PT",R.drawable.earth , 74, 75,78, 92,  R.drawable.mark,listOf("T1", "T2", "T3") ,secondaryPositions = listOf("DF")),
-        Player("Axel Blaze", "Axel", "DL", R.drawable.fuego,92, 86, 85,65,  R.drawable.axel,listOf("T1", "T2", "T3")),
-        Player("Jude Sharp", "Jude","MC",R.drawable.aire, 83, 80, 92,76,  R.drawable.jude,listOf("T1", "T2", "T3")),
-        Player("Nathan Swift", "Nathan", "DF", R.drawable.aire, 81, 95, 75,79,  R.drawable.nathan,listOf("T1", "T3"), secondaryPositions = listOf("MC", "DL")),
-        Player("Nathan Swift", "Nathan", "DL", R.drawable.aire, 91, 95, 75,79,  R.drawable.nathan2,listOf("T2"), secondaryPositions = listOf("MC", "DF")),
-        Player("Shawn Froste", "Shawn", "DL", R.drawable.aire,86, 91, 80,82,  R.drawable.shawn,listOf("T2", "T3") ,secondaryPositions = listOf("DF")),
-        Player("Byron Love",  "Byron","MC", R.drawable.bosque,90, 84, 90, 68, R.drawable.byron,listOf("T1", "T2", "T3") ,secondaryPositions = listOf("DL")),
-        Player("Jack Wallside","Jack" ,"DF", R.drawable.earth, 62, 55, 72,89,  R.drawable.jack, listOf("T1", "T2", "T3")),
-        Player( "Joseph King", "King","PT",R.drawable.fuego , 68, 75, 79,86,  R.drawable.king,listOf("T1","T3")),
-        Player( "Joseph King", "King","PT",R.drawable.fuego , 68, 75, 79,90,  R.drawable.king2,listOf( "T2")),
-        Player ("Bobby Shearer", "Bobby","DF", R.drawable.bosque,70, 73, 78,85,  R.drawable.bobby, listOf("T1", "T2", "T3"), secondaryPositions = listOf("MC")),
-        Player ("Erik Eagle","Erik", "MC",R.drawable.bosque,  82,85,85, 70, R.drawable.erik, listOf("T1", "T2", "T3")),
-        Player ("Kevin Dragonfly" ,"Kevin", "DL",R.drawable.bosque, 84, 79, 78,62, R.drawable.kevin, listOf("T1","T3")),
-        Player ("Kevin Dragonfly" ,"Kevin", "DL",R.drawable.bosque, 94, 79, 78,62, R.drawable.kevin2, listOf("T2")),
-        Player("Shadow Cimmerian", "Shadow", "DL", R.drawable.bosque,95, 95, 95, 95, R.drawable.shadow,listOf("T1", "T2", "T3") ,secondaryPositions = listOf("DF", "MC")),
-        Player("Caleb Stonewall", "Caleb", "MC", R.drawable.fuego,76, 84, 89, 83,R.drawable.caleb, listOf( "T2", "T3")),
-        Player("Archer Hawkins","Archer", "DF", R.drawable.bosque,79, 76, 62,85,  R.drawable.archer,listOf("T3")),
-        Player( "Jim Wraith", "Jim", "DF",R.drawable.bosque, 60, 64, 60, 79, R.drawable.jim,listOf("T1", "T2") ),
-        Player("Maxwell Carson", "Max", "DL", R.drawable.aire, 70, 80, 78, 70, R.drawable.max,listOf("T1"), secondaryPositions = listOf("MC")),
-        Player("Maxwell Carson", "Max", "DL", R.drawable.aire, 70, 80, 88, 70, R.drawable.max2,listOf( "T2"), secondaryPositions = listOf("MC")),
-        Player("Sam Kincaid", "Sam", "MC", R.drawable.fuego, 71, 75, 75, 71, R.drawable.sam,listOf("T1"), secondaryPositions = listOf("DF")),
-        Player("Sam Kincaid", "Sam", "DF", R.drawable.fuego, 71, 75, 75, 81, R.drawable.sam2,listOf( "T2"), secondaryPositions = listOf("MC")),
-        Player("Steve Grimm", "Steve", "MC", R.drawable.aire, 68, 77, 78, 70, R.drawable.steve,listOf("T1")),
-        Player("Steve Grimm", "Steve", "MC", R.drawable.aire, 68, 77, 88, 70, R.drawable.steve2,listOf("T2")),
-        Player("Tim Saunders", "Timmy", "MC", R.drawable.bosque, 75, 80, 76, 70, R.drawable.timmy,listOf("T1")),
-        Player("Tim Saunders", "Timmy", "MC", R.drawable.bosque, 75, 90, 76, 72, R.drawable.timmy2,listOf("T2")),
-        Player("Tod Ironside", "Tod","DF", R.drawable.fuego, 68, 78, 74, 75, R.drawable.tod,listOf("T1",  "T3"), secondaryPositions = listOf("MC") ),
-        Player("Tod Ironside", "Tod","DF", R.drawable.fuego, 68, 78, 74, 85, R.drawable.tod2,listOf("T2") ),
-       Player("William Glass", "Willy","DL", R.drawable.bosque, 49 ,38, 43, 2, R.drawable.willy,listOf("T1", "T2")),
-        Player("Thomas Feldt","Feldt", "PT", R.drawable.bosque, 69, 74, 78, 85, R.drawable.feldt,listOf("T1", "T2")),
-        Player("Nathan Jones", "Mask", "PT", R.drawable.aire, 63, 79, 75, 80, R.drawable.mask,listOf("T1") ),
-        Player("Troy Moon", "Wolfy", "MC", R.drawable.fuego, 78, 86, 79, 70, R.drawable.wolfy,listOf("T1"), secondaryPositions = listOf("DL")),
-        Player("Russell Walk", "Styx", "DF", R.drawable.bosque,62, 77, 70, 79, R.drawable.styx,listOf("T1") ),
-        Player("Jason Jones", "Creepy", "DF", R.drawable.aire, 58, 76,68,71,R.drawable.creepy,listOf("T1")),
-        Player("Ken Furan", "Franky", "DF", R.drawable.earth, 50, 46, 65, 79, R.drawable.franky,listOf("T1"), secondaryPositions = listOf("PT")) ,
-        Player("Jerry Fulton", "Undead", "DF", R.drawable.fuego, 51, 55, 59, 77, R.drawable.undead,listOf("T1")),
-        Player("Ray Mannigs", "Jiangshi", "MC", R.drawable.aire, 65, 78, 70, 62, R.drawable.jiangshi,listOf("T1")),
-        Player("Robert Mayer", "Mummy", "MC", R.drawable.bosque, 66, 73, 71, 64, R.drawable.mummy,listOf("T1")),
-        Player("Alexander Brave", "Grave", "MC", R.drawable.aire, 55 ,77, 67 ,78, R.drawable.grave,listOf("T1"), secondaryPositions = listOf("DF")),
-        Player("Johan Tassman", "Talisman", "DL", R.drawable.bosque, 85, 83, 75, 65, R.drawable.talisman,listOf("T1","T3"), secondaryPositions = listOf("MC")),
-        Player("Burt Wolf", "Blood", "MC", R.drawable.earth, 79, 83 ,77, 75, R.drawable.blood,listOf("T1"), secondaryPositions = listOf("DL")),
-        Player("Paul Siddon", "Poseidon", "PT", R.drawable.earth, 68, 63, 78, 86, R.drawable.poseidon,listOf("T1")),
-        Player("Apollo Light", "Apollo" ,"DF", R.drawable.bosque, 65, 85, 72, 80, R.drawable.apollo,listOf("T1")),
-        Player("Jeff Iron", "Hephestus", "DF", R.drawable.fuego, 79, 87, 77, 77, R.drawable.jeff,listOf("T1"), secondaryPositions = listOf("MC")),
-        Player("Lane War", "Ares", "DF", R.drawable.earth, 65, 79,75, 86, R.drawable.ares,listOf("T1") ),
-        Player("Danny Wood", "Dionysus", "DF", R.drawable.aire, 65, 74, 78, 87, R.drawable.dionysus,listOf("T1")),
-        Player("Artie Mishman", "Artemis", "MC", R.drawable.aire, 75, 85, 82, 75, R.drawable.artemis,listOf("T1")),
-        Player("Arion Matlock", "Hermes", "MC", R.drawable.bosque, 73, 82, 83, 78, R.drawable.hermes,listOf("T1")),
-        Player("Wesley Knox", "Athena", "MC", R.drawable.bosque, 79,85,82,72,R.drawable.athena,listOf("T1")),
-        Player("Jonas Demetrius", "Demeter", "DL", R.drawable.fuego, 88,82,78,70,R.drawable.demeter,listOf("T1", "T3")),
-        Player("Henry House", "Hera", "MC", R.drawable.fuego, 82,84,84,73,R.drawable.hera,listOf("T1", "T3"), secondaryPositions = listOf("DL", "DF")),
-        Player("Peter Drent", "Drent", "DF", R.drawable.earth, 62,69, 72, 84 ,R.drawable.drent,listOf("T1")),
-        Player("Ben Simmons", "Simmons", "DF", R.drawable.bosque, 60, 76, 74, 79, R.drawable.simmons,listOf("T1")),
-        Player("Alan Master", "Master", "MC", R.drawable.aire, 68, 82, 78, 77, R.drawable.master,listOf("T1", "T3"), secondaryPositions = listOf("DF")),
-        Player("Gus Martin", "Martin", "DF", R.drawable.bosque, 66, 78, 79, 79, R.drawable.martin,listOf("T1")),
-        Player("Herman Waldon", "Waldon", "MC", R.drawable.aire, 67, 78, 78, 78, R.drawable.waldon,listOf("T1"), secondaryPositions = listOf("DF")),
-        Player("John Bloom", "Bloom", "MC", R.drawable.fuego, 74, 84, 77, 70, R.drawable.bloom,listOf("T1")),
-        Player("Derek Swing", "Swing", "MC", R.drawable.aire, 74 ,86, 77, 70 ,R.drawable.swing,listOf("T1")),
-        Player("Daniel Hatch", "Hatch", "DL", R.drawable.bosque, 80, 80, 75, 75, R.drawable.hatch,listOf("T1","T3"), secondaryPositions = listOf("DF")),
-        Player("David Samford", "Samford", "DL", R.drawable.bosque, 90, 85, 80, 67, R.drawable.samford2,listOf("T2")),
-        Player("David Samford", "Samford", "DL", R.drawable.bosque, 84, 85, 80, 67, R.drawable.samford,listOf("T1","T3"), secondaryPositions = listOf("MC")),
-        Player("John Neville","Neville", "PT", R.drawable.fuego, 64,63, 73, 84, R.drawable.neville,listOf("T1")) ,
-        Player("Malcolm Night", "Night", "DF", R.drawable.fuego, 75, 80, 77, 80, R.drawable.night,listOf("T1", "T2")),
-        Player("Alfred Meenan", "Meenan", "DF", R.drawable.bosque, 64, 82, 76, 82, R.drawable.meenan,listOf("T1")),
-        Player("Dan Mirthful", "Mirthful", "DF", R.drawable.bosque, 60, 72, 75, 79, R.drawable.mirthful,listOf("T1")),
-        Player("Ricky Clover", "Clover", "DF", R.drawable.earth, 64, 77, 76, 81, R.drawable.clover,listOf("T1")),
-        Player("Toby Damian", "Damian", "MC", R.drawable.aire, 74, 85, 79, 73, R.drawable.damian,listOf("T1")),
-        Player("York Nashmith", "Nashmith", "MC", R.drawable.bosque, 73, 79, 80, 70, R.drawable.nashmith,listOf("T1")),
-        Player("Zachary Moore", "Moore", "MC", R.drawable.bosque, 72, 80, 76, 72, R.drawable.moore,listOf("T1")),
-        Player("Marvin Murdock", "Marvin", "DL", R.drawable.fuego, 86, 83, 79, 62, R.drawable.marvin,listOf("T1", "T3")),
-        Player("Thomas Murdock", "Thomas", "DL", R.drawable.aire, 82, 80, 77, 70, R.drawable.thomas,listOf("T1")),
-        Player("Tyler Murdock", "Tyler", "DL", R.drawable.earth, 84, 85, 76, 66, R.drawable.tyler,listOf("T1", "T3")),
-        Player("Harry Leading", "Leading", "DF", R.drawable.aire, 66, 81, 74, 77, R.drawable.leading,listOf("T1")),
-        Player("Terry Stronger", "Stronger", "DF", R.drawable.fuego, 68, 80, 72, 81, R.drawable.stronger,listOf("T1"),),
-        Player("Philip Marvel", "Marvel", "DF", R.drawable.earth, 65, 78, 76, 79, R.drawable.marvel,listOf("T1")),
-        Player("Noel Good", "Good", "DF", R.drawable.bosque, 62, 68,78, 82, R.drawable.good,listOf("T1")),
-        Player("Tyron Rock", "Rock", "MC", R.drawable.fuego, 75, 77, 80, 74, R.drawable.rock,listOf("T1")),
-        Player("Francis Tell", "Tell", "MC", R.drawable.bosque, 72, 79, 79, 79, R.drawable.tell,listOf("T1")),
-        Player("Samuel Buster", "Busta", "MC", R.drawable.fuego, 78, 83,80, 72, R.drawable.busta,listOf("T1")),
-        Player("Jonathan Seller", "Seller", "DL", R.drawable.aire, 83, 82, 75, 65, R.drawable.seller,listOf("T1")),
-        Player("Victor Kind", "Kind", "MC", R.drawable.bosque, 76, 80, 79, 73, R.drawable.kind,listOf("T1")),
-        Player("Neil Turner", "Turner", "DL", R.drawable.fuego, 86,84, 77, 68, R.drawable.turner,listOf("T1", "T3"), secondaryPositions = listOf("MC")),
-        Player("Sam Idol", "Idol", "PT", R.drawable.earth, 56, 58, 60, 76, R.drawable.idol,listOf("T1")),
-        Player("Marcus Train", "Train", "DF", R.drawable.fuego, 61, 73, 70, 75, R.drawable.train,listOf("T1")),
-        Player("Light Nobel", "Novel", "MC", R.drawable.bosque, 60, 66, 75, 79, R.drawable.novel,listOf("T1")),
-        Player("Walter Valiant", "Hero", "MC", R.drawable.fuego, 68, 78, 76, 77, R.drawable.hero,listOf("T1")),
-        Player("Spencer Gates", "Cosplay", "DF", R.drawable.earth, 62, 65, 73, 77, R.drawable.cosplay,listOf("T1")),
-        Player("Josh Spear", "Online", "DL", R.drawable.bosque, 69, 69, 69, 58, R.drawable.online,listOf("T1")),
-        Player("Gaby Farmer", "Custom", "DL", R.drawable.aire, 69, 72, 66, 55, R.drawable.custom,listOf("T1")),
-        Player("Anthony Woodbridge", "Robot", "MC", R.drawable.aire, 66, 76,72, 66, R.drawable.robot,listOf("T1") ),
-        Player("Gus Gamer", "Gamer", "DL", R.drawable.fuego, 79, 78, 72,61, R.drawable.gaymer,listOf("T1")),
-        Player("Mark Gambling", "Artist", "DL", R.drawable.aire, 78, 77, 75, 64, R.drawable.artist,listOf("T1")),
-        Player("Theodore Master", "Arcade", "DL", R.drawable.bosque, 71, 76, 74, 60, R.drawable.arcade,listOf("T1")),
-        Player("Charlie Boardfield", "Boar", "PT", R.drawable.fuego, 66, 74, 72, 79, R.drawable.boar,listOf("T1")),
-        Player("Hugo Talgeese", "Chiken", "MC", R.drawable.fuego, 73,86, 79, 80, R.drawable.chiken,listOf("T1") ),
-        Player("Wilson Fishman", "Fishman", "DF", R.drawable.bosque, 64, 76, 74, 76, R.drawable.fishman,listOf("T1")),
-        Player("Peter Johnson", "Toad", "DF", R.drawable.bosque, 65, 77, 72, 78, R.drawable.toad,listOf("T1")),
-        Player("Leonard O'Shea", "Lion", "DF", R.drawable.earth, 62, 79, 72, 82, R.drawable.lion,listOf("T1")),
-        Player("Cham Lion", "Chameleon", "MC", R.drawable.aire, 68, 77, 77, 72, R.drawable.chameleon,listOf("T1")),
-        Player("Steve Eagle", "Eagle", "MC", R.drawable.aire, 78, 85,79, 73, R.drawable.eagle,listOf("T1")),
-        Player("Bruce Monkey", "Monkey", "MC", R.drawable.aire, 70,83, 80, 75, R.drawable.monkey,listOf("T1")),
-        Player("Gary Lancaster", "Gorilla", "DL", R.drawable.earth, 83, 80, 75, 70, R.drawable.gorilla,listOf("T1")),
-        Player("Harry Snake", "Snake", "DL", R.drawable.bosque, 80, 81, 77, 64, R.drawable.snake,listOf("T1")),
-        Player("Adrian Speed", "Cheetah", "DL", R.drawable.aire, 82, 90,75, 62, R.drawable.cheetah,listOf("T1")),
-        Player("Morgan Sanders", "Hood", "PT", R.drawable.bosque, 73, 80, 72, 82, R.drawable.hood,listOf("T1")),
-        Player("Newton Flust", "Crackshot", "DF", R.drawable.earth, 65, 87,74, 79, R.drawable.crackshot,listOf("T1")),
-        Player("Jim Hillfort", "Hillfort", "DF", R.drawable.aire, 66, 85, 75, 78, R.drawable.hillfort,listOf("T1")),
-        Player("Galen Thunderbird","Thunder", "DF", R.drawable.earth, 62, 80, 75, 81, R.drawable.thunder,listOf("T1")),
-        Player("Finn Stoned", "Bandit", "DF", R.drawable.fuego, 63, 80, 72, 84, R.drawable.bandit,listOf("T1")),
-        Player("Phil Wingate", "Code", "MC", R.drawable.earth, 70, 86,80, 79, R.drawable.code,listOf("T1")),
-        Player("Jez Shell", "Star", "MC", R.drawable.aire, 74, 89, 78, 76, R.drawable.star,listOf("T1")),
-        Player("Jupiter Jumper", "Cleats", "MC", R.drawable.aire, 76, 89, 78, 74, R.drawable.cleats,listOf("T1")),
-        Player("Sam Samurai", "Samurai", "DL", R.drawable.bosque, 83, 85, 77, 63, R.drawable.samurai,listOf("T1")),
-        Player("Hank Sullivan", "Hattori", "MC", R.drawable.bosque, 79, 86, 83, 74, R.drawable.hattori,listOf("T1")),
-        Player("Sail Bluesea", "Cloak", "DL", R.drawable.fuego, 87, 91, 80, 62, R.drawable.cloak,listOf("T1", "T3"), secondaryPositions = listOf("MC")),
-        Player("Albert Green", "Greeny", "PT", R.drawable.fuego, 71, 76, 74, 86, R.drawable.greeny,listOf("T1")),
-        Player("Seward Hayseed", "Hayseed", "DF", R.drawable.earth, 65, 78, 75, 79, R.drawable.hayseed,listOf("T1")),
-        Player("Kent Work", "Work", "DF", R.drawable.bosque, 65, 80, 72, 80, R.drawable.work,listOf("T1")),
-        Player("Mark Hillvalley", "Hillvalley", "DF", R.drawable.earth, 66, 72, 76, 84, R.drawable.hillvalley,listOf("T1", "T3")),
-        Player("Herb Sherman", "Sherman", "DF", R.drawable.fuego, 64, 79, 75, 81, R.drawable.sherman,listOf("T1")),
-        Player("Joe Small", "Milky", "MC", R.drawable.earth, 69 ,82, 77, 82, R.drawable.milky,listOf("T1")),
-        Player("Ike Steiner", "Mother", "MC", R.drawable.bosque, 70, 77, 77, 70, R.drawable.mother,listOf("T1")),
-        Player("Orville Newman", "Spray", "MC", R.drawable.fuego, 70, 75, 79, 79, R.drawable.spray,listOf("T1")),
-        Player("Tom Walters", "Roast", "MC", R.drawable.earth, 77, 81, 83, 77, R.drawable.roast, listOf("T1")),
-        Player("Daniel Dawson", "Dawson", "MC", R.drawable.aire, 76, 83, 79, 71, R.drawable.dawson, listOf("T1")),
-        Player("Stuart Racoonfur", "Muffs", "DL", R.drawable.bosque, 83, 81, 77, 66, R.drawable.muffs, listOf("T1")),
-        Player("Iggy Russ", "Icarus", "PT", R.drawable.aire, 68, 78, 74, 82,R.drawable.icarus,listOf("T1")),
-        Player("Gus Heeley", "Achilles", "DL", R.drawable.earth, 83, 80, 73, 61, R.drawable.achilles, listOf("T1")),
-        Player("Harry Closs", "Heracles", "DF", R.drawable.fuego, 71, 76, 75, 80, R.drawable.heracles, listOf("T1")),
-        Player("Andy Chronic", "Chronos", "DF", R.drawable.bosque, 68, 81, 75, 78, R.drawable.chronos, listOf("T1")),
-        Player("Ned Yousef", "Medusa", "MC", R.drawable.earth, 77, 81, 80, 74, R.drawable.medusa, listOf("T1")),
-        Player("Grant Eldorado", "Eldorado", "PT", R.drawable.fuego, 77, 76, 72, 76, R.drawable.eldorado, listOf("T1"), secondaryPositions = listOf("DL")),
-        Player("Mike Vox", "Vox", "DF", R.drawable.aire, 64, 75, 73, 75 ,R.drawable.vox, listOf("T1")),
-        Player("Simon Calier", "Calier", "PT", R.drawable.bosque, 75, 78, 77, 76, R.drawable.calier, listOf("T1"), secondaryPositions = listOf("MC")),
-        Player("Barry Potts", "Potts", "MC", R.drawable.aire, 74, 72, 76, 73, R.drawable.potts, listOf("T1")),
-        Player("Alan Cole", "Koala", "MC", R.drawable.bosque, 72, 77, 75, 71, R.drawable.koala, listOf("T1")),
-        Player("Philip Anders", "Panda", "DL", R.drawable.fuego, 78, 78, 75, 62, R.drawable.panda, listOf("T1")),
-        Player("John Reynolds", "Ronin", "DL", R.drawable.aire,78,80,72,62, R.drawable.ronin, listOf("T1")),
-        Player("Paul Peabody", "Peabody", "MC", R.drawable.aire, 71, 77, 75, 80, R.drawable.peabody, listOf("T1"), secondaryPositions = listOf("PT")),
-        Player("Darren LaChance", "Darren", "PT", R.drawable.bosque, 65, 78, 76, 87,R.drawable.darren, listOf("T2", "T3"), secondaryPositions = listOf("MC") ),
-        Player("Hurley Kane", "Hurley", "DF", R.drawable.aire, 82, 82, 76, 81, R.drawable.hurley, listOf("T2", "T3")),
-        Player("Scott Banyan", "Scotty", "DF", R.drawable.bosque, 66, 86, 73, 81, R.drawable.scotty, listOf("T2", "T3")),
-        Player("Suzette Hartland", "Sue", "DL", R.drawable.bosque, 80, 79, 74, 63, R.drawable.sue, listOf("T2")),
-        Player("Victoria Vanguard", "Tori", "MC", R.drawable.aire, 75, 77, 78, 82, R.drawable.tori, listOf("T2")),
-        Player("Eugene Conwell", "Conwell", "DL", R.drawable.bosque, 78, 77, 74, 64, R.drawable.conwell, listOf("T2")),
-        Player("Joe Ingram", "Ingram", "PT", R.drawable.fuego, 61,75,68,71,R.drawable.ingram, listOf("T1", "T2")),
-        Player("Kendall Sefton", "Sefton", "DF", R.drawable.aire, 64, 76, 67, 72, R.drawable.sefton, listOf("T1", "T2")),
-        Player("Jason Strike", "Strike", "DF", R.drawable.fuego, 63, 75, 65, 72, R.drawable.strike, listOf("T1", "T2")),
-        Player("Norman Porter", "Porter", "DF", R.drawable.earth, 62, 67, 65, 73, R.drawable.porter, listOf("T1", "T2")),
-        Player("Maxwell Claus", "Chops", "DF", R.drawable.bosque, 63, 74, 68, 71, R.drawable.chops, listOf("T1", "T2")),
-        Player("Bruce Chaney", "Chaney", "MC", R.drawable.bosque, 69, 75, 71, 70, R.drawable.chaney, listOf("T1", "T2")),
-        Player("Leroy Rhymes", "Rhymes", "MC", R.drawable.aire, 66, 78, 73, 65, R.drawable.rhymes, listOf("T1", "T2")),
-        Player("Mildford Scott", "Scott", "MC", R.drawable.bosque, 65, 74, 71, 63, R.drawable.scott, listOf("T1", "T2")),
-        Player("Lou Edmonds", "Edmonds", "DL", R.drawable.fuego, 74, 75, 70, 62, R.drawable.edmonds, listOf("T1", "T2")),
-        Player("Cameron Morefield", "Morefield", "MC", R.drawable.aire, 72, 77, 75, 67, R.drawable.morefield, listOf("T1", "T2")),
-        Player("Greg Bernard", "Cyborg", "DL", R.drawable.bosque, 77, 79, 76, 64, R.drawable.cyborg, listOf("T1", "T2")),
-        Player("Gordon Star", "Galileo", "PT", R.drawable.bosque, 68, 78, 74, 82, R.drawable.galileo, listOf("T2")),
-        Player("Connor Shuttle", "Coral", "DF", R.drawable.aire, 69, 81, 73, 78, R.drawable.coral, listOf("T2")),
-        Player("Jim Leading", "Gigs", "DF", R.drawable.fuego, 66, 77, 71, 77, R.drawable.gigs, listOf("T2")),
-        Player("Grant Icewater", "Ganymede", "DF", R.drawable.earth, 71, 76, 76, 78, R.drawable.ganymede, listOf("T2")),
-        Player("Charles Riverboat", "Charon", "DF", R.drawable.fuego, 67, 81, 74, 78, R.drawable.charon, listOf("T2")),
-        Player("Pat Box", "Pandora", "MC", R.drawable.aire, 70, 84, 77, 79, R.drawable.pandero, listOf("T2")),
-        Player("Gregory Saturn", "Grengo", "MC", R.drawable.earth, 76, 85, 80, 73, R.drawable.grengo, listOf("T2")),
-        Player("Izzy Jupiter", "Io", "MC", R.drawable.fuego, 75, 80, 78, 75, R.drawable.io, listOf("T2")),
-        Player("Rhona Countdown", "Rhim", "DL", R.drawable.bosque, 84, 82, 76, 65, R.drawable.rhim, listOf("T2")),
-        Player("Jordan Greenway", "Janus", "MC", R.drawable.bosque, 85, 86, 84, 70, R.drawable.janus, listOf("T2")),
-        Player("Jordan Greenway", "Jordan", "MC", R.drawable.bosque, 82, 86, 88, 72,R.drawable.jordan, listOf("T3") ),
-        Player("Dylan Bluemoon", "Diam", "DL", R.drawable.bosque,84, 84, 78, 60, R.drawable.diam, listOf("T2") ),
-        Player("Alfonso Íñigo", "Íñigo", "PT", R.drawable.fuego, 74, 77, 74, 88 ,R.drawable.inigo, listOf("T3")),
-        Player("José Costa", "Costa", "DF", R.drawable.aire, 67, 86, 72, 82, R.drawable.costa, listOf("T3")),
-        Player("José López", "López", "DF", R.drawable.bosque, 65, 81, 75, 83, R.drawable.lopez, listOf("T3")),
-        Player("Antonio Garrido", "Garrido", "DF", R.drawable.earth, 62, 80, 74, 82, R.drawable.garrido, listOf("T3")),
-        Player("Victor García", "García", "DF", R.drawable.earth, 80, 85, 77, 87, R.drawable.garcia, listOf("T3"), secondaryPositions = listOf("MC")),
-        Player("Joan Rodríguez", "Rodríguez", "MC", R.drawable.bosque, 72, 78, 85, 84, R.drawable.rodri, listOf("T3")),
-        Player("Igor Ferreira", "Ferreira" , "MC", R.drawable.fuego, 78, 84, 84, 73, R.drawable.ferreira,listOf("T3")),
-        Player("Miguel Pereira", "Pereira", "MC", R.drawable.aire, 76, 87, 83, 76, R.drawable.pereira,listOf("T3")),
-        Player("Borja Costa", "Borja", "MC", R.drawable.aire, 81, 86, 82, 70, R.drawable.borja, listOf("T3")),
-        Player("Mateo Bonachea", "Bonachea", "DL", R.drawable.earth, 87,82, 76, 64, R.drawable.bonachea, listOf("T3")),
-        Player("Miguel Jiménez", "Jiménez", "DL", R.drawable.bosque, 85, 83, 74, 62, R.drawable.jimenez, listOf("T3")),
-        Player("Juan Espindola", "Espindola", "PT", R.drawable.earth, 66, 80, 75, 81, R.drawable.espindola,listOf("T3")),
-        Player("Isaac César", "César", "DL", R.drawable.aire,83, 85, 77, 65, R.drawable.cesar, listOf("T3")),
-        Player("Laudelino Castor", "Castor", "DF", R.drawable.bosque, 62,80, 71, 79, R.drawable.castor,listOf("T3")),
-        Player("Carlos Arroyo", "Arroyo", "MC", R.drawable.earth, 78, 84, 83, 77, R.drawable.arroyo, listOf("T3")),
-        Player("Federico Rubiera", "Rubiera", "DL", R.drawable.fuego, 82, 82, 80, 64, R.drawable.rubiera, listOf("T3")),
-        Player("Thor Stoutberg", "Thor", "MC", R.drawable.aire, 77, 75, 80, 84, R.drawable.thor, listOf("T3"), secondaryPositions = listOf("DF")),
-        Player("Austin Hobbes", "Austin", "DL", R.drawable.bosque, 88, 87, 78, 67, R.drawable.austin, listOf("T3"), secondaryPositions = listOf("MC")),
-        Player("Xavier Foster", "Xavier", "DL", R.drawable.fuego, 91, 86, 83, 72, R.drawable.xavier, listOf("T3"), secondaryPositions = listOf("MC")),
-        Player("Xavier Foster", "Xene", "DL", R.drawable.fuego, 90, 90, 74, 60, R.drawable.xene, listOf("T2")),
-        Player("Isabelle Trick", "Bellatrix", "MC", R.drawable.aire, 86, 92, 88, 70, R.drawable.bellatrix, listOf("T2")),
-        Player("Wilbur Watkins", "Wittz", "DL", R.drawable.bosque, 86, 82, 74, 67, R.drawable.wittz, listOf("T2", "T3")),
-        Player("Ashton Malone", "Ark", "MC", R.drawable.bosque, 80, 86, 83, 75, R.drawable.ark, listOf("T2")),
-        Player("Katie Brown", "Kiwill", "MC", R.drawable.bosque, 78, 88, 85, 76, R.drawable.kiwill, listOf("T2")),
-     Player("Connor Murray", "Kormer", "MC", R.drawable.fuego, 77, 85, 84, 77, R.drawable.kormer, listOf("T2")),
-     Player("Hunt Mercer", "Hauser", "DF", R.drawable.earth, 70, 80, 75, 81, R.drawable.hauser, listOf("T2")),
-     Player("Zack Cummings", "Zohen", "DF", R.drawable.earth, 74, 84, 75, 86, R.drawable.zohen,listOf("T2", "T3")),
-     Player("Kim Powell", "Kiburn", "DF", R.drawable.fuego, 73, 88, 73, 84, R.drawable.kiburn, listOf("T2")),
-     Player("Gail Baker", "Gele", "DF", R.drawable.aire, 68, 85, 76, 82, R.drawable.gail, listOf("T2")),
-     Player("Nelson Rockwell", "Nero", "PT", R.drawable.aire, 70, 90, 72, 90, R.drawable.nero, listOf("T2")),
-     Player("Dave Quagmire", "Dvalin", "PT", R.drawable.fuego, 84, 80, 76, 87, R.drawable.dvalin, listOf("T2"), secondaryPositions = listOf("DL")),
-     Player("Dave Quagmire", "Quagmire", "MC", R.drawable.fuego, 89, 87, 88, 80, R.drawable.dave, listOf("T3"), secondaryPositions = listOf("PT", "DL", "DF")),
-     Player("Argie Bargie", "Bargie", "DF", R.drawable.bosque, 67, 77, 70, 85, R.drawable.bargie, listOf("T2", "T3")),
-     Player("Zeke Valanche", "Zell", "DL", R.drawable.aire, 86, 86, 75, 83, R.drawable.zell, listOf("T2", "T3"), secondaryPositions = listOf("PT")),
-     Player("Ethan Whitering", "Heat", "MC", R.drawable.bosque, 76, 82, 80 ,82, R.drawable.heat, listOf("T2", "T3"), secondaryPositions = listOf("PT")),
+ private const val DATABASE_NAME = "inazuma_players.db"
+ private const val SEED_DATA_URL = "https://acamprodon.github.io/InazumaDraft-data/players.json"
 
-    )
+ private lateinit var applicationContext: Context
+ private lateinit var database: InazumaDatabase
+ private lateinit var dao: PlayerDao
 
-    fun getPlayersByPosition(position: String): List<Player> {
-        return players.filter { it.position.equals(position, ignoreCase = true) }
-    }
+ fun initialize(context: Context) {
+  if (::dao.isInitialized) return
 
-    fun getRandomPlayers(count: Int): List<Player> {
-        return players.shuffled().take(count)
-    }
+  applicationContext = context.applicationContext
+  database = Room.databaseBuilder(
+   applicationContext,
+   InazumaDatabase::class.java,
+   DATABASE_NAME
+  ).fallbackToDestructiveMigration().build()
+  dao = database.playerDao()
+ }
+
+ suspend fun getPlayers(selectedSeasons: List<String> = emptyList()): List<Player> {
+  ensureInitialized()
+  ensureSeedData()
+  val players = withContext(Dispatchers.IO) { dao.getAll() }
+  val filter = selectedSeasons.map { it.uppercase() }.toSet()
+  return players
+   .asSequence()
+   .filter { filter.isEmpty() || it.seasons.any { season -> season.uppercase() in filter } }
+   .map { it.toDomain(applicationContext) }
+   .toList()
+ }
+
+ suspend fun deletePlayer(playerId: Long) {
+  ensureInitialized()
+  withContext(Dispatchers.IO) { dao.deleteById(playerId) }
+ }
+
+ @VisibleForTesting
+ internal suspend fun overwritePlayers(players: List<PlayerEntity>) {
+  ensureInitialized()
+  withContext(Dispatchers.IO) {
+   dao.insertAll(players)
+  }
+ }
+
+ private fun ensureInitialized() {
+  check(::dao.isInitialized) { "PlayerRepository.initialize(context) must be called before use" }
+ }
+
+ private fun PlayerEntity.toDomain(context: Context): Player {
+  return Player(
+   id = id,
+   name = name,
+   nickname = nickname,
+   position = position,
+   element = context.resolveDrawable(elementRef),
+   kick = kick,
+   speed = speed,
+   control = control,
+   defense = defense,
+   image = context.resolveDrawable(imageRef),
+   season = seasons,
+   secondaryPositions = secondaryPositions
+  )
+ }
+
+ private fun Context.resolveDrawable(reference: String): Int {
+  val trimmed = reference.trim()
+  if (trimmed.isEmpty()) return 0
+  trimmed.toIntOrNull()?.let { return it }
+  val identifier = resources.getIdentifier(trimmed, "drawable", packageName)
+  if (identifier == 0) {
+   Log.w("PlayerRepository", "Drawable not found for reference: $reference")
+  }
+  return identifier
+ }
+
+ private suspend fun ensureSeedData() {
+  val currentCount = withContext(Dispatchers.IO) { dao.count() }
+  if (currentCount > 0) return
+
+  val seeded = withContext(Dispatchers.IO) { loadSeedPlayers() }
+  if (seeded.isEmpty()) return
+
+  runCatching {
+   withContext(Dispatchers.IO) { dao.insertAll(seeded) }
+  }.onFailure { Log.e("PlayerRepository", "Failed to seed database", it) }
+ }
+
+ private fun loadSeedPlayers(): List<PlayerEntity> {
+  return runCatching {
+   fetchRemoteSeed()
+  }.recoverCatching {
+   Log.e("PlayerRepository", "Unable to download seed data", it)
+   emptyList()
+  }.getOrDefault(emptyList())
+ }
+
+ private fun fetchRemoteSeed(): List<PlayerEntity> {
+  val connection = java.net.URL(SEED_DATA_URL).openConnection() as java.net.HttpURLConnection
+  return try {
+   connection.connectTimeout = 15_000
+   connection.readTimeout = 15_000
+   connection.requestMethod = "GET"
+   connection.setRequestProperty("Accept", "application/json")
+   connection.setRequestProperty("User-Agent", "InazumaDraft/1.0 (Android)")
+
+   val code = connection.responseCode
+   if (code != java.net.HttpURLConnection.HTTP_OK) {
+    throw IllegalStateException("Seed download failed with HTTP $code")
+   }
+
+   connection.inputStream.use { stream ->
+    val json = stream.bufferedReader().use { it.readText() }
+    parseSeed(json)
+   }
+  } finally {
+   connection.disconnect()
+  }
+ }
+
+ private fun parseSeed(json: String): List<PlayerEntity> {
+  val array = JSONArray(json)
+  val players = mutableListOf<PlayerEntity>()
+  for (i in 0 until array.length()) {
+   val obj = array.getJSONObject(i)
+   val seasons = obj.getJSONArray("seasons").toStringList()
+   val secondary = obj.optJSONArray("secondaryPositions")?.toStringList().orEmpty()
+   players += PlayerEntity(
+    id = (i + 1).toLong(),
+    name = obj.getString("name"),
+    nickname = obj.getString("nickname"),
+    position = obj.getString("position"),
+    elementRef = obj.getString("element"),
+    kick = obj.getInt("kick"),
+    speed = obj.getInt("speed"),
+    control = obj.getInt("control"),
+    defense = obj.getInt("defense"),
+    imageRef = obj.getString("image"),
+    seasons = seasons,
+    secondaryPositions = secondary
+   )
+  }
+  return players
+
+ }
+}
+
+private fun JSONArray.toStringList(): List<String> {
+ val result = mutableListOf<String>()
+ for (i in 0 until length()) {
+  result += optString(i)
+ }
+ return result
 }

@@ -5,6 +5,7 @@ import kotlinx.parcelize.Parcelize
 
 @Parcelize
 data class Player(
+    val id: Long,
     val name: String,
     val nickname: String,
     val position: String,          // PT, DF, MC, DL (principal)
@@ -14,7 +15,7 @@ data class Player(
     val control: Int,
     val defense: Int,
     val image: Int,
-   val season: List<String> = emptyList(),
+    val season: List<String> = emptyList(),
     val secondaryPositions: List<String> = emptyList()
 ) : Parcelable
 

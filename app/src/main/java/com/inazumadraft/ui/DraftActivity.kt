@@ -8,19 +8,21 @@ import android.os.Bundle
 import android.view.*
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
-import com.inazumadraft.ui.adapters.OptionAdapter
-import com.inazumadraft.ui.adapters.BenchSelectedAdapter
 import com.inazumadraft.R
 import com.inazumadraft.data.PlayerRepository
 import com.inazumadraft.data.formationCoordinates
 import com.inazumadraft.data.formations
 import com.inazumadraft.model.Player
 import com.inazumadraft.model.canPlay
+import com.inazumadraft.ui.adapters.BenchSelectedAdapter
+import com.inazumadraft.ui.adapters.OptionAdapter
 import kotlin.math.max
+import kotlinx.coroutines.launch
 
 class DraftActivity : AppCompatActivity() {
 
@@ -43,8 +45,8 @@ class DraftActivity : AppCompatActivity() {
     private var formationLocked = false
     private var selectedFormationName: String? = null
     private lateinit var formationChoices: List<com.inazumadraft.data.Formation>
-private lateinit var availablePlayers: List<Player>
-private lateinit var selectedSeasons: List<String>
+    private var availablePlayers: List<Player> = emptyList()
+    private lateinit var selectedSeasons: List<String>
     // Capitán
     private var captain: Player? = null
 
@@ -84,10 +86,12 @@ private lateinit var selectedSeasons: List<String>
         btnFormation4.setOnClickListener { selectFormationByIndex(3) }
 
         selectedSeasons = intent.getStringArrayListExtra("selectedSeasons") ?: arrayListOf()
-        availablePlayers = if (selectedSeasons.isEmpty()) {
-            PlayerRepository.players
-        } else {
-            PlayerRepository.players.filter { p -> p.season.any { it in selectedSeasons } }
+
+        setFormationButtonsEnabled(false)
+        lifecycleScope.launch {
+            PlayerRepository.initialize(applicationContext)
+            availablePlayers = PlayerRepository.getPlayers(selectedSeasons)
+            setFormationButtonsEnabled(true)
         }
 
         btnNext.setOnClickListener {
@@ -109,6 +113,13 @@ private lateinit var selectedSeasons: List<String>
         setupBenchPanel()
         setBenchAccessEnabled(false)
 
+    }
+
+    private fun setFormationButtonsEnabled(enabled: Boolean) {
+        btnFormation1.isEnabled = enabled
+        btnFormation2.isEnabled = enabled
+        btnFormation3.isEnabled = enabled
+        btnFormation4.isEnabled = enabled
     }
 
         // ---------------------- Formación y capitán ----------------------
