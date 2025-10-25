@@ -426,7 +426,7 @@ class DraftActivity : AppCompatActivity() {
 
         // Binding visual + TAP behaviour (sin auto-avance)
         if (p != null) {
-            img.setImageResource(p.image)
+            img.loadPlayerImage(p.image)
             name.text = p.nickname
             elem.setImageResource(p.element)
             view.setOnClickListener {

@@ -9,6 +9,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.inazumadraft.model.Player
+import com.inazumadraft.ui.loadPlayerImage
 import com.inazumadraft.R
 
 class BenchSelectedAdapter(
@@ -36,11 +37,11 @@ class BenchSelectedAdapter(
     override fun onBindViewHolder(holder: VH, position: Int) {
         val p = benchPlayers[position]
         if (p != null) {
-            holder.img.setImageResource(p.image)
+            holder.img.loadPlayerImage(p.image)
             holder.elem.setImageResource(p.element)
             holder.name.text = p.nickname
         } else {
-            holder.img.setImageResource(0)
+            holder.img.loadPlayerImage(null)
             holder.elem.setImageResource(0)
             holder.name.text = "Vacío"
             holder.img.background = null

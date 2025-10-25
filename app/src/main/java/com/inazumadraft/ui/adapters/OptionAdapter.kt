@@ -9,7 +9,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.inazumadraft.R
 import com.inazumadraft.model.Player
-
+import com.inazumadraft.ui.loadPlayerImage
 class OptionAdapter(
     private val players: List<Player>,
     private val onClick: (Player) -> Unit,
@@ -43,7 +43,7 @@ class OptionAdapter(
         fun bind(player: Player) {
             // 👇 nickname visible durante el draft
             txtPlayerNickname.text = player.nickname
-            imgPlayer.setImageResource(player.image)
+            imgPlayer.loadPlayerImage(player.image)
             imgElement.setImageResource(player.element)
 
             itemView.setOnClickListener {

@@ -8,7 +8,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.inazumadraft.R
 import com.inazumadraft.model.Player
-
+import com.inazumadraft.ui.loadPlayerImage
 class TeamAdapter(
     private val players: List<Player>
 ) : RecyclerView.Adapter<TeamAdapter.TeamViewHolder>() {
@@ -31,7 +31,7 @@ class TeamAdapter(
 
         fun bind(player: Player) {
             txtPlayerName.text = player.name
-            imgPlayer.setImageResource(player.image)
+            imgPlayer.loadPlayerImage(player.image)
         }
     }
 }

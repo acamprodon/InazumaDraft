@@ -8,6 +8,7 @@ import com.inazumadraft.data.local.InazumaDatabase
 import com.inazumadraft.data.local.PlayerDao
 import com.inazumadraft.data.local.PlayerEntity
 import com.inazumadraft.model.Player
+import com.inazumadraft.model.PlayerImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -16,6 +17,7 @@ object PlayerRepository {
 
  private const val DATABASE_NAME = "inazuma_players.db"
  private const val SEED_DATA_URL = "https://acamprodon.github.io/InazumaDraft-data/players.json"
+ private const val SEED_ASSET_BASE_URL = "https://acamprodon.github.io/InazumaDraft-data/images"
 
  private lateinit var applicationContext: Context
  private lateinit var database: InazumaDatabase
@@ -73,7 +75,7 @@ object PlayerRepository {
    speed = speed,
    control = control,
    defense = defense,
-   image = context.resolveDrawable(imageRef),
+   image = context.resolvePlayerImage(imageRef),
    season = seasons,
    secondaryPositions = secondaryPositions
   )
@@ -89,7 +91,38 @@ object PlayerRepository {
   }
   return identifier
  }
+ private fun Context.resolvePlayerImage(reference: String): PlayerImage {
+  val trimmed = reference.trim()
+  if (trimmed.isEmpty()) return PlayerImage()
 
+  trimmed.toIntOrNull()?.let { return PlayerImage(resourceId = it) }
+
+  val identifier = resources.getIdentifier(trimmed, "drawable", packageName)
+  if (identifier != 0) {
+   return PlayerImage(resourceId = identifier)
+  }
+
+  if (trimmed.startsWith("http", ignoreCase = true)) {
+   return PlayerImage(url = trimmed)
+  }
+
+  var relativePath = when {
+   trimmed.startsWith('/') -> trimmed.drop(1)
+   trimmed.startsWith("./") -> trimmed.drop(2)
+   else -> trimmed
+  }
+
+  while (relativePath.startsWith("../")) {
+   relativePath = relativePath.drop(3)
+  }
+
+  if (relativePath.contains('/') || relativePath.contains('.')) {
+   return PlayerImage(url = SEED_ASSET_BASE_URL + relativePath)
+  }
+
+  Log.w("PlayerRepository", "Image not found for reference: $reference")
+  return PlayerImage()
+ }
  private suspend fun ensureSeedData() {
   val currentCount = withContext(Dispatchers.IO) { dao.count() }
   if (currentCount > 0) return

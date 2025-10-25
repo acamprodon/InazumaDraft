@@ -423,7 +423,7 @@ class FinalTeamActivity : AppCompatActivity() {
         }
 
         if (p != null) {
-            img.setImageResource(p.image); name.text = p.nickname; elem.setImageResource(p.element)
+            img.loadPlayerImage(p.image); name.text = p.nickname; elem.setImageResource(p.element)
             if (p.name == captainName) img.setBackgroundResource(R.drawable.captain_border) else img.background = null
             view.setOnClickListener {
                 pendingBenchIndex?.let { bIndex ->
@@ -441,7 +441,7 @@ class FinalTeamActivity : AppCompatActivity() {
                 }
             }
         } else {
-            name.text = codeToNice(toCode(formation.positions[i])); img.setImageResource(0); elem.setImageResource(0); img.background = null
+            name.text = codeToNice(toCode(formation.positions[i])); img.loadPlayerImage(null); elem.setImageResource(0); img.background = null
             view.setOnClickListener {
                 if (pendingBenchIndex != null) Toast.makeText(this, "Intercambio solo entre jugadores", Toast.LENGTH_SHORT).show()
             }
