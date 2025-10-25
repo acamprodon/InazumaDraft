@@ -46,7 +46,6 @@ dependencies {
     implementation(libs.androidx.media3.common.ktx)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
-    implementation(libs.room.ktx)
     kapt(libs.androidx.room.compiler)
     implementation(libs.kotlinx.coroutines.android)
     testImplementation(libs.junit)
