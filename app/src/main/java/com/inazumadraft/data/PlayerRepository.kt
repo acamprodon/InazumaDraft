@@ -1,6 +1,7 @@
 package com.inazumadraft.data
 
 import android.content.Context
+import android.os.SystemClock
 import android.util.Log
 import androidx.annotation.VisibleForTesting
 import androidx.room.Room
@@ -11,17 +12,32 @@ import com.inazumadraft.model.Player
 import com.inazumadraft.model.PlayerImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlin.jvm.Volatile
 import org.json.JSONArray
+import org.json.JSONObject
 
 object PlayerRepository {
 
  private const val DATABASE_NAME = "inazuma_players.db"
  private const val SEED_DATA_URL = "https://acamprodon.github.io/InazumaDraft-data/players.json"
- private const val SEED_ASSET_BASE_URL = "https://acamprodon.github.io/InazumaDraft-data/images"
+ private const val REMOTE_RETRY_INTERVAL_MS = 60_000L
 
  private lateinit var applicationContext: Context
  private lateinit var database: InazumaDatabase
  private lateinit var dao: PlayerDao
+
+ private val seedMutex = Mutex()
+
+ @Volatile
+ private var remoteSeedSynced = false
+
+ @Volatile
+ private var lastRemoteSeedAttempt = 0L
+
+ @Volatile
+ private var remoteSeedInFlight = false
 
  fun initialize(context: Context) {
   if (::dao.isInitialized) return
@@ -38,9 +54,11 @@ object PlayerRepository {
  suspend fun getPlayers(selectedSeasons: List<String> = emptyList()): List<Player> {
   ensureInitialized()
   ensureSeedData()
-  val players = withContext(Dispatchers.IO) { dao.getAll() }
+  val entities = seedMutex.withLock {
+   withContext(Dispatchers.IO) { dao.getAll() }
+  }
   val filter = selectedSeasons.map { it.uppercase() }.toSet()
-  return players
+  return entities
    .asSequence()
    .filter { filter.isEmpty() || it.seasons.any { season -> season.uppercase() in filter } }
    .map { it.toDomain(applicationContext) }
@@ -49,14 +67,18 @@ object PlayerRepository {
 
  suspend fun deletePlayer(playerId: Long) {
   ensureInitialized()
-  withContext(Dispatchers.IO) { dao.deleteById(playerId) }
+  seedMutex.withLock {
+   withContext(Dispatchers.IO) { dao.deleteById(playerId) }
+  }
  }
 
  @VisibleForTesting
  internal suspend fun overwritePlayers(players: List<PlayerEntity>) {
   ensureInitialized()
-  withContext(Dispatchers.IO) {
-   dao.insertAll(players)
+  seedMutex.withLock {
+   withContext(Dispatchers.IO) {
+    dao.insertAll(players)
+   }
   }
  }
 
@@ -106,42 +128,109 @@ object PlayerRepository {
    return PlayerImage(url = trimmed)
   }
 
-  var relativePath = when {
-   trimmed.startsWith('/') -> trimmed.drop(1)
-   trimmed.startsWith("./") -> trimmed.drop(2)
-   else -> trimmed
+  val resolvedUrl = runCatching {
+   val base = java.net.URL(SEED_DATA_URL)
+   java.net.URL(base, trimmed).toString()
+  }.getOrElse {
+   Log.w("PlayerRepository", "Image not found for reference: $reference", it)
+   null
   }
 
-  while (relativePath.startsWith("../")) {
-   relativePath = relativePath.drop(3)
+  return if (resolvedUrl != null) {
+   PlayerImage(url = resolvedUrl)
+  } else {
+   PlayerImage()
   }
-
-  if (relativePath.contains('/') || relativePath.contains('.')) {
-   return PlayerImage(url = SEED_ASSET_BASE_URL + relativePath)
-  }
-
-  Log.w("PlayerRepository", "Image not found for reference: $reference")
-  return PlayerImage()
  }
  private suspend fun ensureSeedData() {
-  val currentCount = withContext(Dispatchers.IO) { dao.count() }
-  if (currentCount > 0) return
+  var attemptRemote = false
+  var initialCount = 0
+  var skip = false
 
-  val seeded = withContext(Dispatchers.IO) { loadSeedPlayers() }
-  if (seeded.isEmpty()) return
+  seedMutex.withLock {
+   initialCount = withContext(Dispatchers.IO) { dao.count() }
+   if (remoteSeedSynced && initialCount > 0) {
+    skip = true
+    return@withLock
+   }
+   if (remoteSeedSynced && initialCount == 0) {
+    remoteSeedSynced = false
+   }
 
-  runCatching {
-   withContext(Dispatchers.IO) { dao.insertAll(seeded) }
-  }.onFailure { Log.e("PlayerRepository", "Failed to seed database", it) }
+   val now = SystemClock.elapsedRealtime()
+   if (!remoteSeedInFlight && (initialCount == 0 || now - lastRemoteSeedAttempt >= REMOTE_RETRY_INTERVAL_MS)) {
+    lastRemoteSeedAttempt = now
+    attemptRemote = true
+    remoteSeedInFlight = true
+   }
+  }
+
+  if (skip) {
+   return
+  }
+
+  var shouldResetBackoff = initialCount == 0 && !attemptRemote
+  var remoteSeedPersisted = false
+  val remoteResult = if (attemptRemote) downloadRemoteSeed() else null
+
+  if (remoteResult != null) {
+   val players = remoteResult.getOrNull().orEmpty()
+   if (players.isNotEmpty()) {
+    persistRemoteSeed(players)
+    remoteSeedPersisted = true
+   }
+
+   if (players.isEmpty() && remoteResult.isSuccess) {
+    Log.w("PlayerRepository", "Remote dataset contained no players")
+   }
+   shouldResetBackoff = shouldResetBackoff || remoteResult.isFailure || players.isEmpty()
+  }
+
+  if (attemptRemote) {
+   seedMutex.withLock { remoteSeedInFlight = false }
+  }
+
+  if (remoteSeedPersisted) {
+   return
+  }
+
+  if (initialCount == 0) {
+   seedMutex.withLock {
+    val currentCount = withContext(Dispatchers.IO) { dao.count() }
+    if (currentCount == 0) {
+     if (shouldResetBackoff) {
+      lastRemoteSeedAttempt = 0L
+     }
+     Log.w(
+      "PlayerRepository",
+      "No player data available; unable to reach remote dataset at $SEED_DATA_URL"
+     )
+    }
+   }
+  }
  }
 
- private fun loadSeedPlayers(): List<PlayerEntity> {
-  return runCatching {
-   fetchRemoteSeed()
-  }.recoverCatching {
-   Log.e("PlayerRepository", "Unable to download seed data", it)
-   emptyList()
-  }.getOrDefault(emptyList())
+ private suspend fun downloadRemoteSeed(): Result<List<PlayerEntity>> {
+  return withContext(Dispatchers.IO) {
+   runCatching { fetchRemoteSeed() }
+    .onFailure { Log.e("PlayerRepository", "Unable to download seed data", it) }
+  }
+ }
+
+ private suspend fun persistRemoteSeed(players: List<PlayerEntity>) {
+  seedMutex.withLock {
+   runCatching {
+    withContext(Dispatchers.IO) {
+     dao.deleteAll()
+     dao.insertAll(players)
+    }
+   }.onSuccess {
+    remoteSeedSynced = true
+   }.onFailure {
+    Log.e("PlayerRepository", "Failed to persist remote seed", it)
+    lastRemoteSeedAttempt = 0L
+   }
+  }
  }
 
  private fun fetchRemoteSeed(): List<PlayerEntity> {
@@ -168,23 +257,40 @@ object PlayerRepository {
  }
 
  private fun parseSeed(json: String): List<PlayerEntity> {
-  val array = JSONArray(json)
+  val array = when (val trimmed = json.trim()) {
+   "" -> JSONArray()
+   else -> when {
+    trimmed.startsWith("[") -> JSONArray(trimmed)
+    trimmed.startsWith("{") -> {
+     val obj = JSONObject(trimmed)
+     obj.optJSONArray("players")
+      ?: obj.optJSONArray("data")
+      ?: throw IllegalStateException("Seed JSON does not contain a players array")
+    }
+    else -> throw IllegalStateException("Unrecognized seed format")
+   }
+  }
   val players = mutableListOf<PlayerEntity>()
   for (i in 0 until array.length()) {
    val obj = array.getJSONObject(i)
-   val seasons = obj.getJSONArray("seasons").toStringList()
-   val secondary = obj.optJSONArray("secondaryPositions")?.toStringList().orEmpty()
+   val seasons = obj.optFlexibleStringList("seasons", "season")
+   val secondary = obj.optFlexibleStringList("secondaryPositions", "secondary")
+   val rawId = sequenceOf(
+    obj.optLong("id"),
+    obj.optLong("playerId"),
+    obj.optLong("uid")
+   ).firstOrNull { it != 0L }
    players += PlayerEntity(
-    id = (i + 1).toLong(),
-    name = obj.getString("name"),
-    nickname = obj.getString("nickname"),
-    position = obj.getString("position"),
-    elementRef = obj.getString("element"),
-    kick = obj.getInt("kick"),
-    speed = obj.getInt("speed"),
-    control = obj.getInt("control"),
-    defense = obj.getInt("defense"),
-    imageRef = obj.getString("image"),
+    id = rawId ?: (i + 1).toLong(),
+    name = obj.optString("name"),
+    nickname = obj.optString("nickname", obj.optString("name")),
+    position = obj.optString("position"),
+    elementRef = obj.optString("element"),
+    kick = obj.optInt("kick"),
+    speed = obj.optInt("speed"),
+    control = obj.optInt("control"),
+    defense = obj.optInt("defense"),
+    imageRef = obj.optString("image"),
     seasons = seasons,
     secondaryPositions = secondary
    )
@@ -200,4 +306,25 @@ private fun JSONArray.toStringList(): List<String> {
   result += optString(i)
  }
  return result
+}
+
+private fun JSONObject.optFlexibleStringList(vararg keys: String): List<String> {
+ for (key in keys) {
+  if (!has(key)) continue
+  val value = opt(key)
+  when (value) {
+   is JSONArray -> return value.toStringList()
+   is String -> {
+    val parts = value
+     .split(',', '|')
+     .map { it.trim() }
+     .filter { it.isNotEmpty() }
+    if (parts.isNotEmpty()) {
+     return parts
+    }
+   }
+   is Number -> return listOf(value.toString())
+  }
+ }
+ return emptyList()
 }
