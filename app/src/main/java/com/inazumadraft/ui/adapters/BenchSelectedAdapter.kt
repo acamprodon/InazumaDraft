@@ -38,11 +38,11 @@ class BenchSelectedAdapter(
         val p = benchPlayers[position]
         if (p != null) {
             holder.img.loadPlayerImage(p.image)
-            holder.elem.setImageResource(p.element)
+            holder.elem.loadPlayerImage(p.element)
             holder.name.text = p.nickname
         } else {
             holder.img.loadPlayerImage(null)
-            holder.elem.setImageResource(0)
+            holder.elem.loadPlayerImage(null)
             holder.name.text = "Vacío"
             holder.img.background = null
         }

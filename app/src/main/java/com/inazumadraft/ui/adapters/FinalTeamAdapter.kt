@@ -33,7 +33,7 @@ class FinalTeamAdapter(private val players: List<Player>) :
 
         // Imagen y nombre
         holder.imgPlayer.loadPlayerImage(p.image)
-        holder.imgElement.setImageResource(p.element)
+        holder.imgElement.loadPlayerImage(p.element)
         holder.txtPlayerName.text = p.name
 
         // ---- Posición principal + secundarias ----

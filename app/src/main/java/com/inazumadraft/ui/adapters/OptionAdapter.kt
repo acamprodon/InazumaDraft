@@ -44,7 +44,7 @@ class OptionAdapter(
             // 👇 nickname visible durante el draft
             txtPlayerNickname.text = player.nickname
             imgPlayer.loadPlayerImage(player.image)
-            imgElement.setImageResource(player.element)
+            imgElement.loadPlayerImage(player.element)
 
             itemView.setOnClickListener {
                 onClick(player)

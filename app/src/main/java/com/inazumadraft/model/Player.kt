@@ -8,7 +8,7 @@ data class Player(
     val name: String,
     val nickname: String,
     val position: String,          // PT, DF, MC, DL (principal)
-    val element: Int,
+    val element: PlayerImage,
     val kick: Int,
     val speed: Int,
     val control: Int,

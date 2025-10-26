@@ -10,6 +10,7 @@ import com.inazumadraft.data.local.PlayerDao
 import com.inazumadraft.data.local.PlayerEntity
 import com.inazumadraft.model.Player
 import com.inazumadraft.model.PlayerImage
+import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Mutex
@@ -19,7 +20,23 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 object PlayerRepository {
-
+ private val ELEMENT_DRAWABLE_ALIASES = mapOf(
+  "air" to "aire",
+  "wind" to "aire",
+  "wood" to "bosque",
+  "forest" to "bosque",
+  "fire" to "fuego",
+  "flame" to "fuego",
+  "ground" to "earth",
+  "mountain" to "rock",
+  "rock" to "rock",
+  "stone" to "rock",
+  "earth" to "earth",
+  "thunder" to "thunder",
+  "lightning" to "thunder",
+  "shadow" to "shadow",
+  "dark" to "shadow"
+ )
  private const val DATABASE_NAME = "inazuma_players.db"
  private const val SEED_DATA_URL = "https://acamprodon.github.io/InazumaDraft-data/players.json"
  private const val REMOTE_RETRY_INTERVAL_MS = 60_000L
@@ -92,7 +109,7 @@ object PlayerRepository {
    name = name,
    nickname = nickname,
    position = position,
-   element = context.resolveDrawable(elementRef),
+   element = context.resolveElementImage(elementRef),
    kick = kick,
    speed = speed,
    control = control,
@@ -103,15 +120,44 @@ object PlayerRepository {
   )
  }
 
- private fun Context.resolveDrawable(reference: String): Int {
+ private fun Context.resolveElementImage(reference: String): PlayerImage {
   val trimmed = reference.trim()
-  if (trimmed.isEmpty()) return 0
-  trimmed.toIntOrNull()?.let { return it }
-  val identifier = resources.getIdentifier(trimmed, "drawable", packageName)
-  if (identifier == 0) {
-   Log.w("PlayerRepository", "Drawable not found for reference: $reference")
+  if (trimmed.isEmpty()) return PlayerImage()
+
+  trimmed.toIntOrNull()?.let { return PlayerImage(resourceId = it) }
+
+  val sanitized = trimmed
+   .substringAfterLast('/')
+   .substringBeforeLast('.')
+   .lowercase(Locale.ROOT)
+   .replace(Regex("[^a-z0-9_]"), "_")
+   .replace(Regex("_+"), "_")
+   .trim('_')
+
+  val candidates = buildList {
+   if (sanitized.isNotEmpty()) add(sanitized)
+   ELEMENT_DRAWABLE_ALIASES[sanitized]?.let { add(it) }
+  }.distinct()
+
+  for (candidate in candidates) {
+   if (candidate.isEmpty()) continue
+   val identifier = resources.getIdentifier(candidate, "drawable", packageName)
+   if (identifier != 0) {
+    return PlayerImage(resourceId = identifier)
+   }
   }
-  return identifier
+
+  val directIdentifier = resources.getIdentifier(trimmed, "drawable", packageName)
+  if (directIdentifier != 0) {
+   return PlayerImage(resourceId = directIdentifier)
+  }
+  val remote = resolvePlayerImage(reference)
+  if (remote.resourceId != 0 || remote.url != null) {
+   return remote
+  }
+
+  Log.w("PlayerRepository", "Element image not found for reference: $reference")
+  return PlayerImage()
  }
  private fun Context.resolvePlayerImage(reference: String): PlayerImage {
   val trimmed = reference.trim()

@@ -428,7 +428,7 @@ class DraftActivity : AppCompatActivity() {
         if (p != null) {
             img.loadPlayerImage(p.image)
             name.text = p.nickname
-            elem.setImageResource(p.element)
+            elem.loadPlayerImage(p.element)
             view.setOnClickListener {
                 // Tap-swap bench↔campo
                 pendingBenchIndex?.let { bIndex ->
@@ -451,7 +451,7 @@ class DraftActivity : AppCompatActivity() {
             }
         } else {
             name.text = codeToNice(slot.role)
-            img.setImageResource(0); elem.setImageResource(0); img.background = null
+            img.loadPlayerImage(null); elem.loadPlayerImage(null); img.background = null
             view.setOnClickListener {
                 if (pendingBenchIndex != null) {
                     Toast.makeText(this, "Intercambio solo entre jugadores", Toast.LENGTH_SHORT).show()
