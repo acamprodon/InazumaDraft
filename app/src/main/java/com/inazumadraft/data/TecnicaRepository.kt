@@ -27,6 +27,7 @@ object TecnicaRepository {
         Tecnica("Pingüino Emperador N3", 65,  listOf("Jude", "Samford", "Caleb"), combined = true),
         Tecnica("Torre Perfecta", 63,  listOf("Tori", "Scotty", "Hurley"), combined = true ),
         Tecnica("Baile de Mariposas",  44,  listOf("Tori", "Sue"), combined = true),
+        Tecnica("Baile de Mariposas",  44,  listOf("Willow", "Sue"), combined = true),
         Tecnica("Remate Halcón",  42,  listOf("Chiken", "Eagle"), combined = true),
         Tecnica("Bateo Total",  40,  listOf("Gamer", "Artist"), combined = true),
         Tecnica ("Remate Combinado",  42,  listOf("Erik", "Jude"), combined = true),
@@ -60,7 +61,14 @@ object TecnicaRepository {
         Tecnica("Remate de Gaia", 65,listOf("Zell", "Mercury", "Metron"), combined = true ),
         Tecnica("Ventisca de Fuego", 50, listOf("Torch", "Gazelle"), combined = true),
         Tecnica("Remate Caótico", 68, listOf("Torch", "Gazelle", "Byron"), combined = true),
-
+        Tecnica("Escudo Corporal", 65, listOf("Western", "Smith", "Hammond"), combined = true),
+        Tecnica("Aikido", 45, listOf("Agente M", "Firepool"),combined = true ),
+        Tecnica("Remate de Seguridad", 30, listOf("Mirror", "Kenneddy"), combined = true),
+        Tecnica("Bomba Acrobática", 30, listOf("Mirror", "Kenneddy"), combined = true),
+        Tecnica("Emboscada Defensiva", 64, listOf("Hills", "Diver", "Redding"), combined = true),
+        Tecnica("Remate del Águila", 64, listOf("Hills", "Shark", "Contented"), combined = true),
+        Tecnica("Volterta Circense", 43, listOf("Fake", "Badgamae"), combined = true),
+        Tecnica("Carrera a Tres Piernas", 44, listOf("Random", "Poker"), combined = true),
 
 
     )
