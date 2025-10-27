@@ -55,8 +55,11 @@ object TecnicaRepository {
         Tecnica("Muralla Infinita 2",  65, listOf("King", "Hillvalley", "Bargie"), combined = true),
         Tecnica("Segadora",  44,  listOf("Zohen", "Bargie"), combined = true),
         Tecnica("Ciclón Doble",  44,  listOf("Bargie", "Hatch"), combined = true),
+        Tecnica("Ciclón Doble",  44,  listOf("Bargie", "Beltzer"), combined = true),
         Tecnica("Triángulo Z 2",  68,  listOf("Quagmire", "Zell", "Wittz"), combined = true),
-
+        Tecnica("Remate de Gaia", 65,listOf("Zell", "Mercury", "Metron"), combined = true ),
+        Tecnica("Ventisca de Fuego", 50, listOf("Torch", "Gazelle"), combined = true),
+        Tecnica("Remate Caótico", 68, listOf("Torch", "Gazelle", "Byron"), combined = true),
 
 
 
