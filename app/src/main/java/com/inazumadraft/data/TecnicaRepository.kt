@@ -69,6 +69,13 @@ object TecnicaRepository {
         Tecnica("Remate del Águila", 64, listOf("Hills", "Shark", "Contented"), combined = true),
         Tecnica("Volterta Circense", 43, listOf("Fake", "Badgamae"), combined = true),
         Tecnica("Carrera a Tres Piernas", 44, listOf("Random", "Poker"), combined = true),
+        Tecnica("Defensa Propulsada", 44, listOf("JP", "Aitor"), combined = true),
+        Tecnica("Triple Amenaza", 65, listOf("Arion", "Victor", "Riccardo"), combined = true),
+        Tecnica("Tornado de Fuego DD", 50, listOf("Arion", "Victor"), combined = true),
+        Tecnica("Superramte Rebotado", 47, listOf("Arion", "Fei"), combined = true),
+        Tecnica("Tornado de Fuego DT", 67, listOf("Arion", "Victor", "Goldie"), combined = true ),
+        Tecnica("Lluvia de Azufre", 48, listOf("Riccardo", "Victor"), combined = true),
+        Tecnica("Cruce Explosivo", 46, listOf("Hugh", "Shun"), combined = true),
 
 
     )
