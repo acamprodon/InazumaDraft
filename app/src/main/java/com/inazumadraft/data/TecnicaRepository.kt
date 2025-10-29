@@ -1,82 +1,200 @@
 package com.inazumadraft.data
 
+import android.os.SystemClock
+import android.util.Log
+import com.inazumadraft.InazumaDraftApp
 import com.inazumadraft.model.Tecnica
-import com.inazumadraft.R
-
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
 
 object TecnicaRepository {
 
+    private const val SEED_DATA_URL = "https://acamprodon.github.io/InazumaDraft-data/tecnica.json"
+    private const val REMOTE_RETRY_INTERVAL_MS = 60_000L
 
-    val tecnicas = listOf(
-        Tecnica("Triángulo letal",  57,  listOf("Samford", "Hatch", "Swing"), combined = true),
-        Tecnica("Súper Relámpago", 45,  listOf("Mark", "Axel"),combined = true ),
-        Tecnica("Supertrampolín Relámpago",  64,  listOf("Mark", "Axel", "Jack"), combined = true),
-        Tecnica("Ruptura Relámpago", 60,  listOf("Mark", "Axel", "Jude"), combined = true ),
-        Tecnica("Fénix", 63,  listOf("Mark", "Erik", "Bobby"), combined = true),
-        Tecnica("Defensa Triple",  65,listOf("Mark", "Jack", "Tod"), combined = true),
-        Tecnica("Triángulo letal 2", 60,  listOf("Mark", "Bobby", "Jude"), combined = true ),
-        Tecnica("La Tierra",  67,  listOf("Mark", "Axel", "Shawn"), combined = true),
-        Tecnica("Pájaro de Fuego",  49,  listOf("Axel", "Nathan"), combined = true),
-        Tecnica("Trampolín Relámpago", 46,  listOf("Axel", "Jack"), combined = true ),
-        Tecnica("Tornado Dragón",  45,  listOf("Axel", "Kevin"), combined = true),
-        Tecnica("Empuje Gemelo F",  50,  listOf("Axel", "Jude"), combined = true),
-        Tecnica("Fuego Cruzado",  50,  listOf("Axel", "Shawn"), combined = true),
-        Tecnica("Remate Gafas", 25, listOf("Kevin", "Willy"), combined = true ),
-        Tecnica("Ventisca Guiverno", 50,  listOf("Kevin", "Shawn",), combined = true),
-        Tecnica("Pingüino Emperador N2", 62,  listOf("Jude", "Samford", "Hatch"), combined = true),
-        Tecnica("Pingüino Emperador N3", 65,  listOf("Jude", "Samford", "Caleb"), combined = true),
-        Tecnica("Torre Perfecta", 63,  listOf("Tori", "Scotty", "Hurley"), combined = true ),
-        Tecnica("Baile de Mariposas",  44,  listOf("Tori", "Sue"), combined = true),
-        Tecnica("Baile de Mariposas",  44,  listOf("Willow", "Sue"), combined = true),
-        Tecnica("Remate Halcón",  42,  listOf("Chiken", "Eagle"), combined = true),
-        Tecnica("Bateo Total",  40,  listOf("Gamer", "Artist"), combined = true),
-        Tecnica ("Remate Combinado",  42,  listOf("Erik", "Jude"), combined = true),
-        Tecnica ("Remate Combinado",  42,  listOf("Samford", "Jude"), combined = true),
-        Tecnica("Muralla Infinita",  60, listOf("Greeny", "Hillvalley", "Sherman"), combined = true),
-        Tecnica("Triángulo Z",  65,  listOf("Marvin", "Tyler", "Thomas"), combined = true),
-        Tecnica("Flecha Huracán",  61,  listOf("Night", "Meenan", "Mirthful"), combined = true),
-        Tecnica("Remate en V", 48,  listOf("Max", "Steve"), combined = true ),
-        Tecnica("Bloqueo Doble",  49,  listOf("Jim", "Feldt"), combined = true),
-        Tecnica("Estrella Fugaz",  47,  listOf("Timmy", "Sam"), combined = true),
-        Tecnica("Remate Triple",  64,  listOf("Nathan", "Sam", "Tod"), combined = true),
-        Tecnica("Fénix Oscuro",  66,  listOf("Nathan", "Max", "Kevin"), combined = true),
-        Tecnica("Disparo Cósmico",  46, listOf("Janus", "Diam"), combined = true),
-        Tecnica("Tirachinas",  64,  listOf("García", "Jiménez", "Bonachea"), combined = true),
-        Tecnica("Tiro a Reacción",  65, listOf("Mark", "Axel", "Austin"), combined = true),
-        Tecnica("Torbellino Trampolín",  47,  listOf("Nathan", "Jack"), combined = true),
-        Tecnica("El Huracán",  48,  listOf("Nathan", "Shawn"), combined = true),
-        Tecnica("Campo de Fuerza",  49,  listOf("Jude", "Caleb"), combined = true),
-        Tecnica("Bestia del Trueno",  47,  listOf("Shawn", "Thor"), combined = true),
-        Tecnica("La Aurora",  50,  listOf("Shawn", "Xavier"), combined = true),
-        Tecnica("Big Bang",  66,  listOf("Shawn", "Xavier", "Jude"), combined = true),
-        Tecnica("Tormenta del Tigre",  46,  listOf("Axel", "Austin"), combined = true),
-        Tecnica("Fuego Total",  64,  listOf("Axel", "Austin", "Xavier"), combined = true),
-        Tecnica("Supernova",  65,  listOf("Xene", "Bellatrix", "Wittz"), combined = true),
-        Tecnica("Pingüino Espacial",  65,  listOf("Xene", "Bellatrix", "Wittz"), combined = true),
-        Tecnica("Muralla Infinita 2",  65, listOf("King", "Hillvalley", "Bargie"), combined = true),
-        Tecnica("Segadora",  44,  listOf("Zohen", "Bargie"), combined = true),
-        Tecnica("Ciclón Doble",  44,  listOf("Bargie", "Hatch"), combined = true),
-        Tecnica("Ciclón Doble",  44,  listOf("Bargie", "Beltzer"), combined = true),
-        Tecnica("Triángulo Z 2",  68,  listOf("Quagmire", "Zell", "Wittz"), combined = true),
-        Tecnica("Remate de Gaia", 65,listOf("Zell", "Mercury", "Metron"), combined = true ),
-        Tecnica("Ventisca de Fuego", 50, listOf("Torch", "Gazelle"), combined = true),
-        Tecnica("Remate Caótico", 68, listOf("Torch", "Gazelle", "Byron"), combined = true),
-        Tecnica("Escudo Corporal", 65, listOf("Western", "Smith", "Hammond"), combined = true),
-        Tecnica("Aikido", 45, listOf("Agente M", "Firepool"),combined = true ),
-        Tecnica("Remate de Seguridad", 30, listOf("Mirror", "Kenneddy"), combined = true),
-        Tecnica("Bomba Acrobática", 30, listOf("Mirror", "Kenneddy"), combined = true),
-        Tecnica("Emboscada Defensiva", 64, listOf("Hills", "Diver", "Redding"), combined = true),
-        Tecnica("Remate del Águila", 64, listOf("Hills", "Shark", "Contented"), combined = true),
-        Tecnica("Volterta Circense", 43, listOf("Fake", "Badgamae"), combined = true),
-        Tecnica("Carrera a Tres Piernas", 44, listOf("Random", "Poker"), combined = true),
-        Tecnica("Defensa Propulsada", 44, listOf("JP", "Aitor"), combined = true),
-        Tecnica("Triple Amenaza", 65, listOf("Arion", "Victor", "Riccardo"), combined = true),
-        Tecnica("Tornado de Fuego DD", 50, listOf("Arion", "Victor"), combined = true),
-        Tecnica("Superramte Rebotado", 47, listOf("Arion", "Fei"), combined = true),
-        Tecnica("Tornado de Fuego DT", 67, listOf("Arion", "Victor", "Goldie"), combined = true ),
-        Tecnica("Lluvia de Azufre", 48, listOf("Riccardo", "Victor"), combined = true),
-        Tecnica("Cruce Explosivo", 46, listOf("Hugh", "Shun"), combined = true),
+    private val initializer = AtomicBoolean(false)
+    private val scope = CoroutineScope(Job() + Dispatchers.IO)
+    private val seedMutex = Mutex()
 
+    @Volatile
+    private var cachedTecnicas: List<Tecnica> = emptyList()
 
-    )
+    @Volatile
+    private var remoteSeedSynced = false
+
+    @Volatile
+    private var lastRemoteSeedAttempt = 0L
+
+    @Volatile
+    private var remoteSeedInFlight = false
+
+    val tecnicas: List<Tecnica>
+        get() = cachedTecnicas
+
+    fun initialize(app: InazumaDraftApp) {
+        if (!initializer.compareAndSet(false, true)) return
+        scope.launch {
+            ensureSeedData(forceRefresh = false)
+        }
+    }
+
+    suspend fun getTechniques(forceRefresh: Boolean = false): List<Tecnica> {
+        ensureSeedData(forceRefresh)
+        return cachedTecnicas
+    }
+
+    private suspend fun ensureSeedData(forceRefresh: Boolean) {
+        var attemptRemote = forceRefresh
+
+        seedMutex.withLock {
+            if (forceRefresh) {
+                remoteSeedSynced = false
+            }
+
+            if (remoteSeedSynced && !forceRefresh) {
+                return
+            }
+
+            if (remoteSeedInFlight) {
+                return
+            }
+
+            val now = SystemClock.elapsedRealtime()
+            if (!forceRefresh) {
+                if (now - lastRemoteSeedAttempt < REMOTE_RETRY_INTERVAL_MS) {
+                    return
+                }
+            }
+
+            lastRemoteSeedAttempt = now
+            remoteSeedInFlight = true
+            attemptRemote = true
+        }
+
+        if (!attemptRemote) return
+
+        val result = downloadRemoteSeed()
+
+        seedMutex.withLock {
+            remoteSeedInFlight = false
+            result.onSuccess { list ->
+                if (list.isNotEmpty()) {
+                    cachedTecnicas = list
+                    remoteSeedSynced = true
+                } else {
+                    Log.w("TecnicaRepository", "Remote dataset contained no techniques")
+                    if (forceRefresh) {
+                        lastRemoteSeedAttempt = 0L
+                    }
+                }
+            }.onFailure {
+                Log.e("TecnicaRepository", "Unable to download techniques dataset", it)
+                if (forceRefresh) {
+                    lastRemoteSeedAttempt = 0L
+                }
+            }
+        }
+    }
+
+    private suspend fun downloadRemoteSeed(): Result<List<Tecnica>> {
+        return withContext(Dispatchers.IO) {
+            runCatching { fetchRemoteSeed() }
+        }
+    }
+
+    private fun fetchRemoteSeed(): List<Tecnica> {
+        val connection = java.net.URL(SEED_DATA_URL).openConnection() as java.net.HttpURLConnection
+        return try {
+            connection.connectTimeout = 15_000
+            connection.readTimeout = 15_000
+            connection.requestMethod = "GET"
+            connection.setRequestProperty("Accept", "application/json")
+            connection.setRequestProperty("User-Agent", "InazumaDraft/1.0 (Android)")
+
+            val code = connection.responseCode
+            if (code != java.net.HttpURLConnection.HTTP_OK) {
+                throw IllegalStateException("Techniques download failed with HTTP $code")
+            }
+
+            connection.inputStream.use { stream ->
+                val json = stream.bufferedReader().use { it.readText() }
+                parseSeed(json)
+            }
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    private fun parseSeed(json: String): List<Tecnica> {
+        val trimmed = json.trim()
+        val array = when {
+            trimmed.isEmpty() -> JSONArray()
+            trimmed.startsWith("[") -> JSONArray(trimmed)
+            trimmed.startsWith("{") -> {
+                val obj = JSONObject(trimmed)
+                obj.optJSONArray("techniques")
+                    ?: obj.optJSONArray("tecnicas")
+                    ?: obj.optJSONArray("data")
+                    ?: throw IllegalStateException("Seed JSON does not contain a techniques array")
+            }
+            else -> throw IllegalStateException("Unrecognized techniques seed format")
+        }
+
+        val techniques = mutableListOf<Tecnica>()
+        for (i in 0 until array.length()) {
+            val obj = array.optJSONObject(i) ?: continue
+            val name = obj.optString("name", obj.optString("nombre"))
+            if (name.isBlank()) continue
+
+            val players = obj.optFlexibleStringList("players", "jugadores", "members")
+            val power = obj.optInt("power", obj.optInt("poder"))
+            val combined = obj.optBoolean("combined", obj.optBoolean("combinada", false))
+
+            techniques += Tecnica(
+                name = name,
+                power = power,
+                players = players,
+                combined = combined
+            )
+        }
+        return techniques
+    }
+
+}
+
+private fun JSONObject.optFlexibleStringList(vararg keys: String): List<String> {
+    for (key in keys) {
+        if (!has(key)) continue
+        val value = opt(key)
+        when (value) {
+            is JSONArray -> return value.toStringList()
+            is String -> {
+                val parts = value
+                    .split(',', '|')
+                    .map { it.trim() }
+                    .filter { it.isNotEmpty() }
+                if (parts.isNotEmpty()) {
+                    return parts
+                }
+            }
+            is Number -> return listOf(value.toString())
+        }
+    }
+    return emptyList()
+}
+
+private fun JSONArray.toStringList(): List<String> {
+    val result = mutableListOf<String>()
+    for (i in 0 until length()) {
+        result += optString(i)
+    }
+    return result
 }
