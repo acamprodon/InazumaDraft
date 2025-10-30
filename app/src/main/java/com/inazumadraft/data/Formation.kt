@@ -60,7 +60,7 @@ val formationCoordinates = mapOf(
     "4-4-2" to formation(
         row(0.92f, 1),
         row(0.80f, 4),
-        row(0.60f, 4),
+        row(0.50f, 4),
         row(0.28f, 2, spread = 0.40f)
     ),
 
@@ -68,7 +68,7 @@ val formationCoordinates = mapOf(
         "4-3-3" to formation(
             row(0.92f, 1),
             row(0.80f, 4),
-            row(0.62f, 3),
+            row(0.50f, 3),
             row(0.28f, 3, spread = 0.68f)
     ),
 
@@ -77,7 +77,7 @@ val formationCoordinates = mapOf(
         row(0.92f, 1),
         row(0.84f, 3, spread = 0.54f),
         row(0.74f, 2, spread = 0.86f),
-        row(0.62f, 2, spread = 0.40f),
+        row(0.50f, 2, spread = 0.40f),
         row(0.28f, 3, spread = 0.68f)
     ),
 
@@ -86,7 +86,7 @@ val formationCoordinates = mapOf(
         "3-4-3" to formation(
             row(0.92f, 1),
             row(0.82f, 3, spread = 0.60f),
-            row(0.58f, 4, spread = 0.74f),
+            row(0.50f, 4, spread = 0.74f),
             row(0.28f, 3, spread = 0.68f)
     ),
 
@@ -95,7 +95,7 @@ val formationCoordinates = mapOf(
         row(0.92f, 1),
         row(0.84f, 3, spread = 0.54f),
         row(0.74f, 2, spread = 0.86f),
-        row(0.60f, 3),
+        row(0.50f, 3),
         row(0.28f, 2, spread = 0.40f)
     ),
 
@@ -121,7 +121,7 @@ val formationCoordinates = mapOf(
     "4-2-4" to formation(
         row(0.92f, 1),
         row(0.80f, 4),
-        row(0.62f, 2, spread = 0.36f),
+        row(0.50f, 2, spread = 0.36f),
         row(0.30f, 4, spread = 0.76f)
     ),
 
@@ -139,7 +139,7 @@ val formationCoordinates = mapOf(
         row(0.92f, 1),
         row(0.82f, 3, spread = 0.60f),
         row(0.66f, 2, spread = 0.40f),
-        row(0.52f, 3, spread = 0.62f),
+        row(0.48f, 3, spread = 0.62f),
         row(0.28f, 2, spread = 0.40f)
     ),
 
@@ -148,7 +148,7 @@ val formationCoordinates = mapOf(
         row(0.92f, 1),
         row(0.80f, 4),
         row(0.64f, 2, spread = 0.36f),
-        row(0.50f, 3),
+        row(0.48f, 3),
         row(0.26f, 1)
     ),
 
@@ -164,7 +164,7 @@ val formationCoordinates = mapOf(
         row(0.92f, 1),
         row(0.84f, 3, spread = 0.54f),
         row(0.72f, 2, spread = 0.86f),
-        row(0.56f, 4),
+        row(0.50f, 4),
         row(0.26f, 1)
     )
 )
