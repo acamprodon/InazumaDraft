@@ -13,7 +13,7 @@ private fun defaultSpread(count: Int): Float = when (count) {
     2 -> 0.36f
     3 -> 0.56f
     4 -> 0.72f
-    5 -> 0.82f
+    5 -> 0.86f
     else -> 0.76f
 }
 
@@ -73,11 +73,12 @@ val formationCoordinates = mapOf(
     ),
 
     // 5-2-3
-        "5-2-3" to formation(
-            row(0.92f, 1),
-            row(0.82f, 5),
-            row(0.62f, 2, spread = 0.40f),
-            row(0.28f, 3, spread = 0.68f)
+    "5-2-3" to formation(
+        row(0.92f, 1),
+        row(0.84f, 3, spread = 0.54f),
+        row(0.74f, 2, spread = 0.86f),
+        row(0.62f, 2, spread = 0.40f),
+        row(0.28f, 3, spread = 0.68f)
     ),
 
 
@@ -92,7 +93,8 @@ val formationCoordinates = mapOf(
     // 5-3-2
     "5-3-2" to formation(
         row(0.92f, 1),
-        row(0.82f, 5),
+        row(0.84f, 3, spread = 0.54f),
+        row(0.74f, 2, spread = 0.86f),
         row(0.60f, 3),
         row(0.28f, 2, spread = 0.40f)
     ),
@@ -128,7 +130,8 @@ val formationCoordinates = mapOf(
         row(0.92f, 1),
         row(0.82f, 2, spread = 0.60f),
         row(0.62f, 3),
-        row(0.30f, 5)
+        row(0.36f, 2, spread = 0.78f),
+        row(0.24f, 3, spread = 0.66f)
     ),
 
     // 3-5-2
@@ -159,7 +162,8 @@ val formationCoordinates = mapOf(
     ),
     "5-4-1" to formation(
         row(0.92f, 1),
-        row(0.82f, 5),
+        row(0.84f, 3, spread = 0.54f),
+        row(0.72f, 2, spread = 0.86f),
         row(0.56f, 4),
         row(0.26f, 1)
     )

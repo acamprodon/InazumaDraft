@@ -191,8 +191,9 @@ class FinalTeamActivity : AppCompatActivity() {
                 setBackgroundColor(0xff_ff_cc_00.toInt()); setTextColor(0xff_00_00_00.toInt()); elevation = 16f
                 setOnClickListener { openBenchDrawer(root, drawer, scrim) }
             }
-            val lp = FrameLayout.LayoutParams((44 * d).toInt(), (120 * d).toInt()).apply {
-                gravity = Gravity.END or Gravity.CENTER_VERTICAL; marginEnd = (4 * d).toInt()
+            val lp = FrameLayout.LayoutParams((36 * d).toInt(), (128 * d).toInt()).apply {
+                gravity = Gravity.END or Gravity.CENTER_VERTICAL
+                marginEnd = (-28 * d).toInt()
             }
             addContentView(benchHandle, lp)
         }
